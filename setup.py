@@ -19,6 +19,10 @@ setuptools.setup(
         'pymodbus>=2.3.0',
         'click>=6.7',
     ],
+    tests_require=[
+        'nose2>=0.9.2',
+        'nose2[coverage_plugin]>=0.6.5',
+    ],
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
