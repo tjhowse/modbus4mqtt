@@ -35,6 +35,7 @@ class BasicTests(unittest.TestCase):
 
             mock_mqtt().username_pw_set.assert_called_with('brengis', 'pranto')
             mock_mqtt().connect.assert_called_with('kroopit', 1885, 60)
+            #print(mock_mqtt.mock_calls)
 
     def test_pub_on_change(self):
         with patch('paho.mqtt.client.Client') as mock_mqtt:
@@ -90,6 +91,49 @@ class BasicTests(unittest.TestCase):
                 mock_mqtt().publish.assert_any_call(MQTT_TOPIC_PREFIX+'/retain_on', 1, retain=True)
                 mock_mqtt().publish.assert_any_call(MQTT_TOPIC_PREFIX+'/retain_off', 2, retain=False)
                 mock_mqtt().publish.assert_any_call(MQTT_TOPIC_PREFIX+'/retain_absent', 3, retain=False)
+
+    def test_default_table(self):
+        with patch('paho.mqtt.client.Client') as mock_mqtt:
+            with patch('modbus4mqtt.modbus_interface.modbus_interface') as mock_modbus:
+
+                mock_modbus().get_value.side_effect = self.modbus_registers
+
+                m = modbus4mqtt.mqtt_interface('kroopit', 1885, 'brengis', 'pranto', './tests/test_default_table.yaml', MQTT_TOPIC_PREFIX)
+                m.connect()
+                self.modbus_tables['holding'][1] = 1
+                self.modbus_tables['holding'][2] = 2
+                self.modbus_tables['input'][1] = 3
+                m.poll()
+
+                mock_mqtt().publish.assert_any_call(MQTT_TOPIC_PREFIX+'/holding', 1, retain=False)
+                mock_mqtt().publish.assert_any_call(MQTT_TOPIC_PREFIX+'/input', 3, retain=False)
+                mock_mqtt().publish.assert_any_call(MQTT_TOPIC_PREFIX+'/default', 2, retain=False)
+
+    def test_value_map(self):
+        with patch('paho.mqtt.client.Client') as mock_mqtt:
+            with patch('modbus4mqtt.modbus_interface.modbus_interface') as mock_modbus:
+
+                mock_modbus().get_value.side_effect = self.modbus_registers
+
+                m = modbus4mqtt.mqtt_interface('kroopit', 1885, 'brengis', 'pranto', './tests/test_value_map.yaml', MQTT_TOPIC_PREFIX)
+                m.connect()
+                self.modbus_tables['holding'][1] = 1
+                self.modbus_tables['holding'][2] = 2
+                m.poll()
+
+                mock_mqtt().publish.assert_any_call(MQTT_TOPIC_PREFIX+'/value_map_absent', 1, retain=False)
+                mock_mqtt().publish.assert_any_call(MQTT_TOPIC_PREFIX+'/value_map_present', 'b', retain=False)
+                mock_mqtt().publish.reset_mock()
+
+                # This value is outside the map, check it comes through in raw form
+                self.modbus_tables['holding'][2] = 3
+                m.poll()
+
+                # print(mock_mqtt.mock_calls)
+                mock_mqtt().publish.assert_any_call(MQTT_TOPIC_PREFIX+'/value_map_present', 3, retain=False)
+                mock_mqtt().publish.reset_mock()
+
+
 
 if __name__ == "__main__":
     unittest.main()
