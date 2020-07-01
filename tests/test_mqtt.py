@@ -13,6 +13,8 @@ def assert_no_call(self, *args, **kwargs):
 
 Mock.assert_no_call = assert_no_call
 
+MQTT_TOPIC_PREFIX = 'prefix'
+
 class BasicTests(unittest.TestCase):
 
     def setUp(self):
@@ -26,17 +28,22 @@ class BasicTests(unittest.TestCase):
             return 0
         return self.modbus_tables[table][address]
 
+    def test_connect(self):
+        with patch('paho.mqtt.client.Client') as mock_mqtt:
+            m = modbus4mqtt.mqtt_interface('kroopit', 1885, 'brengis', 'pranto', './tests/test_connect.yaml', MQTT_TOPIC_PREFIX)
+            m.connect()
+
+            mock_mqtt().username_pw_set.assert_called_with('brengis', 'pranto')
+            mock_mqtt().connect.assert_called_with('kroopit', 1885, 60)
+
     def test_pub_on_change(self):
         with patch('paho.mqtt.client.Client') as mock_mqtt:
             with patch('modbus4mqtt.modbus_interface.modbus_interface') as mock_modbus:
 
                 mock_modbus().get_value.side_effect = self.modbus_registers
 
-                m = modbus4mqtt.mqtt_interface('kroopit', 1885, 'brengis', 'pranto', './tests/test_pub_on_change.yaml', 'test')
+                m = modbus4mqtt.mqtt_interface('kroopit', 1885, 'brengis', 'pranto', './tests/test_pub_on_change.yaml', MQTT_TOPIC_PREFIX)
                 m.connect()
-
-                mock_mqtt().username_pw_set.assert_called_with('brengis', 'pranto')
-                mock_mqtt().connect.assert_called_with('kroopit', 1885, 60)
 
                 self.modbus_tables['holding'][1] = 85
                 self.modbus_tables['holding'][2] = 86
@@ -44,9 +51,9 @@ class BasicTests(unittest.TestCase):
                 m.poll()
 
                 # Check that every topic was published initially
-                mock_mqtt().publish.assert_any_call('test/pub_on_change_false', 85, retain=False)
-                mock_mqtt().publish.assert_any_call('test/pub_on_change_true', 86, retain=False)
-                mock_mqtt().publish.assert_any_call('test/pub_on_change_absent', 87, retain=False)
+                mock_mqtt().publish.assert_any_call(MQTT_TOPIC_PREFIX+'/pub_on_change_false', 85, retain=False)
+                mock_mqtt().publish.assert_any_call(MQTT_TOPIC_PREFIX+'/pub_on_change_true', 86, retain=False)
+                mock_mqtt().publish.assert_any_call(MQTT_TOPIC_PREFIX+'/pub_on_change_absent', 87, retain=False)
                 mock_mqtt().publish.reset_mock()
 
                 self.modbus_tables['holding'][1] = 15
@@ -55,18 +62,34 @@ class BasicTests(unittest.TestCase):
                 m.poll()
 
                 # Check that every topic was published if everything changed
-                mock_mqtt().publish.assert_any_call('test/pub_on_change_false', 15, retain=False)
-                mock_mqtt().publish.assert_any_call('test/pub_on_change_true', 16, retain=False)
-                mock_mqtt().publish.assert_any_call('test/pub_on_change_absent', 17, retain=False)
+                mock_mqtt().publish.assert_any_call(MQTT_TOPIC_PREFIX+'/pub_on_change_false', 15, retain=False)
+                mock_mqtt().publish.assert_any_call(MQTT_TOPIC_PREFIX+'/pub_on_change_true', 16, retain=False)
+                mock_mqtt().publish.assert_any_call(MQTT_TOPIC_PREFIX+'/pub_on_change_absent', 17, retain=False)
                 mock_mqtt().publish.reset_mock()
 
                 m.poll()
 
                 # Check that the register with pub_only_on_change: true does not re-publish
-                mock_mqtt().publish.assert_any_call('test/pub_on_change_false', 15, retain=False)
-                mock_mqtt().publish.assert_no_call('test/pub_on_change_true', 16, retain=False)
-                mock_mqtt().publish.assert_any_call('test/pub_on_change_absent', 17, retain=False)
+                mock_mqtt().publish.assert_any_call(MQTT_TOPIC_PREFIX+'/pub_on_change_false', 15, retain=False)
+                mock_mqtt().publish.assert_no_call(MQTT_TOPIC_PREFIX+'/pub_on_change_true', 16, retain=False)
+                mock_mqtt().publish.assert_any_call(MQTT_TOPIC_PREFIX+'/pub_on_change_absent', 17, retain=False)
 
+    def test_retain_flag(self):
+        with patch('paho.mqtt.client.Client') as mock_mqtt:
+            with patch('modbus4mqtt.modbus_interface.modbus_interface') as mock_modbus:
+
+                mock_modbus().get_value.side_effect = self.modbus_registers
+
+                m = modbus4mqtt.mqtt_interface('kroopit', 1885, 'brengis', 'pranto', './tests/test_retain_flag.yaml', MQTT_TOPIC_PREFIX)
+                m.connect()
+                self.modbus_tables['holding'][1] = 1
+                self.modbus_tables['holding'][2] = 2
+                self.modbus_tables['holding'][3] = 3
+                m.poll()
+
+                mock_mqtt().publish.assert_any_call(MQTT_TOPIC_PREFIX+'/retain_on', 1, retain=True)
+                mock_mqtt().publish.assert_any_call(MQTT_TOPIC_PREFIX+'/retain_off', 2, retain=False)
+                mock_mqtt().publish.assert_any_call(MQTT_TOPIC_PREFIX+'/retain_absent', 3, retain=False)
 
 if __name__ == "__main__":
     unittest.main()
