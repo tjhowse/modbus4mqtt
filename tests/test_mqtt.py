@@ -27,7 +27,7 @@ class BasicTests(unittest.TestCase):
 
     def read_modbus_register(self, table, address):
         if address not in self.modbus_tables[table]:
-            return 0
+            raise ValueError("Invalid address")
         return self.modbus_tables[table][address]
 
     def write_modbus_register(self, table, address, value):
@@ -153,6 +153,19 @@ class BasicTests(unittest.TestCase):
                 # print(mock_mqtt.mock_calls)
                 mock_mqtt().publish.assert_any_call(MQTT_TOPIC_PREFIX+'/value_map_present', 3, retain=False)
                 mock_mqtt().publish.reset_mock()
+
+    def test_invalid_address(self):
+        with patch('paho.mqtt.client.Client') as mock_mqtt:
+            with patch('modbus4mqtt.modbus_interface.modbus_interface') as mock_modbus:
+                mock_modbus().get_value.side_effect = self.read_modbus_register
+
+                m = modbus4mqtt.mqtt_interface('kroopit', 1885, 'brengis', 'pranto', './tests/test_value_map.yaml', MQTT_TOPIC_PREFIX)
+                m.connect()
+                # Don't set up address 2, so the register polling it throws an exception
+                self.modbus_tables['holding'][1] = 1
+                m.poll()
+                mock_mqtt().publish.assert_any_call(MQTT_TOPIC_PREFIX+'/value_map_absent', 1, retain=False)
+                mock_mqtt().publish.assert_no_call(MQTT_TOPIC_PREFIX+'/value_map_present', 'b', retain=False)
 
     def test_set_topics(self):
         with patch('paho.mqtt.client.Client') as mock_mqtt:
