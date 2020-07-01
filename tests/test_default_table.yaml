@@ -5,7 +5,7 @@ registers:
   - pub_topic: "holding"
     address: 1
   - pub_topic: "input"
-    table: 'input'
+    table: "input"
     address: 1
   - pub_topic: "default"
     address: 2

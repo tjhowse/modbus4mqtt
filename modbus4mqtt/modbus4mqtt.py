@@ -84,8 +84,7 @@ class mqtt_interface():
         pass
 
     def on_message(self, client, userdata, msg):
-        # print("got a message:")
-        print("got a message: {}: {}".format(msg.topic, msg.payload))
+        # print("got a message: {}: {}".format(msg.topic, msg.payload))
         topic = msg.topic[len(self.prefix):]
         for register in [register for register in self.registers if 'set_topic' in register]:
             if topic != register['set_topic']:
@@ -98,6 +97,11 @@ class mqtt_interface():
                     continue
                 # Map the value from the human-readable form into the raw modbus number
                 value = register['value_map'][value]
+            try:
+                value = int(value)
+            except ValueError:
+                logging.error("Failed to convert register value for writing. Bad/missing value_map? Topic: {}, Value: {}".format(topic, value))
+                continue
             self.mb.set_value(register.get('table', 'holding'), register['address'], int(value))
 
     def load_modbus_config(self, path):
