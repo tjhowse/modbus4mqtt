@@ -5,7 +5,7 @@ import logging
 import yaml
 import click
 import paho.mqtt.client as mqtt
-from modbus_interface import modbus_interface
+from . import modbus_interface
 
 class mqtt_interface():
     def __init__(self, hostname, port, username, password, config_file, mqtt_topic_prefix):
@@ -22,7 +22,7 @@ class mqtt_interface():
 
     def connect(self):
         # Connects to modbus and MQTT.
-        self.mb = modbus_interface(self.config['ip'], self.config['port'], self.config['update_rate'])
+        self.mb = modbus_interface.modbus_interface(self.config['ip'], self.config['port'], self.config['update_rate'])
         self.mb.connect()
         # Tells the modbus interface about the registers we consider interesting.
         for register in self.registers:

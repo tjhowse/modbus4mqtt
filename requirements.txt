@@ -1,3 +1,4 @@
 pyyaml
+click
 paho-mqtt
 pymodbus

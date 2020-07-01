@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="modbus4mqtt", # Replace with your own username
-    version="0.1.2",
+    version="0.1.4",
     author="Travis Howse",
     author_email="tjhowse@gmail.com",
     description="A YAML-defined bidirectional Modbus to MQTT interface",
@@ -16,13 +16,18 @@ setuptools.setup(
     install_requires=[
         'pyyaml>=3.5.0',
         'paho-mqtt>=1.5.0',
-        'pymodbus>2.3.0'
+        'pymodbus>=2.3.0',
+        'click>=6.7',
     ],
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
         "Operating System :: OS Independent",
     ],
-    python_requires='>=3.6',
+    python_requires='>=3.5.0',
     test_suite='nose2.collector.collector',
+    entry_points='''
+        [console_scripts]
+        modbus4mqtt=modbus4mqtt.modbus4mqtt:main
+    ''',
 )
