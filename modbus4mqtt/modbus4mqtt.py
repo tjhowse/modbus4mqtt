@@ -48,7 +48,6 @@ class mqtt_interface():
         for register in self.get_registers_with('pub_topic'):
             try:
                 value = self.mb.get_value(register.get('table', 'holding'), register['address'])
-                print(int(value))
             except:
                 logging.warning("Couldn't get value from register {} in table {}".format(register['address'], register.get('table', 'holding')))
                 continue
@@ -71,6 +70,7 @@ class mqtt_interface():
             logging.info("Connected to MQTT.")
         else:
             logging.error("Couldn't connect to MQTT.")
+            return
         # Subscribe to all the set topics.
         for register in self.get_registers_with('set_topic'):
             self._mqtt_client.subscribe(self.prefix+register['set_topic'])
