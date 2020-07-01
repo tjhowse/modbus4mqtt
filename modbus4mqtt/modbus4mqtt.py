@@ -38,10 +38,14 @@ class mqtt_interface():
         self.client.connect(self.hostname, self.port, 60)
         self.client.loop_start()
 
+    def get_registers_with(self, required_key):
+        # Returns the registers containing the required_key
+        return [register for register in self.registers if required_key in register]
+
     def poll(self):
         self.mb.poll()
         self.client.publish(self.prefix+'modbus4mqtt', 'poll')
-        for register in self.registers:
+        for register in self.get_registers_with('pub_topic'):
             value = self.mb.get_value(register['table'], register['address'])
             changed = False
             if value != register['value']:
@@ -63,7 +67,7 @@ class mqtt_interface():
         else:
             logging.error("Couldn't connect to MQTT.")
         # Subscribe to all the set topics.
-        for register in [register for register in self.registers if 'set_topic' in register]:
+        for register in self.get_registers_with('set_topic'):
             self.client.subscribe(self.prefix+register['set_topic'])
             print("Subscribed to {}".format(self.prefix+register['set_topic']))
         self.client.publish(self.prefix+'modbus4mqtt', 'hi')
