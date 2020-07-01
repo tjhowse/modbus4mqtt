@@ -50,7 +50,7 @@ This section of the YAML lists all the modbus registers that you consider intere
 
 `pub_only_on_change` (Optional) Controls whether this register will only be published if its value changed from the previous poll.
 
-`table` (Required) The Modbus table to read from the device. Must be 'holding' or 'input'.
+`table` (Optional) The Modbus table to read from the device. Must be 'holding' or 'input'. If absent it will default to 'holding'.
 
 `address` (Required) The address to read from the device.
 

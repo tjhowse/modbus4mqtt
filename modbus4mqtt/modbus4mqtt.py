@@ -26,7 +26,7 @@ class mqtt_interface():
         self.mb.connect()
         # Tells the modbus interface about the registers we consider interesting.
         for register in self.registers:
-            self.mb.add_monitor_register(register['table'], register['address'])
+            self.mb.add_monitor_register(register.get('table', 'holding'), register['address'])
             register['value'] = None
 
         self._mqtt_client = mqtt.Client()
@@ -47,9 +47,10 @@ class mqtt_interface():
         self._mqtt_client.publish(self.prefix+'modbus4mqtt', 'poll')
         for register in self.get_registers_with('pub_topic'):
             try:
-                value = self.mb.get_value(register['table'], register['address'])
+                value = self.mb.get_value(register.get('table', 'holding'), register['address'])
+                print(int(value))
             except:
-                logging.warning("Couldn't get value from register {} in table {}".format(register['address'], register['table']))
+                logging.warning("Couldn't get value from register {} in table {}".format(register['address'], register.get('table', 'holding')))
                 continue
             changed = False
             if value != register['value']:
@@ -97,7 +98,7 @@ class mqtt_interface():
                     continue
                 # Map the value from the human-readable form into the raw modbus number
                 value = register['value_map'][value]
-            self.mb.set_value(register['table'], register['address'], int(value))
+            self.mb.set_value(register.get('table', 'holding'), register['address'], int(value))
 
     def load_modbus_config(self, path):
         return yaml.load(open(path,'r').read(), Loader=yaml.FullLoader)
