@@ -1,7 +1,7 @@
 # Modbus4MQTT
 https://github.com/tjhowse/modbus4mqtt
 
-![](https://github.com/tjhowse/modbus4mqtt/workflows/unit_tests/badge.svg)
+![](https://github.com/tjhowse/modbus4mqtt/workflows/Unit%20Tests/badge.svg)
 
 This is a gateway that translates between modbus TCP/IP and MQTT.
 
