@@ -29,14 +29,14 @@ class mqtt_interface():
             self.mb.add_monitor_register(register['table'], register['address'])
             register['value'] = None
 
-        self.client = mqtt.Client()
-        self.client.username_pw_set(self.username, self.password)
-        self.client.on_connect = self.on_connect
-        self.client.on_disconnect = self.on_disconnect
-        self.client.on_message = self.on_message
-        self.client.on_subscribe = self.on_subscribe
-        self.client.connect(self.hostname, self.port, 60)
-        self.client.loop_start()
+        self._mqtt_client = mqtt.Client()
+        self._mqtt_client.username_pw_set(self.username, self.password)
+        self._mqtt_client.on_connect = self.on_connect
+        self._mqtt_client.on_disconnect = self.on_disconnect
+        self._mqtt_client.on_message = self.on_message
+        self._mqtt_client.on_subscribe = self.on_subscribe
+        self._mqtt_client.connect(self.hostname, self.port, 60)
+        self._mqtt_client.loop_start()
 
     def get_registers_with(self, required_key):
         # Returns the registers containing the required_key
@@ -44,9 +44,13 @@ class mqtt_interface():
 
     def poll(self):
         self.mb.poll()
-        self.client.publish(self.prefix+'modbus4mqtt', 'poll')
+        self._mqtt_client.publish(self.prefix+'modbus4mqtt', 'poll')
         for register in self.get_registers_with('pub_topic'):
-            value = self.mb.get_value(register['table'], register['address'])
+            try:
+                value = self.mb.get_value(register['table'], register['address'])
+            except:
+                logging.warning("Couldn't get value from register {} in table {}".format(register['address'], register['table']))
+                continue
             changed = False
             if value != register['value']:
                 changed = True
@@ -59,7 +63,7 @@ class mqtt_interface():
                     # This is a bit weird...
                     value = [human for human, raw in register['value_map'].items() if raw == value][0]
             retain = register.get('retain', False)
-            self.client.publish(self.prefix+register['pub_topic'], value, retain=retain)
+            self._mqtt_client.publish(self.prefix+register['pub_topic'], value, retain=retain)
 
     def on_connect(self, client, userdata, flags, rc):
         if rc == 0:
@@ -68,9 +72,9 @@ class mqtt_interface():
             logging.error("Couldn't connect to MQTT.")
         # Subscribe to all the set topics.
         for register in self.get_registers_with('set_topic'):
-            self.client.subscribe(self.prefix+register['set_topic'])
+            self._mqtt_client.subscribe(self.prefix+register['set_topic'])
             print("Subscribed to {}".format(self.prefix+register['set_topic']))
-        self.client.publish(self.prefix+'modbus4mqtt', 'hi')
+        self._mqtt_client.publish(self.prefix+'modbus4mqtt', 'hi')
 
     def on_disconnect(self, client, userdata, flags, rc):
         print("Disconnected")
