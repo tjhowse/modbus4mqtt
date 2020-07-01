@@ -45,7 +45,6 @@ class mqtt_interface():
             value = self.mb.get_value(register['table'], register['address'])
             changed = False
             if value != register['value']:
-                print('it has changed')
                 changed = True
                 register['value'] = value
             if not changed and register.get('pub_only_on_change', False):
