@@ -32,7 +32,7 @@ class BasicTests(unittest.TestCase):
 
                 mock_modbus().get_value.side_effect = self.modbus_registers
 
-                m = modbus4mqtt.mqtt_interface('kroopit', 1885, 'brengis', 'pranto', './tests/test.yaml', 'test')
+                m = modbus4mqtt.mqtt_interface('kroopit', 1885, 'brengis', 'pranto', './tests/test_pub_on_change.yaml', 'test')
                 m.connect()
 
                 mock_mqtt().username_pw_set.assert_called_with('brengis', 'pranto')
@@ -41,7 +41,6 @@ class BasicTests(unittest.TestCase):
                 self.modbus_tables['holding'][1] = 85
                 self.modbus_tables['holding'][2] = 86
                 self.modbus_tables['holding'][3] = 87
-
                 m.poll()
 
                 # Check that every topic was published initially
@@ -53,7 +52,6 @@ class BasicTests(unittest.TestCase):
                 self.modbus_tables['holding'][1] = 15
                 self.modbus_tables['holding'][2] = 16
                 self.modbus_tables['holding'][3] = 17
-
                 m.poll()
 
                 # Check that every topic was published if everything changed
