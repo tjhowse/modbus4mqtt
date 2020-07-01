@@ -86,7 +86,7 @@ class mqtt_interface():
             value = str(msg.payload, 'utf-8')
             if 'value_map' in register:
                 if not value in register['value_map']:
-                    logging.warning("Bad attempt to set a register with a value_map. Set value not in the map.")
+                    logging.warning("Value not in value_map. Topic: {}, value: {}, valid values: {}".format(topic, value, register['value_map'].keys()))
                     continue
                 # Map the value from the human-readable form into the raw modbus number
                 value = register['value_map'][value]
@@ -97,6 +97,7 @@ class mqtt_interface():
 
     def loop_forever(self):
         while True:
+            # TODO this properly.
             self.poll()
             sleep(self.config['update_rate'])
 
