@@ -72,7 +72,7 @@ class mqtt_interface():
         print("Disconnected")
 
     def on_subscribe(self, client, userdata, mid, granted_qos):
-        print("Subscribed to something.")
+        pass
 
     def on_message(self, client, userdata, msg):
         # print("got a message:")
