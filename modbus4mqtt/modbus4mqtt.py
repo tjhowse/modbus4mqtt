@@ -10,10 +10,10 @@ from . import modbus_interface
 class mqtt_interface():
     def __init__(self, hostname, port, username, password, config_file, mqtt_topic_prefix):
         self.hostname = hostname
-        self.port = port
+        self._port = port
         self.username = username
         self.password = password
-        self.config = self.load_modbus_config(config_file)
+        self.config = self._load_modbus_config(config_file)
         if not mqtt_topic_prefix.endswith('/'):
             mqtt_topic_prefix = mqtt_topic_prefix + '/'
         self.prefix = mqtt_topic_prefix
@@ -22,32 +22,32 @@ class mqtt_interface():
 
     def connect(self):
         # Connects to modbus and MQTT.
-        self.mb = modbus_interface.modbus_interface(self.config['ip'], self.config['port'], self.config['update_rate'])
-        self.mb.connect()
+        self._mb = modbus_interface.modbus_interface(self.config['ip'], self.config['port'], self.config['update_rate'])
+        self._mb.connect()
         # Tells the modbus interface about the registers we consider interesting.
         for register in self.registers:
-            self.mb.add_monitor_register(register.get('table', 'holding'), register['address'])
+            self._mb.add_monitor_register(register.get('table', 'holding'), register['address'])
             register['value'] = None
 
         self._mqtt_client = mqtt.Client()
         self._mqtt_client.username_pw_set(self.username, self.password)
-        self._mqtt_client.on_connect = self.on_connect
-        self._mqtt_client.on_disconnect = self.on_disconnect
-        self._mqtt_client.on_message = self.on_message
-        self._mqtt_client.on_subscribe = self.on_subscribe
-        self._mqtt_client.connect(self.hostname, self.port, 60)
+        self._mqtt_client._on_connect = self._on_connect
+        self._mqtt_client._on_disconnect = self._on_disconnect
+        self._mqtt_client._on_message = self._on_message
+        self._mqtt_client._on_subscribe = self._on_subscribe
+        self._mqtt_client.connect(self.hostname, self._port, 60)
         self._mqtt_client.loop_start()
 
-    def get_registers_with(self, required_key):
+    def _get_registers_with(self, required_key):
         # Returns the registers containing the required_key
         return [register for register in self.registers if required_key in register]
 
     def poll(self):
-        self.mb.poll()
+        self._mb.poll()
         self._mqtt_client.publish(self.prefix+'modbus4mqtt', 'poll')
-        for register in self.get_registers_with('pub_topic'):
+        for register in self._get_registers_with('pub_topic'):
             try:
-                value = self.mb.get_value(register.get('table', 'holding'), register['address'])
+                value = self._mb.get_value(register.get('table', 'holding'), register['address'])
             except:
                 logging.warning("Couldn't get value from register {} in table {}".format(register['address'], register.get('table', 'holding')))
                 continue
@@ -65,25 +65,25 @@ class mqtt_interface():
             retain = register.get('retain', False)
             self._mqtt_client.publish(self.prefix+register['pub_topic'], value, retain=retain)
 
-    def on_connect(self, client, userdata, flags, rc):
+    def _on_connect(self, client, userdata, flags, rc):
         if rc == 0:
             logging.info("Connected to MQTT.")
         else:
             logging.error("Couldn't connect to MQTT.")
             return
         # Subscribe to all the set topics.
-        for register in self.get_registers_with('set_topic'):
+        for register in self._get_registers_with('set_topic'):
             self._mqtt_client.subscribe(self.prefix+register['set_topic'])
             print("Subscribed to {}".format(self.prefix+register['set_topic']))
         self._mqtt_client.publish(self.prefix+'modbus4mqtt', 'hi')
 
-    def on_disconnect(self, client, userdata, flags, rc):
+    def _on_disconnect(self, client, userdata, flags, rc):
         print("Disconnected")
 
-    def on_subscribe(self, client, userdata, mid, granted_qos):
+    def _on_subscribe(self, client, userdata, mid, granted_qos):
         pass
 
-    def on_message(self, client, userdata, msg):
+    def _on_message(self, client, userdata, msg):
         # print("got a message: {}: {}".format(msg.topic, msg.payload))
         topic = msg.topic[len(self.prefix):]
         for register in [register for register in self.registers if 'set_topic' in register]:
@@ -102,9 +102,9 @@ class mqtt_interface():
             except ValueError:
                 logging.error("Failed to convert register value for writing. Bad/missing value_map? Topic: {}, Value: {}".format(topic, value))
                 continue
-            self.mb.set_value(register.get('table', 'holding'), register['address'], int(value))
+            self._mb.set_value(register.get('table', 'holding'), register['address'], int(value))
 
-    def load_modbus_config(self, path):
+    def _load_modbus_config(self, path):
         return yaml.load(open(path,'r').read(), Loader=yaml.FullLoader)
 
     def loop_forever(self):

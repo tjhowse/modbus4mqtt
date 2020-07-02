@@ -40,7 +40,7 @@ class MQTTTests(unittest.TestCase):
             mock_mqtt().username_pw_set.assert_called_with('brengis', 'pranto')
             mock_mqtt().connect.assert_called_with('kroopit', 1885, 60)
 
-            m.on_connect(None, None, None, rc=0)
+            m._on_connect(None, None, None, rc=0)
             mock_mqtt().publish.assert_called_with(MQTT_TOPIC_PREFIX+'/modbus4mqtt', 'hi')
             mock_mqtt().subscribe.assert_called_with(MQTT_TOPIC_PREFIX+'/subscribe')
             mock_mqtt().subscribe.assert_no_call(MQTT_TOPIC_PREFIX+'/publish')
@@ -53,7 +53,7 @@ class MQTTTests(unittest.TestCase):
 
             mock_mqtt().username_pw_set.assert_called_with('brengis', 'pranto')
             mock_mqtt().connect.assert_called_with('kroopit', 1885, 60)
-            m.on_connect(None, None, None, rc=1)
+            m._on_connect(None, None, None, rc=1)
             # TODO implement some more thorough checks?
             mock_mqtt().publish.assert_no_call(MQTT_TOPIC_PREFIX+'/modbus4mqtt', 'hi')
 
@@ -183,7 +183,7 @@ class MQTTTests(unittest.TestCase):
                 mock_mqtt().username_pw_set.assert_called_with('brengis', 'pranto')
                 mock_mqtt().connect.assert_called_with('kroopit', 1885, 60)
 
-                m.on_connect(None, None, None, rc=0)
+                m._on_connect(None, None, None, rc=0)
                 mock_mqtt().subscribe.assert_any_call(MQTT_TOPIC_PREFIX+'/no_value_map')
                 mock_mqtt().subscribe.assert_any_call(MQTT_TOPIC_PREFIX+'/value_map')
                 mock_mqtt().publish.reset_mock()
@@ -192,7 +192,7 @@ class MQTTTests(unittest.TestCase):
                 # Publish a human-readable value invalid for this topic, because there's no value map.
                 msg = MQTTMessage(topic=bytes(MQTT_TOPIC_PREFIX+'/no_value_map', 'utf-8'))
                 msg.payload = bytes('a', 'utf-8')
-                m.on_message(None, None, msg)
+                m._on_message(None, None, msg)
                 self.assertEqual(self.modbus_tables['holding'][2], 2)
 
                 self.assertEqual(self.modbus_tables['holding'][1], 1)
@@ -200,23 +200,21 @@ class MQTTTests(unittest.TestCase):
                 msg = MQTTMessage(topic=bytes(MQTT_TOPIC_PREFIX+'/no_value_map', 'utf-8'))
                 # msg.payload = bytes([3])
                 msg.payload = b'3'
-                m.on_message(None, None, msg)
+                m._on_message(None, None, msg)
                 self.assertEqual(self.modbus_tables['holding'][1], 3)
 
                 # Publish a human-readable value valid for this topic, because there's a value map.
                 self.assertEqual(self.modbus_tables['holding'][2], 2)
                 msg = MQTTMessage(topic=bytes(MQTT_TOPIC_PREFIX+'/value_map', 'utf-8'))
                 msg.payload = bytes('a', 'utf-8')
-                m.on_message(None, None, msg)
+                m._on_message(None, None, msg)
                 self.assertEqual(self.modbus_tables['holding'][2], 1)
 
                 # Publish a raw value invalid for this topic, ensure the value doesn't change.
                 msg = MQTTMessage(topic=bytes(MQTT_TOPIC_PREFIX+'/value_map', 'utf-8'))
                 msg.payload = bytes([3])
-                m.on_message(None, None, msg)
+                m._on_message(None, None, msg)
                 self.assertEqual(self.modbus_tables['holding'][2], 1)
-
-
 
 if __name__ == "__main__":
     unittest.main()

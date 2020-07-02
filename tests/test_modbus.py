@@ -46,10 +46,10 @@ class ModbusTests(unittest.TestCase):
             # Confirm registers are added to the correct tables.
             m.add_monitor_register('holding', 5)
             m.add_monitor_register('input', 6)
-            self.assertIn(5, m.tables['holding'])
-            self.assertNotIn(5, m.tables['input'])
-            self.assertIn(6, m.tables['input'])
-            self.assertNotIn(6, m.tables['holding'])
+            self.assertIn(5, m._tables['holding'])
+            self.assertNotIn(5, m._tables['input'])
+            self.assertIn(6, m._tables['input'])
+            self.assertNotIn(6, m._tables['holding'])
 
             m.poll()
 
@@ -74,8 +74,8 @@ class ModbusTests(unittest.TestCase):
             m.add_monitor_register('holding', 15)
             m.add_monitor_register('input', 16)
 
-            self.assertIn(15, m.tables['holding'])
-            self.assertIn(16, m.tables['input'])
+            self.assertIn(15, m._tables['holding'])
+            self.assertIn(16, m._tables['input'])
 
             m.poll()
 
