@@ -3,7 +3,6 @@ import unittest
 from unittest.mock import patch, call, Mock
 from paho.mqtt.client import MQTTMessage
 
-
 from modbus4mqtt import modbus4mqtt
 
 def assert_no_call(self, *args, **kwargs):
@@ -17,7 +16,7 @@ Mock.assert_no_call = assert_no_call
 
 MQTT_TOPIC_PREFIX = 'prefix'
 
-class BasicTests(unittest.TestCase):
+class MQTTTests(unittest.TestCase):
 
     def setUp(self):
         self.modbus_tables = {'input': {}, 'holding': {}}

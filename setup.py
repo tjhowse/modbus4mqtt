@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="modbus4mqtt", # Replace with your own username
-    version="0.1.5",
+    version="0.1.6",
     author="Travis Howse",
     author_email="tjhowse@gmail.com",
     description="A YAML-defined bidirectional Modbus to MQTT interface",

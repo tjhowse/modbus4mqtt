@@ -39,7 +39,7 @@ class modbus_interface():
                     for x in range(0, DEFAULT_MODBUS_SCAN_BATCHING):
                         key = group + x + 1
                         self.values[table][key] = values[x]
-                    start = group + DEFAULT_MODBUS_SCAN_BATCHING
+                    start = group + DEFAULT_MODBUS_SCAN_BATCHING-1
 
     def get_value(self, table, addr):
         if table not in self.values:
@@ -49,10 +49,9 @@ class modbus_interface():
         return self.values[table][addr]
 
     def set_value(self, table, addr, value):
-        print("Mock-writing {} to {} in {}".format(value, addr, table))
         if table != 'holding':
             raise ValueError("Can only set values in the holding table.")
-        # self.mb.write_register(addr, value, unit=0x01)
+        self.mb.write_register(addr, value, unit=0x01)
 
     def scan_value_range(self, table, start, count):
         if table == 'input':
