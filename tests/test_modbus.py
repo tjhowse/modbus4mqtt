@@ -21,9 +21,9 @@ class ModbusTests(unittest.TestCase):
     modbusRegister = namedtuple('modbusRegister', 'registers')
 
     def setUp(self):
-        modbus_interface.DEFAULT_MODBUS_SCAN_BATCHING = 10
-        self.input_registers = self.modbusRegister(registers=list(range(0,modbus_interface.DEFAULT_MODBUS_SCAN_BATCHING*2)))
-        self.holding_registers = self.modbusRegister(registers=list(range(0,modbus_interface.DEFAULT_MODBUS_SCAN_BATCHING*2)))
+        modbus_interface.DEFAULT_SCAN_BATCHING = 10
+        self.input_registers = self.modbusRegister(registers=list(range(0,modbus_interface.DEFAULT_SCAN_BATCHING*2)))
+        self.holding_registers = self.modbusRegister(registers=list(range(0,modbus_interface.DEFAULT_SCAN_BATCHING*2)))
 
     def tearDown(self):
         pass
@@ -53,15 +53,16 @@ class ModbusTests(unittest.TestCase):
 
             m.poll()
 
-            self.assertEqual(m.get_value('holding', 5), 4)
-            self.assertEqual(m.get_value('input', 6), 5)
+            self.assertEqual(m.get_value('holding', 5), 5)
+            self.assertEqual(m.get_value('input', 6), 6)
 
-            # Ensure we read a batch of DEFAULT_MODBUS_SCAN_BATCHING registers even though we only
+            # Ensure we read a batch of DEFAULT_SCAN_BATCHING registers even though we only
             # added one register in each table as interesting
             mock_modbus().read_holding_registers.assert_any_call(0, 10, unit=1)
             mock_modbus().read_input_registers.assert_any_call(0, 10, unit=1)
 
             m.set_value('holding', 5, 7)
+            m.poll()
             mock_modbus().write_register.assert_any_call(5, 7, unit=1)
 
             self.assertRaises(ValueError, m.set_value, 'input', 5, 7)

@@ -1,11 +1,15 @@
+from time import time, sleep
+from queue import Queue
 from pymodbus.client.sync import ModbusTcpClient, ModbusSocketFramer
 
-DEFAULT_MODBUS_SCAN_RATE_S = 5
-DEFAULT_MODBUS_SCAN_BATCHING = 100
+DEFAULT_SCAN_RATE_S = 5
+DEFAULT_SCAN_BATCHING = 100
+DEFAULT_WRITE_BLOCK_INTERVAL_S = 0.2
+DEFAULT_WRITE_SLEEP_S = 0.05
 
 class modbus_interface():
 
-    def __init__(self, ip, port=502, update_rate_s=DEFAULT_MODBUS_SCAN_RATE_S):
+    def __init__(self, ip, port=502, update_rate_s=DEFAULT_SCAN_RATE_S):
         self.ip = ip
         self.port = port
         # This is a dict of sets. Each key represents one table of modbus registers.
@@ -14,6 +18,9 @@ class modbus_interface():
 
         # This is a dicts of dicts. These hold the current values of the interesting registers
         self.values = {'input': {}, 'holding': {}}
+
+        self.planned_writes = Queue()
+        self.writing = False
 
     def connect(self):
         # Connects to the modbus device
@@ -28,18 +35,19 @@ class modbus_interface():
         self.tables[table].add(addr)
 
     def poll(self):
+        self.process_writes()
         # Polls for the values marked as interesting in self.tables.
         for table in self.tables:
-            # This batches up modbus reads in chunks of DEFAULT_MODBUS_SCAN_BATCHING
+            # This batches up modbus reads in chunks of DEFAULT_SCAN_BATCHING
             start = -1
             for k in sorted(self.tables[table]):
-                group = int(k) - int(k) % DEFAULT_MODBUS_SCAN_BATCHING
+                group = int(k) - int(k) % DEFAULT_SCAN_BATCHING
                 if (start < group):
-                    values = self.scan_value_range(table, group, DEFAULT_MODBUS_SCAN_BATCHING)
-                    for x in range(0, DEFAULT_MODBUS_SCAN_BATCHING):
-                        key = group + x + 1
+                    values = self.scan_value_range(table, group, DEFAULT_SCAN_BATCHING)
+                    for x in range(0, DEFAULT_SCAN_BATCHING):
+                        key = group + x
                         self.values[table][key] = values[x]
-                    start = group + DEFAULT_MODBUS_SCAN_BATCHING-1
+                    start = group + DEFAULT_SCAN_BATCHING-1
 
     def get_value(self, table, addr):
         if table not in self.values:
@@ -50,8 +58,26 @@ class modbus_interface():
 
     def set_value(self, table, addr, value):
         if table != 'holding':
+            # I'm not sure if this is true for all devices. I might support writing to coils later,
+            # so leave this door open.
             raise ValueError("Can only set values in the holding table.")
-        self.mb.write_register(addr, value, unit=0x01)
+        self.planned_writes.put((addr, value))
+        self.process_writes()
+
+    def process_writes(self, max_block_s=DEFAULT_WRITE_BLOCK_INTERVAL_S):
+        # TODO I am not entirely happy with this system. It's supposed to prevent
+        # anything overwhelming the modbus interface with a heap of rapid writes,
+        # but without its own event loop it could be quite a while between calls to
+        # .poll()...
+        if self.writing:
+            return
+        write_start_time = time()
+        self.writing = True
+        while not self.planned_writes.empty() and (time() - write_start_time) < max_block_s:
+            addr, value = self.planned_writes.get()
+            self.mb.write_register(addr, value, unit=0x01)
+            sleep(DEFAULT_WRITE_SLEEP_S)
+        self.writing = False
 
     def scan_value_range(self, table, start, count):
         if table == 'input':
