@@ -1,4 +1,5 @@
 from time import time, sleep
+import logging
 from queue import Queue
 from pymodbus.client.sync import ModbusTcpClient, ModbusSocketFramer
 
@@ -20,7 +21,7 @@ class modbus_interface():
         self._values = {'input': {}, 'holding': {}}
 
         self._planned_writes = Queue()
-        self.writing = False
+        self._writing = False
 
     def connect(self):
         # Connects to the modbus device
@@ -69,15 +70,19 @@ class modbus_interface():
         # anything overwhelming the modbus interface with a heap of rapid writes,
         # but without its own event loop it could be quite a while between calls to
         # .poll()...
-        if self.writing:
+        if self._writing:
             return
         write_start_time = time()
-        self.writing = True
-        while not self._planned_writes.empty() and (time() - write_start_time) < max_block_s:
-            addr, value = self._planned_writes.get()
-            self._mb.write_register(addr, value, unit=0x01)
-            sleep(DEFAULT_WRITE_SLEEP_S)
-        self.writing = False
+        try:
+            self._writing = True
+            while not self._planned_writes.empty() and (time() - write_start_time) < max_block_s:
+                addr, value = self._planned_writes.get()
+                self._mb.write_register(addr, value, unit=0x01)
+                sleep(DEFAULT_WRITE_SLEEP_S)
+        except:
+            logging.error("Failed to write to modbus device.")
+        finally:
+            self._writing = False
 
     def _scan_value_range(self, table, start, count):
         if table == 'input':

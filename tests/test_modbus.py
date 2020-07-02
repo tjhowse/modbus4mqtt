@@ -88,3 +88,13 @@ class ModbusTests(unittest.TestCase):
             self.assertRaises(ValueError, m.add_monitor_register, 'beupe', 5)
             self.assertRaises(ValueError, m.get_value, 'holding', 1000)
 
+            # Check that the write queuing works properly.
+            mock_modbus().write_register.reset_mock()
+            m._writing = True
+            m.set_value('holding', 5, 7)
+            m.poll()
+            mock_modbus().write_register.assert_not_called()
+            m._writing = False
+            m.set_value('holding', 6, 8)
+            mock_modbus().write_register.assert_any_call(5, 7, unit=1)
+            mock_modbus().write_register.assert_any_call(6, 8, unit=1)
