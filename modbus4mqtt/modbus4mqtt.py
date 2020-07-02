@@ -123,11 +123,7 @@ class mqtt_interface():
 def main(hostname, port, username, password, config, mqtt_topic_prefix):
     i = mqtt_interface(hostname, port, username, password, config, mqtt_topic_prefix)
     i.connect()
-    # i.poll()
     i.loop_forever()
 
 if __name__ == '__main__':
     main()
-
-
-

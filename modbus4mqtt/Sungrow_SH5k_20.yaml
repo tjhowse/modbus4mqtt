@@ -5,18 +5,18 @@ registers:
   - pub_topic: "forced_charge/mode"
     set_topic: "forced_charge/mode/set"
     retain: true
-    pub_only_on_change: false
+    pub_only_on_change: true
     table: 'holding'
-    address: 13140
+    address: 13139
     value_map:
       enabled: 170
       disabled: 85
   - pub_topic: "forced_charge/weekdays"
-    set_topic: "force_charge/weekdays/set"
+    set_topic: "forced_charge/weekdays/set"
     retain: true
-    pub_only_on_change: false
+    pub_only_on_change: true
     table: 'holding'
-    address: 13141
+    address: 13140
     value_map:
       all_days: 1
       weekdays: 0
@@ -24,58 +24,58 @@ registers:
     set_topic: "forced_charge/period_1/start_hours/set"
     pub_only_on_change: true
     table: 'holding'
-    address: 13142
+    address: 13141
   - pub_topic: "forced_charge/period_1/start_minutes"
     set_topic: "forced_charge/period_1/start_minutes/set"
     pub_only_on_change: true
     table: 'holding'
-    address: 13143
+    address: 13142
   - pub_topic: "forced_charge/period_1/end_hours"
     set_topic: "forced_charge/period_1/end_hours/set"
     pub_only_on_change: true
     table: 'holding'
-    address: 13144
+    address: 13143
   - pub_topic: "forced_charge/period_1/end_minutes"
     set_topic: "forced_charge/period_1/end_minutes/set"
     pub_only_on_change: true
     table: 'holding'
-    address: 13145
+    address: 13144
   - pub_topic: "forced_charge/period_1/target_soc"
     set_topic: "forced_charge/period_1/target_soc/set"
     pub_only_on_change: true
     table: 'holding'
-    address: 13146
+    address: 13145
   - pub_topic: "forced_charge/period_2/start_hours"
     set_topic: "forced_charge/period_2/start_hours/set"
     pub_only_on_change: true
     table: 'holding'
-    address: 13147
+    address: 13146
   - pub_topic: "forced_charge/period_2/start_minutes"
     set_topic: "forced_charge/period_2/start_minutes/set"
     pub_only_on_change: true
     table: 'holding'
-    address: 13148
+    address: 13147
   - pub_topic: "forced_charge/period_2/end_hours"
     set_topic: "forced_charge/period_2/end_hours/set"
     pub_only_on_change: true
     table: 'holding'
-    address: 13149
+    address: 13148
   - pub_topic: "forced_charge/period_2/end_minutes"
     set_topic: "forced_charge/period_2/end_minutes/set"
     pub_only_on_change: true
     table: 'holding'
-    address: 13150
+    address: 13149
   - pub_topic: "forced_charge/period_2/target_soc"
     set_topic: "forced_charge/period_2/target_soc/set"
     pub_only_on_change: true
     table: 'holding'
-    address: 13151
-  - pub_topic: "date_time/minutes"
+    address: 13150
+  - #pub_topic: "date_time/minutes"
     retain: false
     pub_only_on_change: true
     table: 'holding'
     address: 5004
-  - pub_topic: "date_time/seconds"
+  - #pub_topic: "date_time/seconds"
     retain: false
     pub_only_on_change: true
     table: 'holding'
