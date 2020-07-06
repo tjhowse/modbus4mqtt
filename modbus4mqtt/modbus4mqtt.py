@@ -51,6 +51,10 @@ class mqtt_interface():
             except:
                 logging.warning("Couldn't get value from register {} in table {}".format(register['address'], register.get('table', 'holding')))
                 continue
+            # Filter the value through the mask, if present.
+            value &= register.get('mask', 0xFFFF)
+            # Scale the value, if required.
+            value *= register.get('scale', 1)
             changed = False
             if value != register['value']:
                 changed = True
@@ -98,11 +102,12 @@ class mqtt_interface():
                 # Map the value from the human-readable form into the raw modbus number
                 value = register['value_map'][value]
             try:
-                value = int(value)
+                # Scale the value, if required.
+                value = round(value/register.get('scale', 1))
             except ValueError:
                 logging.error("Failed to convert register value for writing. Bad/missing value_map? Topic: {}, Value: {}".format(topic, value))
                 continue
-            self._mb.set_value(register.get('table', 'holding'), register['address'], int(value))
+            self._mb.set_value(register.get('table', 'holding'), register['address'], int(value), register.get('mask', 0xFFFF))
 
     def _load_modbus_config(self, path):
         return yaml.load(open(path,'r').read(), Loader=yaml.FullLoader)

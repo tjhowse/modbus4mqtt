@@ -54,5 +54,8 @@ This section of the YAML lists all the modbus registers that you consider intere
 
 `address` (Required) The address to read from the device.
 
-`value_map` (Optional) A series of human-readable and raw values for the setting. This will be used to translate between human-readable values via MQTT to raw values via Modbus. If a value_map is set for a register the interface will reject raw values sent via MQTT. If value_map is not set the interface will try to call `int(payload)` and set the Modbus register to that value.
+`value_map` (Optional) A series of human-readable and raw values for the setting. This will be used to translate between human-readable values via MQTT to raw values via Modbus. If a value_map is set for a register the interface will reject raw values sent via MQTT. If value_map is not set the interface will try to set the Modbus register to that value.
 
+`scale` (Optional) After reading a value from the Modbus register it will be multiplied by this scalar before being published to MQTT. Values published on this register's `set_topic` will be divided by this scalar before being written to Modbus.
+
+`mask` (Optional) This is a 16-bit number that can be used to select a part of a Modbus register to be referenced by this configuration entry. For example a mask of `0xFF00` will mean this register will map to the most significant byte of the 16-bit Modbus register at `address`. A mask of `0x0001` will reference only the least significant bit of this register.

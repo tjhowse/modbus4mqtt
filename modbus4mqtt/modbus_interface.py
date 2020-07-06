@@ -57,12 +57,12 @@ class modbus_interface():
             raise ValueError("Unpolled address. Use add_monitor_register(addr, table) to add a register to the polled list.")
         return self._values[table][addr]
 
-    def set_value(self, table, addr, value):
+    def set_value(self, table, addr, value, mask=0xFFFF):
         if table != 'holding':
             # I'm not sure if this is true for all devices. I might support writing to coils later,
             # so leave this door open.
             raise ValueError("Can only set values in the holding table.")
-        self._planned_writes.put((addr, value))
+        self._planned_writes.put((addr, value, mask))
         self._process_writes()
 
     def _process_writes(self, max_block_s=DEFAULT_WRITE_BLOCK_INTERVAL_S):
@@ -76,8 +76,14 @@ class modbus_interface():
         try:
             self._writing = True
             while not self._planned_writes.empty() and (time() - write_start_time) < max_block_s:
-                addr, value = self._planned_writes.get()
-                self._mb.write_register(addr, value, unit=0x01)
+                addr, value, mask = self._planned_writes.get()
+                if mask == 0xFFFF:
+                    self._mb.write_register(addr, value, unit=0x01)
+                else:
+                    # https://pymodbus.readthedocs.io/en/latest/source/library/pymodbus.client.html?highlight=mask_write_register#pymodbus.client.common.ModbusClientMixin.mask_write_register
+                    # https://www.mathworks.com/help/instrument/modify-the-contents-of-a-holding-register-using-a-mask-write.html
+                    # Result = (register value AND andMask) OR (orMask AND (NOT andMask))
+                    self._mb.mask_write_register(addr, ~mask, value, unit=0x01)
                 sleep(DEFAULT_WRITE_SLEEP_S)
         except:
             logging.error("Failed to write to modbus device.")
