@@ -29,7 +29,8 @@ class MQTTTests(unittest.TestCase):
             raise ValueError("Invalid address")
         return self.modbus_tables[table][address]
 
-    def write_modbus_register(self, table, address, value):
+    def write_modbus_register(self, table, address, value, mask):
+        #TODO Handle the mask in the unit tests for mask.
         self.modbus_tables[table][address] = value
 
     def test_connect(self):

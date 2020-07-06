@@ -103,6 +103,7 @@ class mqtt_interface():
                 value = register['value_map'][value]
             try:
                 # Scale the value, if required.
+                value = float(value)
                 value = round(value/register.get('scale', 1))
             except ValueError:
                 logging.error("Failed to convert register value for writing. Bad/missing value_map? Topic: {}, Value: {}".format(topic, value))
