@@ -217,5 +217,39 @@ class MQTTTests(unittest.TestCase):
                 m._on_message(None, None, msg)
                 self.assertEqual(self.modbus_tables['holding'][2], 1)
 
+    def test_scale(self):
+        with patch('paho.mqtt.client.Client') as mock_mqtt:
+            with patch('modbus4mqtt.modbus_interface.modbus_interface') as mock_modbus:
+                mock_modbus().get_value.side_effect = self.read_modbus_register
+                mock_modbus().set_value.side_effect = self.write_modbus_register
+                self.modbus_tables['holding'][1] = 1
+                self.modbus_tables['holding'][2] = 2
+                self.modbus_tables['holding'][3] = 3
+
+                m = modbus4mqtt.mqtt_interface('kroopit', 1885, 'brengis', 'pranto', './tests/test_scale.yaml', MQTT_TOPIC_PREFIX)
+                m.connect()
+                m.poll()
+
+                mock_modbus().add_monitor_register.assert_any_call('holding', 1)
+                mock_modbus().add_monitor_register.assert_any_call('holding', 2)
+                mock_modbus().add_monitor_register.assert_any_call('holding', 3)
+                mock_mqtt().publish.assert_any_call('prefix/scale_up_no_value_map', 2, retain=False)
+                mock_mqtt().publish.assert_any_call('prefix/scale_down_no_value_map', 1, retain=False)
+                mock_mqtt().publish.assert_any_call('prefix/scale_with_value_map', 'b', retain=False)
+                # TODO publish to the set_topics and ensure the reverse works too
+
+                # print(mock_mqtt.mock_calls)
+                # print(mock_modbus.mock_calls)
+
+    def test_mask(self):
+        # TODO This.
+        with patch('paho.mqtt.client.Client') as mock_mqtt:
+            with patch('modbus4mqtt.modbus_interface.modbus_interface') as mock_modbus:
+                mock_modbus().get_value.side_effect = self.read_modbus_register
+                mock_modbus().set_value.side_effect = self.write_modbus_register
+                self.modbus_tables['holding'][1] = 1
+                self.modbus_tables['holding'][2] = 2
+                self.modbus_tables['holding'][3] = 3
+
 if __name__ == "__main__":
     unittest.main()
