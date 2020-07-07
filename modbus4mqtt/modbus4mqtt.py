@@ -44,7 +44,6 @@ class mqtt_interface():
 
     def poll(self):
         self._mb.poll()
-        self._mqtt_client.publish(self.prefix+'modbus4mqtt', 'poll')
         for register in self._get_registers_with('pub_topic'):
             try:
                 value = self._mb.get_value(register.get('table', 'holding'), register['address'])
