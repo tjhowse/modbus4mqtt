@@ -1,4 +1,5 @@
 from time import time, sleep
+import traceback
 import logging
 from queue import Queue
 from pymodbus.client.sync import ModbusTcpClient, ModbusSocketFramer
@@ -36,7 +37,6 @@ class modbus_interface():
         self._tables[table].add(addr)
 
     def poll(self):
-        self._process_writes()
         # Polls for the values marked as interesting in self._tables.
         for table in self._tables:
             # This batches up modbus reads in chunks of DEFAULT_SCAN_BATCHING
@@ -49,6 +49,7 @@ class modbus_interface():
                         key = group + x
                         self._values[table][key] = values[x]
                     start = group + DEFAULT_SCAN_BATCHING-1
+        self._process_writes()
 
     def get_value(self, table, addr):
         if table not in self._values:
@@ -83,10 +84,22 @@ class modbus_interface():
                     # https://pymodbus.readthedocs.io/en/latest/source/library/pymodbus.client.html?highlight=mask_write_register#pymodbus.client.common.ModbusClientMixin.mask_write_register
                     # https://www.mathworks.com/help/instrument/modify-the-contents-of-a-holding-register-using-a-mask-write.html
                     # Result = (register value AND andMask) OR (orMask AND (NOT andMask))
-                    self._mb.mask_write_register(addr, ~mask, value, unit=0x01)
+                    # This bit-shift weirdness is to avoid a mask of 0x0001 resulting in a ~mask of -2, which pymodbus doesn't like.
+                    # This means the result will be 65534, AKA 0xFFFE.
+                    # This specific read-before-write operation doesn't work on my modbus solar inverter -
+                    # I get "Modbus Error: [Input/Output] Modbus Error: [Invalid Message] Incomplete message received, expected at least 8 bytes (0 received)"
+                    # I suspect it's a different modbus opcode that tries to do clever things that my device doesn't support.
+                    # result = self._mb.mask_write_register(address=addr, and_mask=(1<<16)-1-mask, or_mask=value, unit=0x01)
+                    # print("Result: {}".format(result))
+                    old_value = self._scan_value_range('holding', addr, 1)[0]
+                    and_mask = (1<<16)-1-mask
+                    or_mask = value
+                    new_value = (old_value & and_mask) | (or_mask & (mask))
+                    self._mb.write_register(addr, new_value, unit=0x01)
                 sleep(DEFAULT_WRITE_SLEEP_S)
-        except:
-            logging.error("Failed to write to modbus device.")
+        except Exception as e:
+            logging.error("Failed to write to modbus device: {}".format(e))
+            traceback.print_exc()
         finally:
             self._writing = False
 

@@ -22,13 +22,13 @@ registers:
       weekdays: 0
   - pub_topic: "forced_charge/period_1/start_hours_lsb"
     set_topic: "forced_charge/period_1/start_hours_lsb/set"
-    pub_only_on_change: false
+    pub_only_on_change: true
     table: 'holding'
     address: 13141
     mask: 0x0001
   - pub_topic: "forced_charge/period_1/start_hours_second_nibble"
     set_topic: "forced_charge/period_1/start_hours_second_nibble/set"
-    pub_only_on_change: false
+    pub_only_on_change: true
     table: 'holding'
     address: 13141
     mask: 0x00F0
