@@ -42,6 +42,12 @@ registers:
     pub_only_on_change: true
     table: 'holding'
     address: 13142
+  - pub_topic: "voltage_in_mv"
+    address: 13000
+    scale: 1000
+  - pub_topic: "first_bit_of_second_byte"
+    address: 13001
+    mask: 0x0010
 ```
 
 This section of the YAML lists all the modbus registers that you consider interesting.
@@ -62,4 +68,4 @@ This section of the YAML lists all the modbus registers that you consider intere
 
 `scale` (Optional) After reading a value from the Modbus register it will be multiplied by this scalar before being published to MQTT. Values published on this register's `set_topic` will be divided by this scalar before being written to Modbus.
 
-`mask` (Optional) This is a 16-bit number that can be used to select a part of a Modbus register to be referenced by this configuration entry. For example a mask of `0xFF00` will mean this register will map to the most significant byte of the 16-bit Modbus register at `address`. A mask of `0x0001` will reference only the least significant bit of this register.
+`mask` (Optional) This is a 16-bit number that can be used to select a part of a Modbus register to be referenced by this register. For example a mask of `0xFF00` will map to the most significant byte of the 16-bit Modbus register at `address`. A mask of `0x0001` will reference only the least significant bit of this register.
