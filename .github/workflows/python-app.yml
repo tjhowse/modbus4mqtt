@@ -34,4 +34,4 @@ jobs:
     - name: Test with nose2
       run: |
         nose2
-        codecov --token=$CODECOV_TOKEN
+        codecov --token=${{secrets.CODECOV_TOKEN}}
