@@ -1,5 +1,6 @@
 # Modbus4MQTT
 https://github.com/tjhowse/modbus4mqtt
+https://pypi.org/project/modbus4mqtt/
 
 ![](https://github.com/tjhowse/modbus4mqtt/workflows/Unit%20Tests/badge.svg)
 [![codecov](https://codecov.io/gh/tjhowse/modbus4mqtt/branch/master/graph/badge.svg)](https://codecov.io/gh/tjhowse/modbus4mqtt)
