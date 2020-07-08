@@ -193,52 +193,62 @@ class MQTTTests(unittest.TestCase):
     def test_set_topics(self):
         with patch('paho.mqtt.client.Client') as mock_mqtt:
             with patch('modbus4mqtt.modbus_interface.modbus_interface') as mock_modbus:
-                mock_modbus().get_value.side_effect = self.read_modbus_register
-                mock_modbus().set_value.side_effect = self.write_modbus_register
-                self.modbus_tables['holding'][1] = 1
-                self.modbus_tables['holding'][2] = 2
+                with self.assertLogs() as mock_logger:
+                    mock_modbus().get_value.side_effect = self.read_modbus_register
+                    mock_modbus().set_value.side_effect = self.write_modbus_register
+                    self.modbus_tables['holding'][1] = 1
+                    self.modbus_tables['holding'][2] = 2
 
-                m = modbus4mqtt.mqtt_interface('kroopit', 1885, 'brengis', 'pranto', './tests/test_set_topics.yaml', MQTT_TOPIC_PREFIX)
-                m.connect()
+                    m = modbus4mqtt.mqtt_interface('kroopit', 1885, 'brengis', 'pranto', './tests/test_set_topics.yaml', MQTT_TOPIC_PREFIX)
+                    m.connect()
 
-                mock_modbus().add_monitor_register.assert_any_call('holding', 1)
-                mock_modbus().add_monitor_register.assert_any_call('holding', 2)
+                    mock_modbus().add_monitor_register.assert_any_call('holding', 1)
+                    mock_modbus().add_monitor_register.assert_any_call('holding', 2)
 
-                mock_mqtt().username_pw_set.assert_called_with('brengis', 'pranto')
-                mock_mqtt().connect.assert_called_with('kroopit', 1885, 60)
+                    mock_mqtt().username_pw_set.assert_called_with('brengis', 'pranto')
+                    mock_mqtt().connect.assert_called_with('kroopit', 1885, 60)
 
-                m._on_connect(None, None, None, rc=0)
-                mock_mqtt().subscribe.assert_any_call(MQTT_TOPIC_PREFIX+'/no_value_map')
-                mock_mqtt().subscribe.assert_any_call(MQTT_TOPIC_PREFIX+'/value_map')
-                mock_mqtt().publish.reset_mock()
+                    m._on_connect(None, None, None, rc=0)
+                    mock_mqtt().subscribe.assert_any_call(MQTT_TOPIC_PREFIX+'/no_value_map')
+                    mock_mqtt().subscribe.assert_any_call(MQTT_TOPIC_PREFIX+'/value_map')
+                    mock_mqtt().publish.reset_mock()
 
-                self.assertEqual(self.modbus_tables['holding'][2], 2)
-                # Publish a human-readable value invalid for this topic, because there's no value map.
-                msg = MQTTMessage(topic=bytes(MQTT_TOPIC_PREFIX+'/no_value_map', 'utf-8'))
-                msg.payload = bytes('a', 'utf-8')
-                m._on_message(None, None, msg)
-                self.assertEqual(self.modbus_tables['holding'][2], 2)
+                    self.assertEqual(self.modbus_tables['holding'][2], 2)
+                    # Publish a human-readable value invalid for this topic, because there's no value map.
+                    msg = MQTTMessage(topic=bytes(MQTT_TOPIC_PREFIX+'/no_value_map', 'utf-8'))
+                    msg.payload = b'a'
+                    m._on_message(None, None, msg)
+                    self.assertIn("Failed to convert register value for writing. Bad/missing value_map? Topic: no_value_map, Value: b'a'", mock_logger.output[-1])
+                    self.assertEqual(self.modbus_tables['holding'][2], 2)
 
-                self.assertEqual(self.modbus_tables['holding'][1], 1)
-                # Publish a raw value valid for this topic
-                msg = MQTTMessage(topic=bytes(MQTT_TOPIC_PREFIX+'/no_value_map', 'utf-8'))
-                # msg.payload = bytes([3])
-                msg.payload = b'3'
-                m._on_message(None, None, msg)
-                self.assertEqual(self.modbus_tables['holding'][1], 3)
+                    self.assertEqual(self.modbus_tables['holding'][1], 1)
+                    # Publish a raw value valid for this topic
+                    msg = MQTTMessage(topic=bytes(MQTT_TOPIC_PREFIX+'/no_value_map', 'utf-8'))
+                    msg.payload = b'3'
+                    m._on_message(None, None, msg)
+                    self.assertEqual(self.modbus_tables['holding'][1], 3)
 
-                # Publish a human-readable value valid for this topic, because there's a value map.
-                self.assertEqual(self.modbus_tables['holding'][2], 2)
-                msg = MQTTMessage(topic=bytes(MQTT_TOPIC_PREFIX+'/value_map', 'utf-8'))
-                msg.payload = bytes('a', 'utf-8')
-                m._on_message(None, None, msg)
-                self.assertEqual(self.modbus_tables['holding'][2], 1)
+                    # Publish a human-readable value valid for this topic, because there's a value map.
+                    self.assertEqual(self.modbus_tables['holding'][2], 2)
+                    msg = MQTTMessage(topic=bytes(MQTT_TOPIC_PREFIX+'/value_map', 'utf-8'))
+                    msg.payload = b'a'
+                    m._on_message(None, None, msg)
+                    self.assertEqual(self.modbus_tables['holding'][2], 1)
 
-                # Publish a raw value invalid for this topic, ensure the value doesn't change.
-                msg = MQTTMessage(topic=bytes(MQTT_TOPIC_PREFIX+'/value_map', 'utf-8'))
-                msg.payload = bytes([3])
-                m._on_message(None, None, msg)
-                self.assertEqual(self.modbus_tables['holding'][2], 1)
+                    # Publish a raw value invalid for this topic, ensure the value doesn't change.
+                    msg = MQTTMessage(topic=bytes(MQTT_TOPIC_PREFIX+'/value_map', 'utf-8'))
+                    msg.payload = bytes([3])
+                    m._on_message(None, None, msg)
+                    self.assertIn("Value not in value_map. Topic: value_map, value:", mock_logger.output[-1])
+                    self.assertEqual(self.modbus_tables['holding'][2], 1)
+
+                    # Publish a value that can't decode as utf-8, ensure the value doesn't change.
+                    msg = MQTTMessage(topic=bytes(MQTT_TOPIC_PREFIX+'/value_map', 'utf-8'))
+                    msg.payload = b'\xff'
+                    m._on_message(None, None, msg)
+                    self.assertIn("Failed to decode MQTT payload as UTF-8. Can't compare it to the value_map for register", mock_logger.output[-1])
+                    self.assertEqual(self.modbus_tables['holding'][2], 1)
+
 
     def test_scale(self):
         with patch('paho.mqtt.client.Client') as mock_mqtt:
