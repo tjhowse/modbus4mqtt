@@ -17,8 +17,10 @@ class mqtt_interface():
         if not mqtt_topic_prefix.endswith('/'):
             mqtt_topic_prefix = mqtt_topic_prefix + '/'
         self.prefix = mqtt_topic_prefix
-        # For ease of reference.
+        self.address_offset = self.config.get('address_offset', 0)
         self.registers = self.config['registers']
+        for register in self.registers:
+            register['address'] += self.address_offset
 
     def connect(self):
         # Connects to modbus and MQTT.

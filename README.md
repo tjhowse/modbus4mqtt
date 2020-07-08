@@ -35,9 +35,10 @@ Look at the [Sungrow SH5k-20](./modbus4mqtt/Sungrow_SH5k_20.yaml) configuration 
 ip: 192.168.1.89
 port: 502
 update_rate: 1
+address_offset: 0
 ```
 
-This is the address of the Modbus device to be polled. Presently only Modbus TCP/IP is supported. The update rate is in seconds. This defines how frequently the registers are polled for changes.
+This is the `ip` address and `port` of the Modbus device to be polled. Presently only Modbus TCP/IP is supported. `update_rate` is in seconds. This defines how frequently the registers are polled for changes. `address_offset` (optional: default 0) is applied to every register address to accomodate different Modbus addressing systems. In many Modbus devices the first register is enumerated as 1, other times 0. See section 4.4 of the Modbus spec.
 
 ```yaml
 registers:
