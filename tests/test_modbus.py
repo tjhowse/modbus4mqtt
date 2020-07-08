@@ -28,11 +28,14 @@ class ModbusTests(unittest.TestCase):
     def tearDown(self):
         pass
 
-    def read_input_registers(self, star, count, unit):
-        return self.input_registers
+    def read_input_registers(self, start, count, unit):
+        return self.modbusRegister(registers=self.input_registers.registers[start:start+count])
 
-    def read_holding_registers(self, star, count, unit):
-        return self.holding_registers
+    def read_holding_registers(self, start, count, unit):
+        return self.modbusRegister(registers=self.holding_registers.registers[start:start+count])
+
+    def write_holding_register(self, address, value, unit):
+        self.holding_registers.registers[address] = value
 
     def throw_exception(self, addr, value, unit):
         raise ValueError('Oh noooo!')
@@ -87,9 +90,24 @@ class ModbusTests(unittest.TestCase):
             mock_modbus().read_input_registers.assert_any_call(0, 10, unit=1)
             mock_modbus().read_input_registers.assert_any_call(10, 10, unit=1)
 
+    def test_invalid_tables_and_addresses(self):
+        with patch('modbus4mqtt.modbus_interface.ModbusTcpClient') as mock_modbus:
+            m = modbus_interface.modbus_interface('1.1.1.1', 111, 2)
+            m.connect()
+
+            m.add_monitor_register('holding', 5)
+            m.add_monitor_register('input', 6)
             self.assertRaises(ValueError, m.get_value, 'beupe', 5)
             self.assertRaises(ValueError, m.add_monitor_register, 'beupe', 5)
             self.assertRaises(ValueError, m.get_value, 'holding', 1000)
+
+    def test_write_queuing(self):
+        with patch('modbus4mqtt.modbus_interface.ModbusTcpClient') as mock_modbus:
+            m = modbus_interface.modbus_interface('1.1.1.1', 111, 2)
+            m.connect()
+
+            m.add_monitor_register('holding', 5)
+            m.add_monitor_register('input', 6)
 
             # Check that the write queuing works properly.
             mock_modbus().write_register.reset_mock()
@@ -102,7 +120,6 @@ class ModbusTests(unittest.TestCase):
             mock_modbus().write_register.assert_any_call(5, 7, unit=1)
             mock_modbus().write_register.assert_any_call(6, 8, unit=1)
 
-
     def test_exception_on_write(self):
         with patch('modbus4mqtt.modbus_interface.ModbusTcpClient') as mock_modbus:
             with self.assertLogs() as mock_logger:
@@ -114,3 +131,27 @@ class ModbusTests(unittest.TestCase):
                 mock_modbus().write_register.side_effect = self.throw_exception
                 m.set_value('holding', 5, 7)
                 self.assertIn("ERROR:root:Failed to write to modbus device: Oh noooo!", mock_logger.output[-1])
+
+    def test_masked_writes(self):
+        with patch('modbus4mqtt.modbus_interface.ModbusTcpClient') as mock_modbus:
+            mock_modbus().read_input_registers.side_effect = self.read_input_registers
+            mock_modbus().read_holding_registers.side_effect = self.read_holding_registers
+            mock_modbus().write_register.side_effect = self.write_holding_register
+
+            m = modbus_interface.modbus_interface('1.1.1.1', 111, 2)
+            m.connect()
+
+            self.holding_registers.registers[1] = 0
+            m.add_monitor_register('holding', 1)
+
+            m.set_value('holding', 1, 0x00FF, 0x00F0)
+            self.assertEqual(self.holding_registers.registers[1], 0x00F0)
+
+            m.set_value('holding', 1, 0x00FF, 0x000F)
+            self.assertEqual(self.holding_registers.registers[1], 0x00FF)
+
+            m.set_value('holding', 1, 0xFFFF, 0xFF00)
+            self.assertEqual(self.holding_registers.registers[1], 0xFFFF)
+
+            m.set_value('holding', 1, 0x0000, 0x0F00)
+            self.assertEqual(self.holding_registers.registers[1], 0xF0FF)
