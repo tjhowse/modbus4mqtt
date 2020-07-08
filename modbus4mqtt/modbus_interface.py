@@ -1,5 +1,4 @@
 from time import time, sleep
-import traceback
 import logging
 from queue import Queue
 from pymodbus.client.sync import ModbusTcpClient, ModbusSocketFramer
@@ -98,8 +97,7 @@ class modbus_interface():
                     self._mb.write_register(addr, new_value, unit=0x01)
                 sleep(DEFAULT_WRITE_SLEEP_S)
         except Exception as e:
-            logging.error("Failed to write to modbus device: {}".format(e))
-            traceback.print_exc()
+            logging.exception("Failed to write to modbus device: {}".format(e))
         finally:
             self._writing = False
 
