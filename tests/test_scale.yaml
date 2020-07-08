@@ -18,5 +18,5 @@ registers:
     address: 3
     scale: 2
     value_map:
-      a: 3
+      a: 4
       b: 6

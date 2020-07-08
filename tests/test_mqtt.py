@@ -232,7 +232,7 @@ class MQTTTests(unittest.TestCase):
 
                 mock_modbus().add_monitor_register.assert_any_call('holding', 1)
                 mock_modbus().add_monitor_register.assert_any_call('holding', 2)
-                mock_modbus().add_monitor_register.assert_any_call('holding', 3)
+                mock_modbus().add_monitor_register.assert_any_call('holding', 2)
                 mock_mqtt().publish.assert_any_call('prefix/scale_up_no_value_map', 2, retain=False)
                 mock_mqtt().publish.assert_any_call('prefix/scale_down_no_value_map', 1, retain=False)
                 mock_mqtt().publish.assert_any_call('prefix/scale_with_value_map', 'b', retain=False)
