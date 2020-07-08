@@ -93,13 +93,18 @@ class mqtt_interface():
             if topic != register['set_topic']:
                 continue
             # We received a set topic message for this topic.
-            value = str(msg.payload, 'utf-8')
+            value = msg.payload
             if 'value_map' in register:
-                if not value in register['value_map']:
-                    logging.warning("Value not in value_map. Topic: {}, value: {}, valid values: {}".format(topic, value, register['value_map'].keys()))
+                try:
+                    value = str(value, 'utf-8')
+                    if not value in register['value_map']:
+                        logging.warning("Value not in value_map. Topic: {}, value: {}, valid values: {}".format(topic, value, register['value_map'].keys()))
+                        continue
+                    # Map the value from the human-readable form into the raw modbus number
+                    value = register['value_map'][value]
+                except UnicodeDecodeError:
+                    logging.warning("Failed to decode MQTT payload as UTF-8. Can't compare it to the value_map for register {}".format(register))
                     continue
-                # Map the value from the human-readable form into the raw modbus number
-                value = register['value_map'][value]
             try:
                 # Scale the value, if required.
                 value = float(value)

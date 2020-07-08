@@ -29,9 +29,12 @@ class MQTTTests(unittest.TestCase):
             raise ValueError("Invalid address")
         return self.modbus_tables[table][address]
 
-    def write_modbus_register(self, table, address, value, mask):
-        #TODO Handle the mask in the unit tests for mask.
-        self.modbus_tables[table][address] = value
+    def write_modbus_register(self, table, address, value, mask=0xFFFF):
+        old_value = self.modbus_tables[table][address]
+        and_mask = (1<<16)-1-mask
+        or_mask = value
+        new_value = (old_value & and_mask) | (or_mask & (mask))
+        self.modbus_tables[table][address] = new_value
 
     def test_connect(self):
         with patch('paho.mqtt.client.Client') as mock_mqtt:
@@ -255,14 +258,36 @@ class MQTTTests(unittest.TestCase):
                 # print(mock_modbus.mock_calls)
 
     def test_mask(self):
-        # TODO This.
         with patch('paho.mqtt.client.Client') as mock_mqtt:
             with patch('modbus4mqtt.modbus_interface.modbus_interface') as mock_modbus:
                 mock_modbus().get_value.side_effect = self.read_modbus_register
                 mock_modbus().set_value.side_effect = self.write_modbus_register
-                self.modbus_tables['holding'][1] = 1
-                self.modbus_tables['holding'][2] = 2
-                self.modbus_tables['holding'][3] = 3
+                self.modbus_tables['holding'][1] = 0xFEF0
+
+                m = modbus4mqtt.mqtt_interface('kroopit', 1885, 'brengis', 'pranto', './tests/test_mask.yaml', MQTT_TOPIC_PREFIX)
+                m.connect()
+                m.poll()
+
+                mock_mqtt().publish.assert_any_call('prefix/mask_no_scale', 0xFE00, retain=False)
+                mock_mqtt().publish.assert_any_call('prefix/no_mask_no_scale', 0xFEF0, retain=False)
+                mock_mqtt().publish.assert_any_call('prefix/mask_and_scale', 0xFE, retain=False)
+
+                msg = MQTTMessage(topic=bytes(MQTT_TOPIC_PREFIX+'/mask_and_scale_set', 'utf-8'))
+                msg.payload = b'255'
+                m._on_message(None, None, msg)
+                self.assertEqual(self.modbus_tables['holding'][1], 0xFFF0)
+
+                # This register isn't scaled, so 255 won't fill up the MSB.
+                msg = MQTTMessage(topic=bytes(MQTT_TOPIC_PREFIX+'/mask_no_scale_set', 'utf-8'))
+                msg.payload = b'255'
+                m._on_message(None, None, msg)
+                self.assertEqual(self.modbus_tables['holding'][1], 0x00F0)
+
+                # This should set the LSb of the MSB.
+                msg = MQTTMessage(topic=bytes(MQTT_TOPIC_PREFIX+'/mask_no_scale_set', 'utf-8'))
+                msg.payload = b'511'
+                m._on_message(None, None, msg)
+                self.assertEqual(self.modbus_tables['holding'][1], 0x01F0)
 
 if __name__ == "__main__":
     unittest.main()
