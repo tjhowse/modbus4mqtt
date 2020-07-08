@@ -81,7 +81,7 @@ class mqtt_interface():
         self._mqtt_client.publish(self.prefix+'modbus4mqtt', 'hi')
 
     def _on_disconnect(self, client, userdata, flags, rc):
-        print("Disconnected")
+        logging.info("Disconnected")
 
     def _on_subscribe(self, client, userdata, mid, granted_qos):
         pass

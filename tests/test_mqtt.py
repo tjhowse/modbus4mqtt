@@ -5,6 +5,8 @@ from paho.mqtt.client import MQTTMessage
 
 from modbus4mqtt import modbus4mqtt
 
+from click.testing import CliRunner
+
 def assert_no_call(self, *args, **kwargs):
     try:
         self.assert_any_call(*args, **kwargs)
@@ -35,6 +37,24 @@ class MQTTTests(unittest.TestCase):
         or_mask = value
         new_value = (old_value & and_mask) | (or_mask & (mask))
         self.modbus_tables[table][address] = new_value
+
+    def test_main(self):
+        with patch('paho.mqtt.client.Client') as mock_mqtt:
+            with patch('modbus4mqtt.modbus4mqtt.mqtt_interface.loop_forever') as mock_mainloop:
+                runner = CliRunner()
+                args = []
+                args += ['--hostname', 'kroopit']
+                args += ['--port', '1885']
+                args += ['--username', 'brengis']
+                args += ['--password', 'pranto']
+                args += ['--config', './tests/test_connect.yaml']
+                args += ['--mqtt_topic_prefix', MQTT_TOPIC_PREFIX]
+
+                result = runner.invoke(modbus4mqtt.main, args)
+                mock_mainloop.assert_called_with()
+
+                mock_mqtt().username_pw_set.assert_called_with('brengis', 'pranto')
+                mock_mqtt().connect.assert_called_with('kroopit', 1885, 60)
 
     def test_connect(self):
         with patch('paho.mqtt.client.Client') as mock_mqtt:
