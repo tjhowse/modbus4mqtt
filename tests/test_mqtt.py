@@ -50,7 +50,7 @@ class MQTTTests(unittest.TestCase):
                 args += ['--config', './tests/test_connect.yaml']
                 args += ['--mqtt_topic_prefix', MQTT_TOPIC_PREFIX]
 
-                result = runner.invoke(modbus4mqtt.main, args)
+                runner.invoke(modbus4mqtt.main, args)
                 mock_mainloop.assert_called_with()
 
                 mock_mqtt().username_pw_set.assert_called_with('brengis', 'pranto')
