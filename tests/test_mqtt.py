@@ -236,8 +236,21 @@ class MQTTTests(unittest.TestCase):
                 mock_mqtt().publish.assert_any_call('prefix/scale_up_no_value_map', 2, retain=False)
                 mock_mqtt().publish.assert_any_call('prefix/scale_down_no_value_map', 1, retain=False)
                 mock_mqtt().publish.assert_any_call('prefix/scale_with_value_map', 'b', retain=False)
-                # TODO publish to the set_topics and ensure the reverse works too
 
+                msg = MQTTMessage(topic=bytes(MQTT_TOPIC_PREFIX+'/scale_up_no_value_map_set', 'utf-8'))
+                msg.payload = b'6'
+                m._on_message(None, None, msg)
+                self.assertEqual(self.modbus_tables['holding'][1], 3)
+
+                msg = MQTTMessage(topic=bytes(MQTT_TOPIC_PREFIX+'/scale_down_no_value_map_set', 'utf-8'))
+                msg.payload = b'1'
+                m._on_message(None, None, msg)
+                self.assertEqual(self.modbus_tables['holding'][2], 2)
+
+                msg = MQTTMessage(topic=bytes(MQTT_TOPIC_PREFIX+'/scale_with_value_map_set', 'utf-8'))
+                msg.payload = b'b'
+                m._on_message(None, None, msg)
+                self.assertEqual(self.modbus_tables['holding'][3], 3)
                 # print(mock_mqtt.mock_calls)
                 # print(mock_modbus.mock_calls)
 
