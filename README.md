@@ -13,6 +13,19 @@ There are already a few things that do this, but didn't quite have the features 
 
 The mapping of modbus registers to MQTT topics is in a simple YAML file.
 
+The most up-to-date docs will always be on Github.
+
+## Installation
+
+```bash
+$ pip3 install --user modbus4mqtt
+$ modbus4mqtt --help
+```
+
+Alternatively you can run Modbus4MQTT in a Docker container. A [Dockerfile](./Dockerfile) example is provided.
+
+You will need to provide the credentials to connect to your MQTT broker, as well as a path to a YAML file that defines the memory map of your Modbus device.
+
 ## YAML definition
 
 Look at the [Sungrow SH5k-20](./modbus4mqtt/Sungrow_SH5k_20.yaml) configuration YAML for a working example.
