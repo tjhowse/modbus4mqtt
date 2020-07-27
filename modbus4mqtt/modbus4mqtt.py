@@ -60,7 +60,7 @@ class mqtt_interface():
             if value != register['value']:
                 changed = True
                 register['value'] = value
-            if not changed and register.get('pub_only_on_change', False):
+            if not changed and register.get('pub_only_on_change', True):
                 continue
             # Map from the raw number back to the human-readable form
             if 'value_map' in register:

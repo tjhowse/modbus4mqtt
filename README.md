@@ -72,7 +72,7 @@ This section of the YAML lists all the modbus registers that you consider intere
 
 `retain` (Optional) Controls whether the value of this register will be published with the retain bit set.
 
-`pub_only_on_change` (Optional) Controls whether this register will only be published if its value changed from the previous poll. Defaults to false.
+`pub_only_on_change` (Optional) Controls whether this register will only be published if its value changed from the previous poll. Defaults to True.
 
 `table` (Optional) The Modbus table to read from the device. Must be 'holding' or 'input'. If absent it will default to 'holding'.
 
