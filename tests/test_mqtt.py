@@ -117,7 +117,7 @@ class MQTTTests(unittest.TestCase):
                 # Check that the register with pub_only_on_change: true does not re-publish
                 mock_mqtt().publish.assert_any_call(MQTT_TOPIC_PREFIX+'/pub_on_change_false', 15, retain=False)
                 mock_mqtt().publish.assert_no_call(MQTT_TOPIC_PREFIX+'/pub_on_change_true', 16, retain=False)
-                mock_mqtt().publish.assert_no_call(MQTT_TOPIC_PREFIX+'/pub_on_change_absent', 17, retain=False)
+                mock_mqtt().publish.assert_any_call(MQTT_TOPIC_PREFIX+'/pub_on_change_absent', 17, retain=False)
 
     def test_retain_flag(self):
         with patch('paho.mqtt.client.Client') as mock_mqtt:
