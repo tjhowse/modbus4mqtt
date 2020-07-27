@@ -6,7 +6,6 @@ registers:
   - pub_topic: "forced_charge/mode"
     set_topic: "forced_charge/mode/set"
     retain: true
-    table: 'holding'
     address: 13139
     value_map:
       enabled: 170
@@ -14,56 +13,43 @@ registers:
   - pub_topic: "forced_charge/weekdays"
     set_topic: "forced_charge/weekdays/set"
     retain: true
-    table: 'holding'
     address: 13140
     value_map:
       all_days: 1
       weekdays: 0
+  - pub_topic: "13141"
+    address: 13141
   - pub_topic: "forced_charge/period_1/start_hours"
     set_topic: "forced_charge/period_1/start_hours/set"
-    table: 'holding'
     address: 13141
   - pub_topic: "forced_charge/period_1/start_minutes"
     set_topic: "forced_charge/period_1/start_minutes/set"
-    table: 'holding'
     address: 13142
   - pub_topic: "forced_charge/period_1/end_hours"
     set_topic: "forced_charge/period_1/end_hours/set"
-    table: 'holding'
     address: 13143
   - pub_topic: "forced_charge/period_1/end_minutes"
     set_topic: "forced_charge/period_1/end_minutes/set"
-    table: 'holding'
     address: 13144
   - pub_topic: "forced_charge/period_1/target_soc"
     set_topic: "forced_charge/period_1/target_soc/set"
-    table: 'holding'
     address: 13145
   - pub_topic: "forced_charge/period_2/start_hours"
     set_topic: "forced_charge/period_2/start_hours/set"
-    table: 'holding'
     address: 13146
   - pub_topic: "forced_charge/period_2/start_minutes"
     set_topic: "forced_charge/period_2/start_minutes/set"
-    table: 'holding'
     address: 13147
   - pub_topic: "forced_charge/period_2/end_hours"
     set_topic: "forced_charge/period_2/end_hours/set"
-    table: 'holding'
     address: 13148
   - pub_topic: "forced_charge/period_2/end_minutes"
     set_topic: "forced_charge/period_2/end_minutes/set"
-    table: 'holding'
     address: 13149
   - pub_topic: "forced_charge/period_2/target_soc"
     set_topic: "forced_charge/period_2/target_soc/set"
-    table: 'holding'
     address: 13150
   - #pub_topic: "date_time/minutes"
-    retain: false
-    table: 'holding'
     address: 5004
   - #pub_topic: "date_time/seconds"
-    retain: false
-    table: 'holding'
     address: 5005
