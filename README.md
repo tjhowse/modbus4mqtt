@@ -66,6 +66,8 @@ registers:
 
 This section of the YAML lists all the modbus registers that you consider interesting.
 
+`address` (Required) The decimal address of the register to read from the device, starting at 0. Many modbus devices enumerate registers beginning at 1, so beware.
+
 `pub_topic` (Optional) This is the topic to which the value of this register will be published.
 
 `set_topic` (Optional) Values published to this topic will be written to the Modbus device.
@@ -75,8 +77,6 @@ This section of the YAML lists all the modbus registers that you consider intere
 `pub_only_on_change` (Optional) Controls whether this register will only be published if its value changed from the previous poll. Defaults to True.
 
 `table` (Optional) The Modbus table to read from the device. Must be 'holding' or 'input'. If absent it will default to 'holding'.
-
-`address` (Required) The address to read from the device.
 
 `value_map` (Optional) A series of human-readable and raw values for the setting. This will be used to translate between human-readable values via MQTT to raw values via Modbus. If a value_map is set for a register the interface will reject raw values sent via MQTT. If value_map is not set the interface will try to set the Modbus register to that value. Note that the scale is applied after the value is read from Modbus and before it is written to Modbus.
 
