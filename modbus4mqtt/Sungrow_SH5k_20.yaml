@@ -17,8 +17,6 @@ registers:
     value_map:
       all_days: 1
       weekdays: 0
-  - pub_topic: "13141"
-    address: 13141
   - pub_topic: "forced_charge/period_1/start_hours"
     set_topic: "forced_charge/period_1/start_hours/set"
     address: 13141
@@ -53,3 +51,390 @@ registers:
     address: 5004
   - #pub_topic: "date_time/seconds"
     address: 5005
+  - pub_topic: "13000"
+    address: 13000
+  - pub_topic: "load_control/mode"
+    value_map:
+      timer: 0
+      manual: 1
+      optimized: 2
+    address: 13001
+  - pub_topic: "load_control/timer/start_time_1_hours"
+    address: 13002
+  - pub_topic: "load_control/timer/start_time_1_minutes"
+    address: 13003
+  - pub_topic: "load_control/timer/end_time_1_hours"
+    address: 13004
+  - pub_topic: "load_control/timer/end_time_1_minutes"
+    address: 13005
+  - pub_topic: "load_control/timer/start_time_2_hours"
+    address: 13006
+  - pub_topic: "load_control/timer/start_time_2_minutes"
+    address: 13007
+  - pub_topic: "load_control/timer/end_time_2_hours"
+    address: 13008
+  - pub_topic: "load_control/timer/end_time_2_minutes"
+    address: 13009
+  - pub_topic: "load_control/on_off"
+    value_map:
+      on: 170
+      off: 85
+    address: 13010
+  - pub_topic: "load_control/optimized/start_time_hours"
+    address: 13011
+  - pub_topic: "load_control/optimized/start_time_minutes"
+    address: 13012
+  - pub_topic: "load_control/optimized/end_time_hours"
+    address: 13013
+  - pub_topic: "load_control/optimized/end_time_minutes"
+    address: 13014
+  - pub_topic: "load_control/optimized/power"
+    address: 13015
+  - pub_topic: "13016"
+    address: 13016
+  - pub_topic: "13017"
+    address: 13017
+  - pub_topic: "13018"
+    address: 13018
+  - pub_topic: "13019"
+    address: 13019
+  - pub_topic: "13020"
+    address: 13020
+  - pub_topic: "13021"
+    address: 13021
+  - pub_topic: "13022"
+    address: 13022
+  - pub_topic: "13023"
+    address: 13023
+  - pub_topic: "13024"
+    address: 13024
+  - pub_topic: "13025"
+    address: 13025
+  - pub_topic: "13026"
+    address: 13026
+  - pub_topic: "13027"
+    address: 13027
+  - pub_topic: "13028"
+    address: 13028
+  - pub_topic: "13029"
+    address: 13029
+  - pub_topic: "13030"
+    address: 13030
+  - pub_topic: "13031"
+    address: 13031
+  - pub_topic: "13032"
+    address: 13032
+  - pub_topic: "13033"
+    address: 13033
+  - pub_topic: "13034"
+    address: 13034
+  - pub_topic: "13035"
+    address: 13035
+  - pub_topic: "13036"
+    address: 13036
+  - pub_topic: "13037"
+    address: 13037
+  - pub_topic: "13038"
+    address: 13038
+  - pub_topic: "13039"
+    address: 13039
+  - pub_topic: "13040"
+    address: 13040
+  - pub_topic: "13041"
+    address: 13041
+  - pub_topic: "13042"
+    address: 13042
+  - pub_topic: "13043"
+    address: 13043
+  - pub_topic: "13044"
+    address: 13044
+  - pub_topic: "13045"
+    address: 13045
+  - pub_topic: "13046"
+    address: 13046
+  - pub_topic: "13047"
+    address: 13047
+  - pub_topic: "13048"
+    address: 13048
+  - pub_topic: "13049"
+    address: 13049
+  - pub_topic: "13050"
+    address: 13050
+  - pub_topic: "13051"
+    address: 13051
+  - pub_topic: "13052"
+    address: 13052
+  - pub_topic: "13053"
+    address: 13053
+  - pub_topic: "13054"
+    address: 13054
+  - pub_topic: "13055"
+    address: 13055
+  - pub_topic: "13056"
+    address: 13056
+  - pub_topic: "13057"
+    address: 13057
+  - pub_topic: "13058"
+    address: 13058
+  - pub_topic: "13059"
+    address: 13059
+  - pub_topic: "13060"
+    address: 13060
+  - pub_topic: "13061"
+    address: 13061
+  - pub_topic: "13062"
+    address: 13062
+  - pub_topic: "13063"
+    address: 13063
+  - pub_topic: "13064"
+    address: 13064
+  - pub_topic: "13065"
+    address: 13065
+  - pub_topic: "13066"
+    address: 13066
+  - pub_topic: "13067"
+    address: 13067
+  - pub_topic: "13068"
+    address: 13068
+  - pub_topic: "13069"
+    address: 13069
+  - pub_topic: "13070"
+    address: 13070
+  - pub_topic: "13071"
+    address: 13071
+  - pub_topic: "13072"
+    address: 13072
+  - pub_topic: "13073"
+    address: 13073
+  - pub_topic: "13074"
+    address: 13074
+  - pub_topic: "13075"
+    address: 13075
+  - pub_topic: "13076"
+    address: 13076
+  - pub_topic: "13077"
+    address: 13077
+  - pub_topic: "13078"
+    address: 13078
+  - pub_topic: "13079"
+    address: 13079
+  - pub_topic: "13080"
+    address: 13080
+  - pub_topic: "13081"
+    address: 13081
+  - pub_topic: "13082"
+    address: 13082
+  - pub_topic: "13083"
+    address: 13083
+  - pub_topic: "13084"
+    address: 13084
+  - pub_topic: "13085"
+    address: 13085
+  - pub_topic: "13086"
+    address: 13086
+  - pub_topic: "13087"
+    address: 13087
+  - pub_topic: "13088"
+    address: 13088
+  - pub_topic: "13089"
+    address: 13089
+  - pub_topic: "13090"
+    address: 13090
+  - pub_topic: "13091"
+    address: 13091
+  - pub_topic: "13092"
+    address: 13092
+  - pub_topic: "13093"
+    address: 13093
+  - pub_topic: "13094"
+    address: 13094
+  - pub_topic: "13095"
+    address: 13095
+  - pub_topic: "13096"
+    address: 13096
+  - pub_topic: "13097"
+    address: 13097
+  - pub_topic: "13098"
+    address: 13098
+  - pub_topic: "13099"
+    address: 13099
+  - pub_topic: "13100"
+    address: 13100
+  - pub_topic: "13101"
+    address: 13101
+  - pub_topic: "13102"
+    address: 13102
+  - pub_topic: "13103"
+    address: 13103
+  - pub_topic: "13104"
+    address: 13104
+  - pub_topic: "13105"
+    address: 13105
+  - pub_topic: "13106"
+    address: 13106
+  - pub_topic: "13107"
+    address: 13107
+  - pub_topic: "13108"
+    address: 13108
+  - pub_topic: "13109"
+    address: 13109
+  - pub_topic: "13110"
+    address: 13110
+  - pub_topic: "13111"
+    address: 13111
+  - pub_topic: "13112"
+    address: 13112
+  - pub_topic: "13113"
+    address: 13113
+  - pub_topic: "13114"
+    address: 13114
+  - pub_topic: "13115"
+    address: 13115
+  - pub_topic: "13116"
+    address: 13116
+  - pub_topic: "13117"
+    address: 13117
+  - pub_topic: "13118"
+    address: 13118
+  - pub_topic: "13119"
+    address: 13119
+  - pub_topic: "13120"
+    address: 13120
+  - pub_topic: "13121"
+    address: 13121
+  - pub_topic: "13122"
+    address: 13122
+  - pub_topic: "13123"
+    address: 13123
+  - pub_topic: "13124"
+    address: 13124
+  - pub_topic: "13125"
+    address: 13125
+  - pub_topic: "13126"
+    address: 13126
+  - pub_topic: "13127"
+    address: 13127
+  - pub_topic: "13128"
+    address: 13128
+  - pub_topic: "13129"
+    address: 13129
+  - pub_topic: "13130"
+    address: 13130
+  - pub_topic: "13131"
+    address: 13131
+  - pub_topic: "13132"
+    address: 13132
+  - pub_topic: "13133"
+    address: 13133
+  - pub_topic: "13134"
+    address: 13134
+  - pub_topic: "13135"
+    address: 13135
+  - pub_topic: "13136"
+    address: 13136
+  - pub_topic: "13137"
+    address: 13137
+  - pub_topic: "13138"
+    address: 13138
+  - pub_topic: "13139"
+    address: 13139
+  - pub_topic: "13150"
+    address: 13150
+  - pub_topic: "13151"
+    address: 13151
+  - pub_topic: "13152"
+    address: 13152
+  - pub_topic: "13153"
+    address: 13153
+  - pub_topic: "13154"
+    address: 13154
+  - pub_topic: "13155"
+    address: 13155
+  - pub_topic: "13156"
+    address: 13156
+  - pub_topic: "13157"
+    address: 13157
+  - pub_topic: "13158"
+    address: 13158
+  - pub_topic: "13159"
+    address: 13159
+  - pub_topic: "13160"
+    address: 13160
+  - pub_topic: "13161"
+    address: 13161
+  - pub_topic: "13162"
+    address: 13162
+  - pub_topic: "13163"
+    address: 13163
+  - pub_topic: "13164"
+    address: 13164
+  - pub_topic: "13165"
+    address: 13165
+  - pub_topic: "13166"
+    address: 13166
+  - pub_topic: "13167"
+    address: 13167
+  - pub_topic: "13168"
+    address: 13168
+  - pub_topic: "13169"
+    address: 13169
+  - pub_topic: "13170"
+    address: 13170
+  - pub_topic: "13171"
+    address: 13171
+  - pub_topic: "13172"
+    address: 13172
+  - pub_topic: "13173"
+    address: 13173
+  - pub_topic: "13174"
+    address: 13174
+  - pub_topic: "13175"
+    address: 13175
+  - pub_topic: "13176"
+    address: 13176
+  - pub_topic: "13177"
+    address: 13177
+  - pub_topic: "13178"
+    address: 13178
+  - pub_topic: "13179"
+    address: 13179
+  - pub_topic: "13180"
+    address: 13180
+  - pub_topic: "13181"
+    address: 13181
+  - pub_topic: "13182"
+    address: 13182
+  - pub_topic: "13183"
+    address: 13183
+  - pub_topic: "13184"
+    address: 13184
+  - pub_topic: "13185"
+    address: 13185
+  - pub_topic: "13186"
+    address: 13186
+  - pub_topic: "13187"
+    address: 13187
+  - pub_topic: "13188"
+    address: 13188
+  - pub_topic: "13189"
+    address: 13189
+  - pub_topic: "13190"
+    address: 13190
+  - pub_topic: "13191"
+    address: 13191
+  - pub_topic: "13192"
+    address: 13192
+  - pub_topic: "13193"
+    address: 13193
+  - pub_topic: "13194"
+    address: 13194
+  - pub_topic: "13195"
+    address: 13195
+  - pub_topic: "13196"
+    address: 13196
+  - pub_topic: "13197"
+    address: 13197
+  - pub_topic: "13198"
+    address: 13198
+  - pub_topic: "13199"
+    address: 13199
