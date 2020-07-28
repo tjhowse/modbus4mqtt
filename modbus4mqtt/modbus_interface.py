@@ -2,6 +2,7 @@ from time import time, sleep
 import logging
 from queue import Queue
 from pymodbus.client.sync import ModbusTcpClient, ModbusSocketFramer
+from pymodbus import exceptions
 
 DEFAULT_SCAN_RATE_S = 5
 DEFAULT_SCAN_BATCHING = 100
@@ -43,10 +44,13 @@ class modbus_interface():
             for k in sorted(self._tables[table]):
                 group = int(k) - int(k) % DEFAULT_SCAN_BATCHING
                 if (start < group):
-                    values = self._scan_value_range(table, group, DEFAULT_SCAN_BATCHING)
-                    for x in range(0, DEFAULT_SCAN_BATCHING):
-                        key = group + x
-                        self._values[table][key] = values[x]
+                    try:
+                        values = self._scan_value_range(table, group, DEFAULT_SCAN_BATCHING)
+                        for x in range(0, DEFAULT_SCAN_BATCHING):
+                            key = group + x
+                            self._values[table][key] = values[x]
+                    except ValueError as e:
+                        logging.exception("{}".format(e))
                     start = group + DEFAULT_SCAN_BATCHING-1
         self._process_writes()
 
@@ -102,7 +106,11 @@ class modbus_interface():
             self._writing = False
 
     def _scan_value_range(self, table, start, count):
+        result = None
         if table == 'input':
-            return self._mb.read_input_registers(start, count, unit=0x01).registers
+            result = self._mb.read_input_registers(start, count, unit=0x01)
         elif table == 'holding':
-            return self._mb.read_holding_registers(start, count, unit=0x01).registers
+            result = self._mb.read_holding_registers(start, count, unit=0x01)
+        if isinstance(result, exceptions.ModbusIOException):
+            raise ValueError("Failed to read {} table registers from {} to {}".format(table, start, start+count))
+        return result.registers
