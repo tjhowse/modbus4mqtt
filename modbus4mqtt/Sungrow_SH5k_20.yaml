@@ -302,39 +302,42 @@ registers:
     address: 13120
   - pub_topic: "13121"
     address: 13121
-  - pub_topic: "13122"
+  - pub_topic: "bat_usage_time/weekday_usage/start_time_1_hours"
     address: 13122
-  - pub_topic: "13123"
+  - pub_topic: "bat_usage_time/weekday_usage/start_time_1_minutes" #etc
     address: 13123
-  - pub_topic: "13124"
+  - pub_topic: "bat_usage_time/weekday_usage/end_time_1_hours" #etc
     address: 13124
-  - pub_topic: "13125"
+  - pub_topic: "bat_usage_time/weekday_usage/end_time_1_minutes" #etc
     address: 13125
-  - pub_topic: "13126"
+  - pub_topic: "bat_usage_time/weekday_usage/start_time_2_hours" #etc
     address: 13126
-  - pub_topic: "13127"
+  - pub_topic: "bat_usage_time/weekday_usage/start_time_2_minutes" #etc
     address: 13127
-  - pub_topic: "13128"
+  - pub_topic: "bat_usage_time/weekday_usage/end_time_2_hours" #etc
     address: 13128
-  - pub_topic: "13129"
+  - pub_topic: "bat_usage_time/weekday_usage/end_time_2_minutes" #etc
     address: 13129
-  - pub_topic: "13130"
+  - pub_topic: "bat_usage_time/weekend_usage"
+    value_map:
+      disable: 85
+      enable: 170
     address: 13130
-  - pub_topic: "13131"
+  - pub_topic: "bat_usage_time/weekend_usage/start_time_1_hours"
     address: 13131
-  - pub_topic: "13132"
+  - pub_topic: "bat_usage_time/weekend_usage/start_time_1_minutes" #minutes
     address: 13132
-  - pub_topic: "13133"
+  - pub_topic: "bat_usage_time/weekend_usage/end_time_1_hours" #end1 hours
     address: 13133
-  - pub_topic: "13134"
+  - pub_topic: "bat_usage_time/weekend_usage/end_time_1_minutes" #end1 minutes
     address: 13134
-  - pub_topic: "13135"
+  - pub_topic: "bat_usage_time/weekend_usage/start_time_2_hours" #start 2 hours
     address: 13135
-  - pub_topic: "13136"
+  - pub_topic: "bat_usage_time/weekend_usage/start_time_2_minutes" #start 2 minutes
     address: 13136
-  - pub_topic: "13137"
+  - pub_topic: "bat_usage_time/weekend_usage/end_time_2_hours" #end 2 hours
     address: 13137
-  - pub_topic: "13138"
+  - pub_topic: "bat_usage_time/weekend_usage/end_time_2_minutes" #end 2 minutes
     address: 13138
   - pub_topic: "13139"
     address: 13139
