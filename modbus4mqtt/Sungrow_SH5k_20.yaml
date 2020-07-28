@@ -75,7 +75,7 @@ registers:
     address: 13008
   - pub_topic: "load_control/timer/end_time_2_minutes"
     address: 13009
-  - pub_topic: "load_control/on_off"
+  - pub_topic: "load_control/on_off "
     value_map:
       on: 170
       off: 85
