@@ -17,8 +17,6 @@ registers:
     value_map:
       all_days: 1
       weekdays: 0
-  - pub_topic: "13141"
-    address: 13141
   - pub_topic: "forced_charge/period_1/start_hours"
     set_topic: "forced_charge/period_1/start_hours/set"
     address: 13141
