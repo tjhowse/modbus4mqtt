@@ -38,10 +38,10 @@ class ModbusTests(unittest.TestCase):
         self.holding_registers.registers[address] = value
 
     def connect_success(self):
-        return True
+        return False
 
     def connect_failure(self):
-        return False
+        return True
 
     def throw_exception(self, addr, value, unit):
         raise ValueError('Oh noooo!')

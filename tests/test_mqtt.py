@@ -41,11 +41,11 @@ class MQTTTests(unittest.TestCase):
 
     def connect_success(self):
         self.connect_attempts += 1
-        return True
+        return False
 
     def connect_failure(self):
         self.connect_attempts += 1
-        return False
+        return True
 
     def test_main(self):
         with patch('paho.mqtt.client.Client') as mock_mqtt:
