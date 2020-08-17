@@ -101,6 +101,8 @@ class modbus_interface():
                     self._mb.write_register(addr, new_value, unit=0x01)
                 sleep(DEFAULT_WRITE_SLEEP_S)
         except Exception as e:
+            # BUG catch only the specific exception that means pymodbus failed to write to a register
+            # the modbus device doesn't support, not an error at the TCP layer.
             logging.exception("Failed to write to modbus device: {}".format(e))
         finally:
             self._writing = False

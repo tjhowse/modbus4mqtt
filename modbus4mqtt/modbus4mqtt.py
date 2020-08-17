@@ -21,16 +21,35 @@ class mqtt_interface():
         self.registers = self.config['registers']
         for register in self.registers:
             register['address'] += self.address_offset
+        self.modbus_connect_retries = -1 # Retry forever by default
+        self.modbus_reconnect_sleep_interval = 5 # Wait this many seconds between modbus connection attempts
 
     def connect(self):
         # Connects to modbus and MQTT.
+        self.connect_modbus()
+        self.connect_mqtt()
+
+    def connect_modbus(self):
         self._mb = modbus_interface.modbus_interface(self.config['ip'], self.config['port'], self.config['update_rate'])
-        self._mb.connect()
+        failed_attempts = 1
+        while not self._mb.connect():
+            logging.warning("Modbus connection attempt {} failed. Retrying...".format(failed_attempts))
+            failed_attempts += 1
+            if self.modbus_connect_retries != -1 and failed_attempts > self.modbus_connect_retries:
+                logging.error("Failed to connect to modbus. Giving up.")
+                self.modbus_connection_failed()
+                # This weird break is here because we mock out modbus_connection_failed in the tests
+                break
+            sleep(self.modbus_reconnect_sleep_interval)
         # Tells the modbus interface about the registers we consider interesting.
         for register in self.registers:
             self._mb.add_monitor_register(register.get('table', 'holding'), register['address'])
             register['value'] = None
 
+    def modbus_connection_failed(self):
+        exit(1)
+
+    def connect_mqtt(self):
         self._mqtt_client = mqtt.Client()
         self._mqtt_client.username_pw_set(self.username, self.password)
         self._mqtt_client._on_connect = self._on_connect
@@ -45,7 +64,13 @@ class mqtt_interface():
         return [register for register in self.registers if required_key in register]
 
     def poll(self):
-        self._mb.poll()
+        try:
+            self._mb.poll()
+        except Exception as e:
+            logging.exception("Failed to poll modbus device, attempting to reconnect: {}".format(e))
+            self.connect_modbus()
+            return
+
         for register in self._get_registers_with('pub_topic'):
             try:
                 value = self._mb.get_value(register.get('table', 'holding'), register['address'])
@@ -133,6 +158,10 @@ class mqtt_interface():
 @click.option('--config', default='./Sungrow_SH5k_20.yaml', help='The YAML config file for your modbus device.')
 @click.option('--mqtt_topic_prefix', default='modbus4mqtt', help='Prefixed to everything this publishes')
 def main(hostname, port, username, password, config, mqtt_topic_prefix):
+    logging.basicConfig(
+        format='%(asctime)s %(levelname)-8s %(message)s',
+        level=logging.INFO,
+        datefmt='%Y-%m-%d %H:%M:%S')
     i = mqtt_interface(hostname, port, username, password, config, mqtt_topic_prefix)
     i.connect()
     i.loop_forever()

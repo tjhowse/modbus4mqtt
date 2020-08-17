@@ -22,6 +22,7 @@ class MQTTTests(unittest.TestCase):
 
     def setUp(self):
         self.modbus_tables = {'input': {}, 'holding': {}}
+        self.connect_attempts = 0
 
     def tearDown(self):
         pass
@@ -38,52 +39,74 @@ class MQTTTests(unittest.TestCase):
         new_value = (old_value & and_mask) | (or_mask & (mask))
         self.modbus_tables[table][address] = new_value
 
+    def connect_success(self):
+        self.connect_attempts += 1
+        return True
+
+    def connect_failure(self):
+        self.connect_attempts += 1
+        return False
+
     def test_main(self):
         with patch('paho.mqtt.client.Client') as mock_mqtt:
             with patch('modbus4mqtt.modbus4mqtt.mqtt_interface.loop_forever') as mock_mainloop:
-                runner = CliRunner()
-                args = []
-                args += ['--hostname', 'kroopit']
-                args += ['--port', '1885']
-                args += ['--username', 'brengis']
-                args += ['--password', 'pranto']
-                args += ['--config', './tests/test_connect.yaml']
-                args += ['--mqtt_topic_prefix', MQTT_TOPIC_PREFIX]
+                with patch('modbus4mqtt.modbus_interface.modbus_interface') as mock_modbus:
+                    mock_modbus().connect.side_effect = self.connect_success
+                    runner = CliRunner()
+                    args = []
+                    args += ['--hostname', 'kroopit']
+                    args += ['--port', '1885']
+                    args += ['--username', 'brengis']
+                    args += ['--password', 'pranto']
+                    args += ['--config', './tests/test_connect.yaml']
+                    args += ['--mqtt_topic_prefix', MQTT_TOPIC_PREFIX]
 
-                runner.invoke(modbus4mqtt.main, args)
-                mock_mainloop.assert_called_with()
+                    runner.invoke(modbus4mqtt.main, args)
+                    mock_mainloop.assert_called_with()
+
+                    mock_mqtt().username_pw_set.assert_called_with('brengis', 'pranto')
+                    mock_mqtt().connect.assert_called_with('kroopit', 1885, 60)
+
+    def test_connect(self):
+        with patch('paho.mqtt.client.Client') as mock_mqtt:
+            with patch('modbus4mqtt.modbus_interface.modbus_interface') as mock_modbus:
+                mock_modbus().connect.side_effect = self.connect_success
+                m = modbus4mqtt.mqtt_interface('kroopit', 1885, 'brengis', 'pranto', './tests/test_connect.yaml', MQTT_TOPIC_PREFIX)
+                m.connect()
 
                 mock_mqtt().username_pw_set.assert_called_with('brengis', 'pranto')
                 mock_mqtt().connect.assert_called_with('kroopit', 1885, 60)
 
-    def test_connect(self):
+                m._on_connect(None, None, None, rc=0)
+                mock_mqtt().publish.assert_called_with(MQTT_TOPIC_PREFIX+'/modbus4mqtt', 'hi')
+                mock_mqtt().subscribe.assert_called_with(MQTT_TOPIC_PREFIX+'/subscribe')
+                mock_mqtt().subscribe.assert_no_call(MQTT_TOPIC_PREFIX+'/publish')
+
+    def test_failed_modbus_connect(self):
         with patch('paho.mqtt.client.Client') as mock_mqtt:
-            m = modbus4mqtt.mqtt_interface('kroopit', 1885, 'brengis', 'pranto', './tests/test_connect.yaml', MQTT_TOPIC_PREFIX)
-            m.connect()
+            with patch('modbus4mqtt.modbus_interface.modbus_interface') as mock_modbus:
+                mock_modbus().connect.side_effect = self.connect_failure
+                m = modbus4mqtt.mqtt_interface('kroopit', 1885, 'brengis', 'pranto', './tests/test_connect.yaml', MQTT_TOPIC_PREFIX)
+                self.connect_attempts = 0
+                m.modbus_connect_retries = 3
+                m.modbus_reconnect_sleep_interval = 0.1
+                def replacement():
+                    # Normally this would kill the program. We don't want that.
+                    pass
+                m.modbus_connection_failed = replacement
+                m.connect()
+                self.assertEqual(self.connect_attempts, 3)
 
-            mock_mqtt().username_pw_set.assert_called_with('brengis', 'pranto')
-            mock_mqtt().connect.assert_called_with('kroopit', 1885, 60)
-
-            m._on_connect(None, None, None, rc=0)
-            mock_mqtt().publish.assert_called_with(MQTT_TOPIC_PREFIX+'/modbus4mqtt', 'hi')
-            mock_mqtt().subscribe.assert_called_with(MQTT_TOPIC_PREFIX+'/subscribe')
-            mock_mqtt().subscribe.assert_no_call(MQTT_TOPIC_PREFIX+'/publish')
-            # print(mock_mqtt.mock_calls)
-
-    def test_failed_connect(self):
-        with patch('paho.mqtt.client.Client') as mock_mqtt:
-            m = modbus4mqtt.mqtt_interface('kroopit', 1885, 'brengis', 'pranto', './tests/test_connect.yaml', MQTT_TOPIC_PREFIX)
-            m.connect()
-
-            mock_mqtt().username_pw_set.assert_called_with('brengis', 'pranto')
-            mock_mqtt().connect.assert_called_with('kroopit', 1885, 60)
-            m._on_connect(None, None, None, rc=1)
-            # TODO implement some more thorough checks?
-            mock_mqtt().publish.assert_no_call(MQTT_TOPIC_PREFIX+'/modbus4mqtt', 'hi')
+                mock_mqtt().username_pw_set.assert_called_with('brengis', 'pranto')
+                mock_mqtt().connect.assert_called_with('kroopit', 1885, 60)
+                m._on_connect(None, None, None, rc=1)
+                # TODO implement some more thorough checks?
+                mock_mqtt().publish.assert_no_call(MQTT_TOPIC_PREFIX+'/modbus4mqtt', 'hi')
 
     def test_pub_on_change(self):
         with patch('paho.mqtt.client.Client') as mock_mqtt:
             with patch('modbus4mqtt.modbus_interface.modbus_interface') as mock_modbus:
+                mock_modbus().connect.side_effect = self.connect_success
 
                 mock_modbus().get_value.side_effect = self.read_modbus_register
 
@@ -122,7 +145,7 @@ class MQTTTests(unittest.TestCase):
     def test_retain_flag(self):
         with patch('paho.mqtt.client.Client') as mock_mqtt:
             with patch('modbus4mqtt.modbus_interface.modbus_interface') as mock_modbus:
-
+                mock_modbus().connect.side_effect = self.connect_success
                 mock_modbus().get_value.side_effect = self.read_modbus_register
 
                 m = modbus4mqtt.mqtt_interface('kroopit', 1885, 'brengis', 'pranto', './tests/test_retain_flag.yaml', MQTT_TOPIC_PREFIX)
@@ -139,7 +162,7 @@ class MQTTTests(unittest.TestCase):
     def test_default_table(self):
         with patch('paho.mqtt.client.Client') as mock_mqtt:
             with patch('modbus4mqtt.modbus_interface.modbus_interface') as mock_modbus:
-
+                mock_modbus().connect.side_effect = self.connect_success
                 mock_modbus().get_value.side_effect = self.read_modbus_register
 
                 m = modbus4mqtt.mqtt_interface('kroopit', 1885, 'brengis', 'pranto', './tests/test_default_table.yaml', MQTT_TOPIC_PREFIX)
@@ -156,7 +179,7 @@ class MQTTTests(unittest.TestCase):
     def test_value_map(self):
         with patch('paho.mqtt.client.Client') as mock_mqtt:
             with patch('modbus4mqtt.modbus_interface.modbus_interface') as mock_modbus:
-
+                mock_modbus().connect.side_effect = self.connect_success
                 mock_modbus().get_value.side_effect = self.read_modbus_register
 
                 m = modbus4mqtt.mqtt_interface('kroopit', 1885, 'brengis', 'pranto', './tests/test_value_map.yaml', MQTT_TOPIC_PREFIX)
@@ -180,6 +203,7 @@ class MQTTTests(unittest.TestCase):
     def test_invalid_address(self):
         with patch('paho.mqtt.client.Client') as mock_mqtt:
             with patch('modbus4mqtt.modbus_interface.modbus_interface') as mock_modbus:
+                mock_modbus().connect.side_effect = self.connect_success
                 mock_modbus().get_value.side_effect = self.read_modbus_register
 
                 m = modbus4mqtt.mqtt_interface('kroopit', 1885, 'brengis', 'pranto', './tests/test_value_map.yaml', MQTT_TOPIC_PREFIX)
@@ -193,6 +217,7 @@ class MQTTTests(unittest.TestCase):
     def test_set_topics(self):
         with patch('paho.mqtt.client.Client') as mock_mqtt:
             with patch('modbus4mqtt.modbus_interface.modbus_interface') as mock_modbus:
+                mock_modbus().connect.side_effect = self.connect_success
                 with self.assertLogs() as mock_logger:
                     mock_modbus().get_value.side_effect = self.read_modbus_register
                     mock_modbus().set_value.side_effect = self.write_modbus_register
@@ -253,6 +278,7 @@ class MQTTTests(unittest.TestCase):
     def test_scale(self):
         with patch('paho.mqtt.client.Client') as mock_mqtt:
             with patch('modbus4mqtt.modbus_interface.modbus_interface') as mock_modbus:
+                mock_modbus().connect.side_effect = self.connect_success
                 mock_modbus().get_value.side_effect = self.read_modbus_register
                 mock_modbus().set_value.side_effect = self.write_modbus_register
                 self.modbus_tables['holding'][1] = 1
@@ -290,6 +316,7 @@ class MQTTTests(unittest.TestCase):
     def test_mask(self):
         with patch('paho.mqtt.client.Client') as mock_mqtt:
             with patch('modbus4mqtt.modbus_interface.modbus_interface') as mock_modbus:
+                mock_modbus().connect.side_effect = self.connect_success
                 mock_modbus().get_value.side_effect = self.read_modbus_register
                 mock_modbus().set_value.side_effect = self.write_modbus_register
                 self.modbus_tables['holding'][1] = 0xFEF0
@@ -322,6 +349,7 @@ class MQTTTests(unittest.TestCase):
     def test_address_offset(self):
         with patch('paho.mqtt.client.Client') as mock_mqtt:
             with patch('modbus4mqtt.modbus_interface.modbus_interface') as mock_modbus:
+                mock_modbus().connect.side_effect = self.connect_success
                 mock_modbus().get_value.side_effect = self.read_modbus_register
 
                 m = modbus4mqtt.mqtt_interface('kroopit', 1885, 'brengis', 'pranto', './tests/test_address_offset.yaml', MQTT_TOPIC_PREFIX)

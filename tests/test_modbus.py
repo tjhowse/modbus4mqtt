@@ -37,11 +37,18 @@ class ModbusTests(unittest.TestCase):
     def write_holding_register(self, address, value, unit):
         self.holding_registers.registers[address] = value
 
+    def connect_success(self):
+        return True
+
+    def connect_failure(self):
+        return False
+
     def throw_exception(self, addr, value, unit):
         raise ValueError('Oh noooo!')
 
     def test_connect(self):
         with patch('modbus4mqtt.modbus_interface.ModbusTcpClient') as mock_modbus:
+            mock_modbus().connect.side_effect = self.connect_success
             mock_modbus().read_input_registers.side_effect = self.read_input_registers
             mock_modbus().read_holding_registers.side_effect = self.read_holding_registers
 
@@ -92,6 +99,7 @@ class ModbusTests(unittest.TestCase):
 
     def test_invalid_tables_and_addresses(self):
         with patch('modbus4mqtt.modbus_interface.ModbusTcpClient') as mock_modbus:
+            mock_modbus().connect.side_effect = self.connect_success
             m = modbus_interface.modbus_interface('1.1.1.1', 111, 2)
             m.connect()
 
@@ -103,6 +111,7 @@ class ModbusTests(unittest.TestCase):
 
     def test_write_queuing(self):
         with patch('modbus4mqtt.modbus_interface.ModbusTcpClient') as mock_modbus:
+            mock_modbus().connect.side_effect = self.connect_success
             m = modbus_interface.modbus_interface('1.1.1.1', 111, 2)
             m.connect()
 
@@ -122,6 +131,7 @@ class ModbusTests(unittest.TestCase):
 
     def test_exception_on_write(self):
         with patch('modbus4mqtt.modbus_interface.ModbusTcpClient') as mock_modbus:
+            mock_modbus().connect.side_effect = self.connect_success
             with self.assertLogs() as mock_logger:
                 m = modbus_interface.modbus_interface('1.1.1.1', 111, 2)
                 m.connect()
@@ -134,6 +144,7 @@ class ModbusTests(unittest.TestCase):
 
     def test_masked_writes(self):
         with patch('modbus4mqtt.modbus_interface.ModbusTcpClient') as mock_modbus:
+            mock_modbus().connect.side_effect = self.connect_success
             mock_modbus().read_input_registers.side_effect = self.read_input_registers
             mock_modbus().read_holding_registers.side_effect = self.read_holding_registers
             mock_modbus().write_register.side_effect = self.write_holding_register
