@@ -1,6 +1,6 @@
 ip: 192.168.1.89
 port: 502
-update_rate: 1
+update_rate: 5
 address_offset: 0
 registers:
   - pub_topic: "forced_charge/mode"
@@ -93,6 +93,7 @@ registers:
   - pub_topic: "bat_usage_time/weekday_usage/start_time_1_minutes"
     address: 13123
   - pub_topic: "bat_usage_time/weekday_usage/end_time_1_hours"
+    set_topic: "bat_usage_time/weekday_usage/end_time_1_hours/set"
     address: 13124
   - pub_topic: "bat_usage_time/weekday_usage/end_time_1_minutes"
     address: 13125
@@ -101,13 +102,15 @@ registers:
   - pub_topic: "bat_usage_time/weekday_usage/start_time_2_minutes"
     address: 13127
   - pub_topic: "bat_usage_time/weekday_usage/end_time_2_hours"
+    set_topic: "bat_usage_time/weekday_usage/end_time_2_hours/set"
     address: 13128
   - pub_topic: "bat_usage_time/weekday_usage/end_time_2_minutes"
     address: 13129
   - pub_topic: "bat_usage_time/weekend_usage"
+    set_topic: "bat_usage_time/weekend_usage/set"
     value_map:
-      disable: 85
-      enable: 170
+      disabled: 85
+      enabled: 170
     address: 13130
   - pub_topic: "bat_usage_time/weekend_usage/start_time_1_hours"
     address: 13131
