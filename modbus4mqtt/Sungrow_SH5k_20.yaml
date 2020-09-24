@@ -3,6 +3,9 @@ port: 502
 update_rate: 5
 address_offset: 0
 registers:
+  - pub_topic: "no_export/partial/limit"
+    set_topic: "no_export/partial/limit/set"
+    address: 13073
   - pub_topic: "forced_charge/mode"
     set_topic: "forced_charge/mode/set"
     retain: true
