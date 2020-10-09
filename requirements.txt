@@ -1,4 +1,6 @@
+setuptools
 pyyaml
 click
 paho-mqtt
 pymodbus
+SungrowModbusTCPClient

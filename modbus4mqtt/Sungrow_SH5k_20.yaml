@@ -2,6 +2,7 @@ ip: 192.168.1.89
 port: 502
 update_rate: 5
 address_offset: 0
+variant: sungrow
 registers:
   - pub_topic: "no_export/partial/limit"
     set_topic: "no_export/partial/limit/set"
