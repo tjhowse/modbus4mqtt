@@ -3,7 +3,7 @@ import logging
 from queue import Queue
 from pymodbus.client.sync import ModbusTcpClient, ModbusSocketFramer
 from pymodbus import exceptions
-from SungrowModbusTCPClient import SungrowModbusTCPClient
+from SungrowModbusTcpClient import SungrowModbusTcpClient
 
 DEFAULT_SCAN_RATE_S = 5
 DEFAULT_SCAN_BATCHING = 100
