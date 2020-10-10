@@ -34,11 +34,20 @@ Look at the [Sungrow SH5k-20](./modbus4mqtt/Sungrow_SH5k_20.yaml) configuration 
 ```yaml
 ip: 192.168.1.89
 port: 502
-update_rate: 1
+update_rate: 5
 address_offset: 0
+variant: sungrow
 ```
 
-This is the `ip` address and `port` of the Modbus device to be polled. Presently only Modbus TCP/IP is supported. `update_rate` is in seconds. This defines how frequently the registers are polled for changes. `address_offset` (optional: default 0) is applied to every register address to accomodate different Modbus addressing systems. In many Modbus devices the first register is enumerated as 1, other times 0. See section 4.4 of the Modbus spec.
+`ip` (Required) The IP address of the modbus device to be polled. Presently only modbus TCP/IP is supported.
+
+`port` (Optional: default 502) The port on the modbus device to connect to.
+
+`update_rate` (Optional: default 5) The number of seconds between polls of the modbus device.
+
+`address_offset` (Optional: default 0) This offset is applied to every register address to accomodate different Modbus addressing systems. In many Modbus devices the first register is enumerated as 1, other times 0. See section 4.4 of the Modbus spec.
+
+`variant` (Optional) Allows variants of the ModbusTcpClient library to be used. Setting this to 'sungrow' enables support of SungrowModbusTcpClient. This library transparently decrypts the modbus comms with sungrow SH inverters running newer firmware versions.
 
 ```yaml
 registers:

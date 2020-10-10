@@ -31,8 +31,8 @@ class mqtt_interface():
 
     def connect_modbus(self):
         self._mb = modbus_interface.modbus_interface(self.config['ip'],
-                                                     self.config['port'],
-                                                     self.config['update_rate'],
+                                                     self.config.get('port', 502),
+                                                     self.config.get('update_rate', 5),
                                                      variant=self.config.get('variant', None))
         failed_attempts = 1
         while self._mb.connect():
