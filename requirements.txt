@@ -3,4 +3,4 @@ pyyaml
 click
 paho-mqtt
 pymodbus
-SungrowModbusTCPClient
+SungrowModbusTcpClient>=0.1.2

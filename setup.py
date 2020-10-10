@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="modbus4mqtt",
-    version="0.2.2",
+    version="0.3.0",
     author="Travis Howse",
     author_email="tjhowse@gmail.com",
     description="A YAML-defined bidirectional Modbus to MQTT interface",
@@ -18,7 +18,7 @@ setuptools.setup(
         'paho-mqtt>=1.5.0',
         'pymodbus>=2.3.0',
         'click>=6.7',
-        'SungrowModbusTCPClient',
+        'SungrowModbusTcpClient>=0.1.2',
     ],
     tests_require=[
         'nose2>=0.9.2',
