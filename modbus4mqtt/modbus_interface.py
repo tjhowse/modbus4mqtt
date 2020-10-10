@@ -3,6 +3,7 @@ import logging
 from queue import Queue
 from pymodbus.client.sync import ModbusTcpClient, ModbusSocketFramer
 from pymodbus import exceptions
+from SungrowModbusTcpClient import SungrowModbusTcpClient
 
 DEFAULT_SCAN_RATE_S = 5
 DEFAULT_SCAN_BATCHING = 100
@@ -11,7 +12,7 @@ DEFAULT_WRITE_SLEEP_S = 0.05
 
 class modbus_interface():
 
-    def __init__(self, ip, port=502, update_rate_s=DEFAULT_SCAN_RATE_S):
+    def __init__(self, ip, port=502, update_rate_s=DEFAULT_SCAN_RATE_S, variant=None):
         self._ip = ip
         self._port = port
         # This is a dict of sets. Each key represents one table of modbus registers.
@@ -23,12 +24,21 @@ class modbus_interface():
 
         self._planned_writes = Queue()
         self._writing = False
+        self._variant = variant
 
     def connect(self):
         # Connects to the modbus device
-        self._mb = ModbusTcpClient(self._ip, self._port,
-                                  framer=ModbusSocketFramer, timeout=1,
-                                  RetryOnEmpty=True, retries=1)
+        if self._variant == 'sungrow':
+            # Some later versions of the sungrow inverter firmware encrypts the payloads of
+            # the modbus traffic. https://github.com/rpvelloso/Sungrow-Modbus is a drop-in
+            # replacement for ModbusTcpClient that manages decrypting the traffic for us.
+            self._mb = SungrowModbusTcpClient(self._ip, self._port,
+                                              framer=ModbusSocketFramer, timeout=1,
+                                              RetryOnEmpty=True, retries=1)
+        else:
+            self._mb = ModbusTcpClient(self._ip, self._port,
+                                       framer=ModbusSocketFramer, timeout=1,
+                                       RetryOnEmpty=True, retries=1)
 
     def add_monitor_register(self, table, addr):
         # Accepts a modbus register and table to monitor
