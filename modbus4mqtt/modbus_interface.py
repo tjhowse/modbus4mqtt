@@ -32,7 +32,7 @@ class modbus_interface():
             # Some later versions of the sungrow inverter firmware encrypts the payloads of
             # the modbus traffic. https://github.com/rpvelloso/Sungrow-Modbus is a drop-in
             # replacement for ModbusTcpClient that manages decrypting the traffic for us.
-            self._mb = SungrowModbusTcpClient(self._ip, self._port,
+            self._mb = SungrowModbusTcpClient.SungrowModbusTcpClient(host=self._ip, port=self._port,
                                               framer=ModbusSocketFramer, timeout=1,
                                               RetryOnEmpty=True, retries=1)
         else:
