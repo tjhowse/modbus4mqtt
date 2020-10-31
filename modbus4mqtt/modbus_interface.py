@@ -9,6 +9,7 @@ DEFAULT_SCAN_RATE_S = 5
 DEFAULT_SCAN_BATCHING = 100
 DEFAULT_WRITE_BLOCK_INTERVAL_S = 0.2
 DEFAULT_WRITE_SLEEP_S = 0.05
+DEFAULT_READ_SLEEP_S = 0.05
 
 class modbus_interface():
 
@@ -63,6 +64,8 @@ class modbus_interface():
                         for x in range(0, self._scan_batching):
                             key = group + x
                             self._values[table][key] = values[x]
+                        # Avoid back-to-back read operations that could overwhelm some modbus devices.
+                        sleep(DEFAULT_READ_SLEEP_S)
                     except ValueError as e:
                         logging.exception("{}".format(e))
                     start = group + self._scan_batching-1
