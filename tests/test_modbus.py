@@ -179,18 +179,19 @@ class ModbusTests(unittest.TestCase):
 
             # Confirm registers are added to the correct tables.
             m.add_monitor_register('holding', 5)
+            m.add_monitor_register('holding', 6)
             m.add_monitor_register('input', 6)
-            self.assertIn(5, m._tables['holding'])
-            self.assertNotIn(5, m._tables['input'])
-            self.assertIn(6, m._tables['input'])
-            self.assertNotIn(6, m._tables['holding'])
+            m.add_monitor_register('input', 7)
 
             m.poll()
 
             self.assertEqual(m.get_value('holding', 5), 5)
+            self.assertEqual(m.get_value('holding', 6), 6)
             self.assertEqual(m.get_value('input', 6), 6)
+            self.assertEqual(m.get_value('input', 7), 7)
 
-            # Ensure we read a batch of DEFAULT_SCAN_BATCHING registers even though we only
-            # added one register in each table as interesting
+            # Ensure each register is scanned with a separate read call.
             mock_modbus().read_holding_registers.assert_any_call(5, 1, unit=1)
+            mock_modbus().read_holding_registers.assert_any_call(6, 1, unit=1)
             mock_modbus().read_input_registers.assert_any_call(6, 1, unit=1)
+            mock_modbus().read_input_registers.assert_any_call(7, 1, unit=1)
