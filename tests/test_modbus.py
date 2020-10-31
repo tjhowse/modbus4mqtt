@@ -166,3 +166,31 @@ class ModbusTests(unittest.TestCase):
 
             m.set_value('holding', 1, 0x0000, 0x0F00)
             self.assertEqual(self.holding_registers.registers[1], 0xF0FF)
+
+    def test_scan_batching_of_one(self):
+        with patch('modbus4mqtt.modbus_interface.ModbusTcpClient') as mock_modbus:
+            mock_modbus().connect.side_effect = self.connect_success
+            mock_modbus().read_input_registers.side_effect = self.read_input_registers
+            mock_modbus().read_holding_registers.side_effect = self.read_holding_registers
+
+            m = modbus_interface.modbus_interface('1.1.1.1', 111, 2, scan_batching=1)
+            m.connect()
+            mock_modbus.assert_called_with('1.1.1.1', 111, RetryOnEmpty=True, framer=modbus_interface.ModbusSocketFramer, retries=1, timeout=1)
+
+            # Confirm registers are added to the correct tables.
+            m.add_monitor_register('holding', 5)
+            m.add_monitor_register('input', 6)
+            self.assertIn(5, m._tables['holding'])
+            self.assertNotIn(5, m._tables['input'])
+            self.assertIn(6, m._tables['input'])
+            self.assertNotIn(6, m._tables['holding'])
+
+            m.poll()
+
+            self.assertEqual(m.get_value('holding', 5), 5)
+            self.assertEqual(m.get_value('input', 6), 6)
+
+            # Ensure we read a batch of DEFAULT_SCAN_BATCHING registers even though we only
+            # added one register in each table as interesting
+            mock_modbus().read_holding_registers.assert_any_call(5, 1, unit=1)
+            mock_modbus().read_input_registers.assert_any_call(6, 1, unit=1)
