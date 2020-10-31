@@ -1,0 +1,11 @@
+#ip: 172.16.50.116
+ip: 192.168.1.89
+port: 502
+update_rate: 5
+address_offset: 0
+variant: sungrow
+registers:
+  - pub_topic: "seconds"
+    address: 5004
+    pub_only_on_change: false
+    table: 'holding'
