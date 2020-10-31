@@ -37,6 +37,7 @@ port: 502
 update_rate: 5
 address_offset: 0
 variant: sungrow
+scan_batching: 100
 ```
 
 `ip` (Required) The IP address of the modbus device to be polled. Presently only modbus TCP/IP is supported.
@@ -45,9 +46,11 @@ variant: sungrow
 
 `update_rate` (Optional: default 5) The number of seconds between polls of the modbus device.
 
-`address_offset` (Optional: default 0) This offset is applied to every register address to accomodate different Modbus addressing systems. In many Modbus devices the first register is enumerated as 1, other times 0. See section 4.4 of the Modbus spec.
+`address_offset` (Optional: default 0) This offset is applied to every register address to accommodate different Modbus addressing systems. In many Modbus devices the first register is enumerated as 1, other times 0. See section 4.4 of the Modbus spec.
 
 `variant` (Optional) Allows variants of the ModbusTcpClient library to be used. Setting this to 'sungrow' enables support of SungrowModbusTcpClient. This library transparently decrypts the modbus comms with sungrow SH inverters running newer firmware versions.
+
+`scan_batching` (Optional: default 100) Modbus read operations are more efficient in bigger batches of contiguous registers, but different devices have different limits on the size of the batched reads. This setting can also be helpful when building a modbus register map for an uncharted device. On some modbus devices a single invalid register in a read range will fail the entire read operation. By setting `scan_batching` to `1` each register will be scanned individually.
 
 ```yaml
 registers:

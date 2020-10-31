@@ -12,7 +12,7 @@ DEFAULT_WRITE_SLEEP_S = 0.05
 
 class modbus_interface():
 
-    def __init__(self, ip, port=502, update_rate_s=DEFAULT_SCAN_RATE_S, variant=None):
+    def __init__(self, ip, port=502, update_rate_s=DEFAULT_SCAN_RATE_S, variant=None, scan_batching=None):
         self._ip = ip
         self._port = port
         # This is a dict of sets. Each key represents one table of modbus registers.
@@ -25,6 +25,10 @@ class modbus_interface():
         self._planned_writes = Queue()
         self._writing = False
         self._variant = variant
+        if scan_batching is None:
+            self._scan_batching = DEFAULT_SCAN_BATCHING
+        elif 1 <= scan_batching <= 100:
+            self._scan_batching = scan_batching
 
     def connect(self):
         # Connects to the modbus device
@@ -49,19 +53,19 @@ class modbus_interface():
     def poll(self):
         # Polls for the values marked as interesting in self._tables.
         for table in self._tables:
-            # This batches up modbus reads in chunks of DEFAULT_SCAN_BATCHING
+            # This batches up modbus reads in chunks of self._scan_batching
             start = -1
             for k in sorted(self._tables[table]):
-                group = int(k) - int(k) % DEFAULT_SCAN_BATCHING
+                group = int(k) - int(k) % self._scan_batching
                 if (start < group):
                     try:
-                        values = self._scan_value_range(table, group, DEFAULT_SCAN_BATCHING)
-                        for x in range(0, DEFAULT_SCAN_BATCHING):
+                        values = self._scan_value_range(table, group, self._scan_batching)
+                        for x in range(0, self._scan_batching):
                             key = group + x
                             self._values[table][key] = values[x]
                     except ValueError as e:
                         logging.exception("{}".format(e))
-                    start = group + DEFAULT_SCAN_BATCHING-1
+                    start = group + self._scan_batching-1
         self._process_writes()
 
     def get_value(self, table, addr):
