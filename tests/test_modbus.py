@@ -195,3 +195,18 @@ class ModbusTests(unittest.TestCase):
             mock_modbus().read_holding_registers.assert_any_call(6, 1, unit=1)
             mock_modbus().read_input_registers.assert_any_call(6, 1, unit=1)
             mock_modbus().read_input_registers.assert_any_call(7, 1, unit=1)
+
+    def test_scan_batching_bad_value(self):
+        with patch('modbus4mqtt.modbus_interface.ModbusTcpClient') as mock_modbus:
+            with self.assertLogs() as mock_logger:
+                mock_modbus().connect.side_effect = self.connect_success
+                mock_modbus().read_input_registers.side_effect = self.read_input_registers
+                mock_modbus().read_holding_registers.side_effect = self.read_holding_registers
+
+                bad_scan_batching = 101
+                modbus_interface.modbus_interface('1.1.1.1', 111, 2, scan_batching=bad_scan_batching)
+                self.assertIn("Bad value for scan_batching: {}. Enforcing maximum value of {}".format(bad_scan_batching, modbus_interface.MAX_SCAN_BATCHING), mock_logger.output[-1])
+
+                bad_scan_batching = 0
+                modbus_interface.modbus_interface('1.1.1.1', 111, 2, scan_batching=bad_scan_batching)
+                self.assertIn("Bad value for scan_batching: {}. Enforcing minimum value of {}".format(bad_scan_batching, modbus_interface.MIN_SCAN_BATCHING), mock_logger.output[-1])

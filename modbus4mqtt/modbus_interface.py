@@ -7,6 +7,8 @@ from SungrowModbusTcpClient import SungrowModbusTcpClient
 
 DEFAULT_SCAN_RATE_S = 5
 DEFAULT_SCAN_BATCHING = 100
+MIN_SCAN_BATCHING = 1
+MAX_SCAN_BATCHING = 100
 DEFAULT_WRITE_BLOCK_INTERVAL_S = 0.2
 DEFAULT_WRITE_SLEEP_S = 0.05
 DEFAULT_READ_SLEEP_S = 0.05
@@ -26,10 +28,16 @@ class modbus_interface():
         self._planned_writes = Queue()
         self._writing = False
         self._variant = variant
-        if scan_batching is None:
-            self._scan_batching = DEFAULT_SCAN_BATCHING
-        elif 1 <= scan_batching <= 100:
-            self._scan_batching = scan_batching
+        self._scan_batching = DEFAULT_SCAN_BATCHING
+        if scan_batching is not None:
+            if scan_batching < MIN_SCAN_BATCHING:
+                logging.warning("Bad value for scan_batching: {}. Enforcing minimum value of {}".format(scan_batching, MIN_SCAN_BATCHING))
+                self._scan_batching = MIN_SCAN_BATCHING
+            elif scan_batching > MAX_SCAN_BATCHING:
+                logging.warning("Bad value for scan_batching: {}. Enforcing maximum value of {}".format(scan_batching, MAX_SCAN_BATCHING))
+                self._scan_batching = MAX_SCAN_BATCHING
+            else:
+                self._scan_batching = scan_batching
 
     def connect(self):
         # Connects to the modbus device
