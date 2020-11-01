@@ -53,9 +53,9 @@ registers:
     set_topic: "forced_charge/period_2/target_soc/set"
     address: 13150
   - #pub_topic: "date_time/minutes"
-    address: 5004
+    address: 5003
   - #pub_topic: "date_time/seconds"
-    address: 5005
+    address: 5004
   - pub_topic: "load_control/mode"
     value_map:
       timer: 0
