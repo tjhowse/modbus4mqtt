@@ -203,10 +203,10 @@ class ModbusTests(unittest.TestCase):
                 mock_modbus().read_input_registers.side_effect = self.read_input_registers
                 mock_modbus().read_holding_registers.side_effect = self.read_holding_registers
 
-                bad_scan_batching = 101
+                bad_scan_batching = modbus_interface.MAX_SCAN_BATCHING+1
                 modbus_interface.modbus_interface('1.1.1.1', 111, 2, scan_batching=bad_scan_batching)
                 self.assertIn("Bad value for scan_batching: {}. Enforcing maximum value of {}".format(bad_scan_batching, modbus_interface.MAX_SCAN_BATCHING), mock_logger.output[-1])
 
-                bad_scan_batching = 0
+                bad_scan_batching = modbus_interface.MIN_SCAN_BATCHING-1
                 modbus_interface.modbus_interface('1.1.1.1', 111, 2, scan_batching=bad_scan_batching)
                 self.assertIn("Bad value for scan_batching: {}. Enforcing minimum value of {}".format(bad_scan_batching, modbus_interface.MIN_SCAN_BATCHING), mock_logger.output[-1])
