@@ -3,6 +3,7 @@ port: 502
 update_rate: 5
 address_offset: 0
 variant: sungrow
+scan_batching: 100
 registers:
   - pub_topic: "no_export/partial/limit"
     set_topic: "no_export/partial/limit/set"

@@ -33,7 +33,8 @@ class mqtt_interface():
         self._mb = modbus_interface.modbus_interface(self.config['ip'],
                                                      self.config.get('port', 502),
                                                      self.config.get('update_rate', 5),
-                                                     variant=self.config.get('variant', None))
+                                                     variant=self.config.get('variant', None),
+                                                     scan_batching=self.config.get('scan_batching', None))
         failed_attempts = 1
         while self._mb.connect():
             logging.warning("Modbus connection attempt {} failed. Retrying...".format(failed_attempts))
