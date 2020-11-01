@@ -24,7 +24,7 @@ $ modbus4mqtt --help
 
 Alternatively you can run Modbus4MQTT in a Docker container. A [Dockerfile](./Dockerfile) example is provided.
 
-You will need to provide the credentials to connect to your MQTT broker, as well as a path to a YAML file that defines the memory map of your Modbus device.
+You will need to provide the credentials to connect to your MQTT broker, as well as a path to a YAML file that defines the memory map of your Modbus device. You can download these YAML files from this project's github repo.
 
 ## YAML definition
 
