@@ -84,14 +84,14 @@ This section of the YAML lists all the modbus registers that you consider intere
 
 `set_topic` (Optional) Values published to this topic will be written to the Modbus device.
 
-`retain` (Optional) Controls whether the value of this register will be published with the retain bit set.
+`retain` (Optional: default false) Controls whether the value of this register will be published with the retain bit set.
 
-`pub_only_on_change` (Optional) Controls whether this register will only be published if its value changed from the previous poll. Defaults to True.
+`pub_only_on_change` (Optional: default true) Controls whether this register will only be published if its value changed from the previous poll.
 
-`table` (Optional) The Modbus table to read from the device. Must be 'holding' or 'input'. If absent it will default to 'holding'.
+`table` (Optional: default 'holding') The Modbus table to read from the device. Must be 'holding' or 'input'.
 
 `value_map` (Optional) A series of human-readable and raw values for the setting. This will be used to translate between human-readable values via MQTT to raw values via Modbus. If a value_map is set for a register the interface will reject raw values sent via MQTT. If value_map is not set the interface will try to set the Modbus register to that value. Note that the scale is applied after the value is read from Modbus and before it is written to Modbus.
 
-`scale` (Optional) After reading a value from the Modbus register it will be multiplied by this scalar before being published to MQTT. Values published on this register's `set_topic` will be divided by this scalar before being written to Modbus.
+`scale` (Optional: default 1) After reading a value from the Modbus register it will be multiplied by this scalar before being published to MQTT. Values published on this register's `set_topic` will be divided by this scalar before being written to Modbus.
 
-`mask` (Optional) This is a 16-bit number that can be used to select a part of a Modbus register to be referenced by this register. For example a mask of `0xFF00` will map to the most significant byte of the 16-bit Modbus register at `address`. A mask of `0x0001` will reference only the least significant bit of this register.
+`mask` (Optional: Default 0xFFFF) This is a 16-bit number that can be used to select a part of a Modbus register to be referenced by this register. For example a mask of `0xFF00` will map to the most significant byte of the 16-bit Modbus register at `address`. A mask of `0x0001` will reference only the least significant bit of this register.
