@@ -9,3 +9,8 @@ registers:
     value_map:
       a: 1
       b: 2
+  - pub_topic: "value_map_misinterpretation"
+    address: 3
+    value_map:
+      on: 1
+      off: 2

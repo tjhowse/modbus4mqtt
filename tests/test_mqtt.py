@@ -186,18 +186,23 @@ class MQTTTests(unittest.TestCase):
                 m.connect()
                 self.modbus_tables['holding'][1] = 1
                 self.modbus_tables['holding'][2] = 2
+                self.modbus_tables['holding'][3] = 1
                 m.poll()
 
+                print(mock_mqtt.mock_calls)
                 mock_mqtt().publish.assert_any_call(MQTT_TOPIC_PREFIX+'/value_map_absent', 1, retain=False)
                 mock_mqtt().publish.assert_any_call(MQTT_TOPIC_PREFIX+'/value_map_present', 'b', retain=False)
+                mock_mqtt().publish.assert_any_call(MQTT_TOPIC_PREFIX+'/value_map_misinterpretation', 'on', retain=False)
                 mock_mqtt().publish.reset_mock()
 
                 # This value is outside the map, check it comes through in raw form
                 self.modbus_tables['holding'][2] = 3
+                self.modbus_tables['holding'][3] = 2
                 m.poll()
 
-                # print(mock_mqtt.mock_calls)
+                print(mock_mqtt.mock_calls)
                 mock_mqtt().publish.assert_any_call(MQTT_TOPIC_PREFIX+'/value_map_present', 3, retain=False)
+                mock_mqtt().publish.assert_any_call(MQTT_TOPIC_PREFIX+'/value_map_misinterpretation', 'off', retain=False)
                 mock_mqtt().publish.reset_mock()
 
     def test_invalid_address(self):
