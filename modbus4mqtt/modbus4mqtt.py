@@ -5,7 +5,9 @@ import logging
 import yaml
 import click
 import paho.mqtt.client as mqtt
+
 from . import modbus_interface
+from . import version
 
 class mqtt_interface():
     def __init__(self, hostname, port, username, password, config_file, mqtt_topic_prefix):
@@ -166,6 +168,7 @@ def main(hostname, port, username, password, config, mqtt_topic_prefix):
         format='%(asctime)s %(levelname)-8s %(message)s',
         level=logging.INFO,
         datefmt='%Y-%m-%d %H:%M:%S')
+    logging.info("Starting modbus4mqtt v{}".format(version.version))
     i = mqtt_interface(hostname, port, username, password, config, mqtt_topic_prefix)
     i.connect()
     i.loop_forever()

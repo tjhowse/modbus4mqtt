@@ -1,11 +1,12 @@
 import setuptools
+from modbus4mqtt.version import version
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
     name="modbus4mqtt",
-    version="0.3.3",
+    version=version,
     author="Travis Howse",
     author_email="tjhowse@gmail.com",
     description="A YAML-defined bidirectional Modbus to MQTT interface",
