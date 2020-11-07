@@ -5,6 +5,23 @@ address_offset: 0
 variant: sungrow
 scan_batching: 100
 registers:
+  - pub_topic: "ems/EMS_MODE"
+    set_topic: "ems/EMS_MODE/set"
+    address: 13049
+    value_map:
+      self: 0
+      forced: 2
+      external: 3
+  - pub_topic: "ems/CHARGE_DISCHARGE_COMMAND"
+    set_topic: "ems/CHARGE_DISCHARGE_COMMAND/set"
+    address: 13050
+    value_map:
+      charge: 0xAA
+      discharge: 0xBB
+      stop: 0xCC
+  - pub_topic: "ems/CHARGE_DISCHARGE_POWER"
+    set_topic: "ems/CHARGE_DISCHARGE_POWER/set"
+    address: 13051
   - pub_topic: "no_export/partial/limit"
     set_topic: "no_export/partial/limit/set"
     address: 13073
