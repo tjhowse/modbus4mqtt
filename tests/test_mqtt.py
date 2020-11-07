@@ -189,7 +189,6 @@ class MQTTTests(unittest.TestCase):
                 self.modbus_tables['holding'][3] = 1
                 m.poll()
 
-                print(mock_mqtt.mock_calls)
                 mock_mqtt().publish.assert_any_call(MQTT_TOPIC_PREFIX+'/value_map_absent', 1, retain=False)
                 mock_mqtt().publish.assert_any_call(MQTT_TOPIC_PREFIX+'/value_map_present', 'b', retain=False)
                 mock_mqtt().publish.assert_any_call(MQTT_TOPIC_PREFIX+'/value_map_misinterpretation', 'on', retain=False)
@@ -200,7 +199,6 @@ class MQTTTests(unittest.TestCase):
                 self.modbus_tables['holding'][3] = 2
                 m.poll()
 
-                print(mock_mqtt.mock_calls)
                 mock_mqtt().publish.assert_any_call(MQTT_TOPIC_PREFIX+'/value_map_present', 3, retain=False)
                 mock_mqtt().publish.assert_any_call(MQTT_TOPIC_PREFIX+'/value_map_misinterpretation', 'off', retain=False)
                 mock_mqtt().publish.reset_mock()
