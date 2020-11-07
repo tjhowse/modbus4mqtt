@@ -2,7 +2,7 @@
 
 from time import sleep
 import logging
-import yaml
+from ruamel.yaml import YAML
 import click
 import paho.mqtt.client as mqtt
 
@@ -148,7 +148,8 @@ class mqtt_interface():
             self._mb.set_value(register.get('table', 'holding'), register['address'], int(value), register.get('mask', 0xFFFF))
 
     def _load_modbus_config(self, path):
-        return yaml.load(open(path,'r').read(), Loader=yaml.FullLoader)
+        yaml=YAML(typ='safe')
+        return yaml.load(open(path,'r').read())
 
     def loop_forever(self):
         while True:

@@ -15,7 +15,7 @@ setuptools.setup(
     url="https://github.com/tjhowse/modbus4mqtt",
     packages=setuptools.find_packages(),
     install_requires=[
-        'pyyaml>=3.5.0',
+        'ruamel.yaml>=0.16.12',
         'paho-mqtt>=1.5.0',
         'pymodbus>=2.3.0',
         'click>=6.7',
