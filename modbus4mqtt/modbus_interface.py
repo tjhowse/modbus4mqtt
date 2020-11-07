@@ -138,6 +138,8 @@ class modbus_interface():
             result = self._mb.read_input_registers(start, count, unit=0x01)
         elif table == 'holding':
             result = self._mb.read_holding_registers(start, count, unit=0x01)
-        if isinstance(result, exceptions.ModbusIOException):
-            raise ValueError("Failed to read {} table registers from {} to {}".format(table, start, start+count))
-        return result.registers
+        try:
+            return result.registers
+        except:
+            # The result doesn't have a registers attribute, something has gone wrong!
+            raise ValueError("Failed to read {} {} table registers starting from {}: {}".format(count, table, start, result))

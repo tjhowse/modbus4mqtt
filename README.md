@@ -1,4 +1,5 @@
 # Modbus4MQTT
+
 https://github.com/tjhowse/modbus4mqtt
 
 https://pypi.org/project/modbus4mqtt/
@@ -9,11 +10,19 @@ https://pypi.org/project/modbus4mqtt/
 
 This is a gateway that translates between modbus TCP/IP and MQTT.
 
-There are already a few things that do this, but didn't quite have the features I wanted.
-
 The mapping of modbus registers to MQTT topics is in a simple YAML file.
 
 The most up-to-date docs will always be on Github.
+
+## Similar software
+
+There is already good software out there that can do what Modbus4MQTT does, but none
+that I could find that has this functionality as its focus. Do one thing and do it well.
+Modbus4mqtt is designed to fit in as a component of other systems, rather than trying to
+be a complete solution.
+
+* [Solariot](https://github.com/meltaxa/solariot)
+* [PVStats](https://github.com/ptarcher/pvstats) ([Fork](https://github.com/tjhowse/pvstats))
 
 ## Installation
 
