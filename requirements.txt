@@ -1,5 +1,5 @@
 setuptools
-pyyaml
+ruamel.yaml>=0.16.12
 click
 paho-mqtt
 pymodbus
