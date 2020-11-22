@@ -111,7 +111,7 @@ class mqtt_interface():
         for register in self._get_registers_with('set_topic'):
             self._mqtt_client.subscribe(self.prefix+register['set_topic'])
             print("Subscribed to {}".format(self.prefix+register['set_topic']))
-        self._mqtt_client.publish(self.prefix+'modbus4mqtt', 'modbus4mqtt v{} starting up.'.format(version.version))
+        self._mqtt_client.publish(self.prefix+'modbus4mqtt', 'modbus4mqtt v{} connected.'.format(version.version))
 
     def _on_disconnect(self, client, userdata, rc):
         logging.warning("Disconnected from MQTT. Attempting to reconnect.")

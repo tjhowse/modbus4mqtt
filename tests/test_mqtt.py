@@ -78,7 +78,7 @@ class MQTTTests(unittest.TestCase):
                 mock_mqtt().connect.assert_called_with('kroopit', 1885, 60)
 
                 m._on_connect(None, None, None, rc=0)
-                mock_mqtt().publish.assert_called_with(MQTT_TOPIC_PREFIX+'/modbus4mqtt', 'modbus4mqtt v{} starting up.'.format(modbus4mqtt.version.version))
+                mock_mqtt().publish.assert_called_with(MQTT_TOPIC_PREFIX+'/modbus4mqtt', 'modbus4mqtt v{} connected.'.format(modbus4mqtt.version.version))
                 mock_mqtt().subscribe.assert_called_with(MQTT_TOPIC_PREFIX+'/subscribe')
                 mock_mqtt().subscribe.assert_no_call(MQTT_TOPIC_PREFIX+'/publish')
 
@@ -101,7 +101,7 @@ class MQTTTests(unittest.TestCase):
                 mock_mqtt().connect.assert_called_with('kroopit', 1885, 60)
                 m._on_connect(None, None, None, rc=1)
                 # TODO implement some more thorough checks?
-                mock_mqtt().publish.assert_no_call(MQTT_TOPIC_PREFIX+'/modbus4mqtt', 'modbus4mqtt v{} starting up.'.format(modbus4mqtt.version.version))
+                mock_mqtt().publish.assert_no_call(MQTT_TOPIC_PREFIX+'/modbus4mqtt', 'modbus4mqtt v{} connected.'.format(modbus4mqtt.version.version))
 
     def test_pub_on_change(self):
         with patch('paho.mqtt.client.Client') as mock_mqtt:
