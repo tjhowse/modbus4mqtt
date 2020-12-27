@@ -1,0 +1,65 @@
+ip: 192.168.1.xxx #your inverter ip address
+port: 502
+update_rate: 60
+address_offset: 0
+variant: sungrow
+scan_batching: 1
+registers:
+  - pub_topic: "output_power" #total output power kWh
+    address: 5000
+    table: 'input'
+  - pub_topic: "daily_yield"  #daily yield kWh
+    address: 5002
+    table: 'input'
+  - pub_topic: "total_yield"  #Total yield kWh
+    address: 5003
+    table: 'input'
+  - pub_topic: "total_running_time"  #Total running time (h)
+    address: 5003
+    table: 'input'
+  - pub_topic: "internal_temperature" #inverter internal temperature 0.1C
+    address: 5007
+    table: 'input'
+  - pub_topic: "dc_output"  #dc output power (W)
+    address: 5016
+    table: 'input'
+  - pub_topic: "phase_a_voltage" #Phase A Voltage (0.1V)
+    address: 5018
+    table: 'input'
+  - pub_topic: "phase_a_current" #Phase A Current (0.1A)
+    address: 5021
+    table: 'input'
+  - pub_topic: "ac_output" #AC output power, total active power (W)
+    address: 5030
+    table: 'input'
+  - pub_topic: "power_factor" #Power factor (0.001)
+    address: 5034
+    table: 'input'
+  - pub_topic: "grid_frequency" #Grid Frequency (0.1Hz)
+    address: 5035
+    table: 'input'
+  - pub_topic: "device_state" #Device State  (see comments below for states)
+    address: 5037
+    table: 'input'
+  - pub_topic: "daily_running_time" #Daily running time (1m)
+    address: 5112
+    table: 'input'
+
+    #see https://github.com/tjhowse/modbus4mqtt/files/5732710/TI_20190704_Communication.Protocol.for.Residential.Single-phase.Grid-Connected.Inverters_V10_EN.pdf for full list of registers and details
+
+    # Device States (register 5037)
+    #
+    #0 Run
+    #1 Stop (normal stop)
+    #2 Initial Standby
+    #3 Key stop
+    #4 Standby
+    #5 Emergency Stop
+    #6 Startup
+    #7 Stopping
+    #9 Fault stop
+    #10 Alarm Run
+    #11 Derating run
+    #12 Limited run
+    #13 Communication fault
+    #16 Sleeping
