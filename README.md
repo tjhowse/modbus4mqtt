@@ -48,19 +48,16 @@ address_offset: 0
 variant: sungrow
 scan_batching: 100
 ```
+| Field name | Required | Default | Description |
+| ---------- | -------- | ------- | ----------- |
+| ip | Required | N/A | The IP address of the modbus device to be polled. Presently only modbus TCP/IP is supported. |
+| port | Optional | 502 | The port on the modbus device to connect to. |
+| update_rate | Optional | 5 | The number of seconds between polls of the modbus device. |
+| address_offset | Optional | 0 | This offset is applied to every register address to accommodate different Modbus addressing systems. In many Modbus devices the first register is enumerated as 1, other times 0. See section 4.4 of the Modbus spec. |
+| variant | Optional | N/A | Allows variants of the ModbusTcpClient library to be used. Setting this to 'sungrow' enables support of SungrowModbusTcpClient. This library transparently decrypts the modbus comms with sungrow SH inverters running newer firmware versions. |
+| scan_batching | Optional | 100 | Must be between 1 and 100 inclusive. Modbus read operations are more efficient in bigger batches of contiguous registers, but different devices have different limits on the size of the batched reads. This setting can also be helpful when building a modbus register map for an uncharted device. In some modbus devices a single invalid register in a read range will fail the entire read operation. By setting `scan_batching` to `1` each register will be scanned individually. This will be very inefficient and should not be used in production as it will saturate the link with many read operations. |
 
-`ip` (Required) The IP address of the modbus device to be polled. Presently only modbus TCP/IP is supported.
-
-`port` (Optional: default 502) The port on the modbus device to connect to.
-
-`update_rate` (Optional: default 5) The number of seconds between polls of the modbus device.
-
-`address_offset` (Optional: default 0) This offset is applied to every register address to accommodate different Modbus addressing systems. In many Modbus devices the first register is enumerated as 1, other times 0. See section 4.4 of the Modbus spec.
-
-`variant` (Optional) Allows variants of the ModbusTcpClient library to be used. Setting this to 'sungrow' enables support of SungrowModbusTcpClient. This library transparently decrypts the modbus comms with sungrow SH inverters running newer firmware versions.
-
-`scan_batching` (Optional: default 100) Must be between 1 and 100 inclusive. Modbus read operations are more efficient in bigger batches of contiguous registers, but different devices have different limits on the size of the batched reads. This setting can also be helpful when building a modbus register map for an uncharted device. In some modbus devices a single invalid register in a read range will fail the entire read operation. By setting `scan_batching` to `1` each register will be scanned individually. This will be very inefficient and should not be used in production as it will saturate the link with many read operations.
-
+### Register settings
 ```yaml
 registers:
   - pub_topic: "forced_charge/mode"
@@ -83,24 +80,25 @@ registers:
   - pub_topic: "first_bit_of_second_byte"
     address: 13001
     mask: 0x0010
+  - pub_topic: "load_control/optimized/end_time"
+    address: 13013
+    json_key: hours
+  - pub_topic: "load_control/optimized/end_time"
+    address: 13014
+    json_key: minutes
 ```
 
 This section of the YAML lists all the modbus registers that you consider interesting.
 
-`address` (Required) The decimal address of the register to read from the device, starting at 0. Many modbus devices enumerate registers beginning at 1, so beware.
-
-`pub_topic` (Optional) This is the topic to which the value of this register will be published.
-
-`set_topic` (Optional) Values published to this topic will be written to the Modbus device.
-
-`retain` (Optional: default false) Controls whether the value of this register will be published with the retain bit set.
-
-`pub_only_on_change` (Optional: default true) Controls whether this register will only be published if its value changed from the previous poll.
-
-`table` (Optional: default 'holding') The Modbus table to read from the device. Must be 'holding' or 'input'.
-
-`value_map` (Optional) A series of human-readable and raw values for the setting. This will be used to translate between human-readable values via MQTT to raw values via Modbus. If a value_map is set for a register the interface will reject raw values sent via MQTT. If value_map is not set the interface will try to set the Modbus register to that value. Note that the scale is applied after the value is read from Modbus and before it is written to Modbus.
-
-`scale` (Optional: default 1) After reading a value from the Modbus register it will be multiplied by this scalar before being published to MQTT. Values published on this register's `set_topic` will be divided by this scalar before being written to Modbus.
-
-`mask` (Optional: default 0xFFFF) This is a 16-bit number that can be used to select a part of a Modbus register to be referenced by this register. For example a mask of `0xFF00` will map to the most significant byte of the 16-bit Modbus register at `address`. A mask of `0x0001` will reference only the least significant bit of this register.
+| Field name | Required | Default | Description |
+| ---------- | -------- | ------- | ----------- |
+| address | Required | N/A | The decimal address of the register to read from the device, starting at 0. Many modbus devices enumerate registers beginning at 1, so beware. |
+| pub_topic | Optional | N/A | This is the topic to which the value of this register will be published. |
+| set_topic | Optional | N/A | Values published to this topic will be written to the Modbus device. |
+| retain | Optional | false | Controls whether the value of this register will be published with the retain bit set. |
+| pub_only_on_change | Optional | true | Controls whether this register will only be published if its value changed from the previous poll. |
+| table | Optional | holding | The Modbus table to read from the device. Must be 'holding' or 'input'. |
+| value_map | Optional | N/A | A series of human-readable and raw values for the setting. This will be used to translate between human-readable values via MQTT to raw values via Modbus. If a value_map is set for a register the interface will reject raw values sent via MQTT. If value_map is not set the interface will try to set the Modbus register to that value. Note that the scale is applied after the value is read from Modbus and before it is written to Modbus. |
+| scale | Optional | 1 | After reading a value from the Modbus register it will be multiplied by this scalar before being published to MQTT. Values published on this register's `set_topic` will be divided by this scalar before being written to Modbus. |
+| mask | Optional | 0xFFFF | This is a 16-bit number that can be used to select a part of a Modbus register to be referenced by this register. For example a mask of `0xFF00` will map to the most significant byte of the 16-bit Modbus register at `address`. A mask of `0x0001` will reference only the least significant bit of this register. |
+| json_key | Optional | N/A | The value of this register will be published to its pub_topic in JSON format. E.G. `{ key: value }` Registers with a json_key specified can share a pub_topic. All registers with shared pub_topics must have a json_key specified. Multiple registers can be published to the same topic in the same JSON message. |
