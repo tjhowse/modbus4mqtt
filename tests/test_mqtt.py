@@ -381,7 +381,6 @@ class MQTTTests(unittest.TestCase):
                 self.modbus_tables['holding'][2] = 2
                 self.modbus_tables['holding'][3] = 3
                 m.poll()
-                print(mock_mqtt.mock_calls)
 
                 mock_mqtt().publish.assert_any_call(MQTT_TOPIC_PREFIX+'/publish2', '{"A": 3}', retain=False)
                 mock_mqtt().publish.assert_any_call(MQTT_TOPIC_PREFIX+'/publish', '{"A": 1, "B": "off"}', retain=True)
