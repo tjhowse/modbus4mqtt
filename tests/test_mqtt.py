@@ -366,5 +366,42 @@ class MQTTTests(unittest.TestCase):
 
                 mock_mqtt().publish.assert_any_call(MQTT_TOPIC_PREFIX+'/publish', 2, retain=False)
 
+    def test_register_validation(self):
+        valids = [[     # Different json_keys for same topic
+            {'address': 13049, 'json_key': 'a', 'pub_topic': 'ems/EMS_MODE'},
+            {'address': 13050, 'json_key': 'A', 'pub_topic': 'ems/EMS_MODE'},
+            {'address': 13050, 'json_key': 'b', 'pub_topic': 'ems/EMS_MODE'}
+        ],
+        [               # Different topics, duplicate json_key
+            {'address': 13050, 'json_key': 'A', 'pub_topic': 'ems/EMS_MODEA'},
+            {'address': 13050, 'json_key': 'A', 'pub_topic': 'ems/EMS_MODEB'}
+        ],
+        [               # Different topic, no json_key
+            {'address': 13050, 'pub_topic': 'ems/EMS_MODEA'},
+            {'address': 13050, 'json_key': 'A', 'pub_topic': 'ems/EMS_MODEB'}
+        ]]
+        invalids = [[   # Duplicate json_key for a topic
+            {'address': 13050, 'json_key': 'A', 'pub_topic': 'ems/EMS_MODE'},
+            {'address': 13050, 'json_key': 'A', 'pub_topic': 'ems/EMS_MODE'}
+        ],
+        [               # Missing json_key for a register with a duplicated pub_topic
+            {'address': 13049, 'pub_topic': 'ems/EMS_MODE'},
+            {'address': 13050, 'json_key': 'A', 'pub_topic': 'ems/EMS_MODE'}
+        ]]
+        for valid in valids:
+            try:
+                modbus4mqtt.mqtt_interface._validate_registers(valid)
+            except:
+                self.fail("Threw an exception checking a valid register configuration")
+        for invalid in invalids:
+            fail = False
+            try:
+                modbus4mqtt.mqtt_interface._validate_registers(invalid)
+            except:
+                fail = True
+            if not fail:
+                self.fail("Didn't throw an exception checking an invalid register configuration")
+
+
 if __name__ == "__main__":
     unittest.main()
