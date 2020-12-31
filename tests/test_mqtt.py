@@ -379,6 +379,10 @@ class MQTTTests(unittest.TestCase):
         [               # Different topic, no json_key
             {'address': 13050, 'pub_topic': 'ems/EMS_MODEA'},
             {'address': 13050, 'json_key': 'A', 'pub_topic': 'ems/EMS_MODEB'}
+        ],
+        [               # Retain specified twice and consistent
+            {'address': 13050, 'json_key': 'A', 'pub_topic': 'ems/EMS_MODE', 'retain': True},
+            {'address': 13050, 'json_key': 'B', 'pub_topic': 'ems/EMS_MODE', 'retain': True}
         ]]
         invalids = [[   # Duplicate json_key for a topic
             {'address': 13050, 'json_key': 'A', 'pub_topic': 'ems/EMS_MODE'},
@@ -387,6 +391,10 @@ class MQTTTests(unittest.TestCase):
         [               # Missing json_key for a register with a duplicated pub_topic
             {'address': 13049, 'pub_topic': 'ems/EMS_MODE'},
             {'address': 13050, 'json_key': 'A', 'pub_topic': 'ems/EMS_MODE'}
+        ],
+        [               # Retain specified twice and inconsistent
+            {'address': 13050, 'json_key': 'A', 'pub_topic': 'ems/EMS_MODE', 'retain': True},
+            {'address': 13050, 'json_key': 'B', 'pub_topic': 'ems/EMS_MODE', 'retain': False}
         ]]
         for valid in valids:
             try:
