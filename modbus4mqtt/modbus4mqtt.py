@@ -116,7 +116,7 @@ class mqtt_interface():
                 self._mqtt_client.publish(self.prefix+register['pub_topic'], value, retain=retain)
 
         for topic, message in json_messages.items():
-            m = json.dumps(message)
+            m = json.dumps(message, sort_keys=True)
             self._mqtt_client.publish(self.prefix+topic, m, retain=json_messages_retain[topic])
 
     def _on_connect(self, client, userdata, flags, rc):
