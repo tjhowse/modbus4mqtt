@@ -147,9 +147,36 @@ class mqtt_interface():
                 continue
             self._mb.set_value(register.get('table', 'holding'), register['address'], int(value), register.get('mask', 0xFFFF))
 
+    # This throws ValueError exceptions if the imported registers are invalid
+    @staticmethod
+    def _validate_registers(registers):
+        all_pub_topics = set()
+        duplicate_pub_topics = set()
+        # Key: shared pub_topics, value: list of json_keys
+        duplicate_json_keys = {}
+
+        # Look for duplicate pub_topics
+        for register in registers:
+            if register['pub_topic'] in all_pub_topics:
+                duplicate_pub_topics.add(register['pub_topic'])
+                duplicate_json_keys[register['pub_topic']] = []
+            all_pub_topics.add(register['pub_topic'])
+
+        # Check that all registers with duplicate pub topics have json_keys
+        for register in registers:
+            if register['pub_topic'] in duplicate_pub_topics:
+                if 'json_key' not in register:
+                    raise ValueError("Bad YAML configuration. pub_topic '{}' duplicated across registers without json_key field. Registers that share a pub_topic must also have a unique json_key.".format(register['pub_topic']))
+                if register['json_key'] in duplicate_json_keys[register['pub_topic']]:
+                    raise ValueError("Bad YAML configuration. pub_topic '{}' duplicated across registers with a duplicated json_key field. Registers that share a pub_topic must also have a unique json_key.".format(register['pub_topic']))
+                duplicate_json_keys[register['pub_topic']] += [register['json_key']]
+
     def _load_modbus_config(self, path):
         yaml=YAML(typ='safe')
-        return yaml.load(open(path,'r').read())
+        result = yaml.load(open(path,'r').read())
+        registers = [register for register in result['registers'] if 'pub_topic' in register]
+        mqtt_interface._validate_registers(registers)
+        return result
 
     def loop_forever(self):
         while True:
