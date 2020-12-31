@@ -115,6 +115,7 @@ class mqtt_interface():
                 retain = register.get('retain', False)
                 self._mqtt_client.publish(self.prefix+register['pub_topic'], value, retain=retain)
 
+        # Transmit the queued JSON messages.
         for topic, message in json_messages.items():
             m = json.dumps(message, sort_keys=True)
             self._mqtt_client.publish(self.prefix+topic, m, retain=json_messages_retain[topic])
