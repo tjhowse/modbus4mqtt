@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 from time import sleep
+import json
 import logging
 from ruamel.yaml import YAML
 import click
@@ -77,6 +78,10 @@ class mqtt_interface():
             self.connect_modbus()
             return
 
+        # This is used to store values that are published as JSON messages rather than individual values
+        json_messages = {}
+        json_messages_retain = {}
+
         for register in self._get_registers_with('pub_topic'):
             try:
                 value = self._mb.get_value(register.get('table', 'holding'), register['address'])
@@ -98,8 +103,22 @@ class mqtt_interface():
                 if value in register['value_map'].values():
                     # This is a bit weird...
                     value = [human for human, raw in register['value_map'].items() if raw == value][0]
-            retain = register.get('retain', False)
-            self._mqtt_client.publish(self.prefix+register['pub_topic'], value, retain=retain)
+            if register.get('json_key', False):
+                # This value won't get published to MQTT immediately. It gets stored and sent at the end of the poll.
+                if register['pub_topic'] not in json_messages:
+                    json_messages[register['pub_topic']] = {}
+                    json_messages_retain[register['pub_topic']] = False
+                json_messages[register['pub_topic']][register['json_key']] = value
+                if 'retain' in register:
+                    json_messages_retain[register['pub_topic']] = register['retain']
+            else:
+                retain = register.get('retain', False)
+                self._mqtt_client.publish(self.prefix+register['pub_topic'], value, retain=retain)
+
+        # Transmit the queued JSON messages.
+        for topic, message in json_messages.items():
+            m = json.dumps(message, sort_keys=True)
+            self._mqtt_client.publish(self.prefix+topic, m, retain=json_messages_retain[topic])
 
     def _on_connect(self, client, userdata, flags, rc):
         if rc == 0:
@@ -121,6 +140,7 @@ class mqtt_interface():
 
     def _on_message(self, client, userdata, msg):
         # print("got a message: {}: {}".format(msg.topic, msg.payload))
+        # TODO Handle json_key writes. https://github.com/tjhowse/modbus4mqtt/issues/23
         topic = msg.topic[len(self.prefix):]
         for register in [register for register in self.registers if 'set_topic' in register]:
             if topic != register['set_topic']:
@@ -147,9 +167,47 @@ class mqtt_interface():
                 continue
             self._mb.set_value(register.get('table', 'holding'), register['address'], int(value), register.get('mask', 0xFFFF))
 
+    # This throws ValueError exceptions if the imported registers are invalid
+    @staticmethod
+    def _validate_registers(registers):
+        all_pub_topics = set()
+        duplicate_pub_topics = set()
+        # Key: shared pub_topics, value: list of json_keys
+        duplicate_json_keys = {}
+        # Key: shared pub_topics, value: set of retain values (true/false)
+        retain_setting = {}
+
+        # Look for duplicate pub_topics
+        for register in registers:
+            if register['pub_topic'] in all_pub_topics:
+                duplicate_pub_topics.add(register['pub_topic'])
+                duplicate_json_keys[register['pub_topic']] = []
+                retain_setting[register['pub_topic']] = set()
+            if 'json_key' in register and 'set_topic' in register:
+                raise ValueError("Bad YAML configuration. Register with set_topic '{}' has a json_key specified. This is invalid. See https://github.com/tjhowse/modbus4mqtt/issues/23 for details.".format(register['set_topic']))
+            all_pub_topics.add(register['pub_topic'])
+
+        # Check that all registers with duplicate pub topics have json_keys
+        for register in registers:
+            if register['pub_topic'] in duplicate_pub_topics:
+                if 'json_key' not in register:
+                    raise ValueError("Bad YAML configuration. pub_topic '{}' duplicated across registers without json_key field. Registers that share a pub_topic must also have a unique json_key.".format(register['pub_topic']))
+                if register['json_key'] in duplicate_json_keys[register['pub_topic']]:
+                    raise ValueError("Bad YAML configuration. pub_topic '{}' duplicated across registers with a duplicated json_key field. Registers that share a pub_topic must also have a unique json_key.".format(register['pub_topic']))
+                duplicate_json_keys[register['pub_topic']] += [register['json_key']]
+                if 'retain' in register:
+                    retain_setting[register['pub_topic']].add(register['retain'])
+        # Check that there are no disagreements as to whether this pub_topic should be retained or not.
+        for topic, retain_set in retain_setting.items():
+            if len(retain_set) > 1:
+                raise ValueError("Bad YAML configuration. pub_topic '{}' has conflicting retain settings.".format(topic))
+
     def _load_modbus_config(self, path):
         yaml=YAML(typ='safe')
-        return yaml.load(open(path,'r').read())
+        result = yaml.load(open(path,'r').read())
+        registers = [register for register in result['registers'] if 'pub_topic' in register]
+        mqtt_interface._validate_registers(registers)
+        return result
 
     def loop_forever(self):
         while True:

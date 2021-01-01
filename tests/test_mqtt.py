@@ -366,5 +366,73 @@ class MQTTTests(unittest.TestCase):
 
                 mock_mqtt().publish.assert_any_call(MQTT_TOPIC_PREFIX+'/publish', 2, retain=False)
 
+    def test_json_key(self):
+        # Validating the various json_key rules is among the responsibilities of test_register_validation() below.
+        with patch('paho.mqtt.client.Client') as mock_mqtt:
+            with patch('modbus4mqtt.modbus_interface.modbus_interface') as mock_modbus:
+                mock_modbus().connect.side_effect = self.connect_success
+                mock_modbus().get_value.side_effect = self.read_modbus_register
+
+                m = modbus4mqtt.mqtt_interface('kroopit', 1885, 'brengis', 'pranto', './tests/test_json_key.yaml', MQTT_TOPIC_PREFIX)
+                m.connect()
+
+                self.modbus_tables['holding'][0] = 0
+                self.modbus_tables['holding'][1] = 1
+                self.modbus_tables['holding'][2] = 2
+                self.modbus_tables['holding'][3] = 3
+                m.poll()
+
+                mock_mqtt().publish.assert_any_call(MQTT_TOPIC_PREFIX+'/publish2', '{"A": 3}', retain=False)
+                mock_mqtt().publish.assert_any_call(MQTT_TOPIC_PREFIX+'/publish', '{"A": 1, "B": "off"}', retain=True)
+
+    def test_register_validation(self):
+        valids = [[     # Different json_keys for same topic
+            {'address': 13049, 'json_key': 'a', 'pub_topic': 'ems/EMS_MODE'},
+            {'address': 13050, 'json_key': 'A', 'pub_topic': 'ems/EMS_MODE'},
+            {'address': 13050, 'json_key': 'b', 'pub_topic': 'ems/EMS_MODE'}
+        ],
+        [               # Different topics, duplicate json_key
+            {'address': 13050, 'json_key': 'A', 'pub_topic': 'ems/EMS_MODEA'},
+            {'address': 13050, 'json_key': 'A', 'pub_topic': 'ems/EMS_MODEB'}
+        ],
+        [               # Different topic, no json_key
+            {'address': 13050, 'pub_topic': 'ems/EMS_MODEA'},
+            {'address': 13050, 'json_key': 'A', 'pub_topic': 'ems/EMS_MODEB'}
+        ],
+        [               # Retain specified twice and consistent
+            {'address': 13050, 'json_key': 'A', 'pub_topic': 'ems/EMS_MODE', 'retain': True},
+            {'address': 13050, 'json_key': 'B', 'pub_topic': 'ems/EMS_MODE', 'retain': True}
+        ]]
+        invalids = [[   # Duplicate json_key for a topic
+            {'address': 13050, 'json_key': 'A', 'pub_topic': 'ems/EMS_MODE'},
+            {'address': 13050, 'json_key': 'A', 'pub_topic': 'ems/EMS_MODE'}
+        ],
+        [               # Missing json_key for a register with a duplicated pub_topic
+            {'address': 13049, 'pub_topic': 'ems/EMS_MODE'},
+            {'address': 13050, 'json_key': 'A', 'pub_topic': 'ems/EMS_MODE'}
+        ],
+        [               # Retain specified twice and inconsistent
+            {'address': 13050, 'json_key': 'A', 'pub_topic': 'ems/EMS_MODE', 'retain': True},
+            {'address': 13050, 'json_key': 'B', 'pub_topic': 'ems/EMS_MODE', 'retain': False}
+        ],
+        [               # set_topic and json_key both specified
+            {'address': 13050, 'json_key': 'A', 'pub_topic': 'ems/EMS_MODE', 'set_topic': 'ems/EMS_MODE/set', 'retain': True},
+            {'address': 13050, 'json_key': 'B', 'pub_topic': 'ems/EMS_MODE', 'retain': False}
+        ]]
+        for valid in valids:
+            try:
+                modbus4mqtt.mqtt_interface._validate_registers(valid)
+            except:
+                self.fail("Threw an exception checking a valid register configuration")
+        for invalid in invalids:
+            fail = False
+            try:
+                modbus4mqtt.mqtt_interface._validate_registers(invalid)
+            except:
+                fail = True
+            if not fail:
+                self.fail("Didn't throw an exception checking an invalid register configuration")
+
+
 if __name__ == "__main__":
     unittest.main()
