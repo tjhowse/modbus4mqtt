@@ -86,6 +86,9 @@ registers:
   - pub_topic: "load_control/optimized/end_time"
     address: 13014
     json_key: minutes
+  - pub_topic: "external_temperature"
+    address: 13015
+    type: int16
 ```
 
 This section of the YAML lists all the modbus registers that you consider interesting.
@@ -102,3 +105,4 @@ This section of the YAML lists all the modbus registers that you consider intere
 | scale | Optional | 1 | After reading a value from the Modbus register it will be multiplied by this scalar before being published to MQTT. Values published on this register's `set_topic` will be divided by this scalar before being written to Modbus. |
 | mask | Optional | 0xFFFF | This is a 16-bit number that can be used to select a part of a Modbus register to be referenced by this register. For example a mask of `0xFF00` will map to the most significant byte of the 16-bit Modbus register at `address`. A mask of `0x0001` will reference only the least significant bit of this register. |
 | json_key | Optional | N/A | The value of this register will be published to its pub_topic in JSON format. E.G. `{ key: value }` Registers with a json_key specified can share a pub_topic. All registers with shared pub_topics must have a json_key specified. In this way, multiple registers can be published to the same topic in a single JSON message. If any of the registers that share a pub_topic have the retain field set that will affect the published JSON message. Conflicting retain settings are invalid. The keys will be alphabetically sorted. |
+| type | Optional | uint16 | The type of the value stored at the modbus address provided. Only uint16 (unsigned 16-bit integer) and int16 (signed 16-bit integer) are currently supported. |

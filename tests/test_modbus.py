@@ -210,3 +210,14 @@ class ModbusTests(unittest.TestCase):
                 bad_scan_batching = modbus_interface.MIN_SCAN_BATCHING-1
                 modbus_interface.modbus_interface('1.1.1.1', 111, 2, scan_batching=bad_scan_batching)
                 self.assertIn("Bad value for scan_batching: {}. Enforcing minimum value of {}".format(bad_scan_batching, modbus_interface.MIN_SCAN_BATCHING), mock_logger.output[-1])
+
+    def test_type_conversions(self):
+        with patch('modbus4mqtt.modbus_interface.ModbusTcpClient') as mock_modbus:
+            a = modbus_interface._convert_from_type_to_uint16(-1, 'int16')
+            self.assertEqual(a, 2**16-1)
+            a = modbus_interface._convert_from_uint16_to_type(2**16-1, 'int16')
+            self.assertEqual(a, -1)
+            a = modbus_interface._convert_from_type_to_uint16(10, 'uint16')
+            self.assertEqual(a, 10)
+            a = modbus_interface._convert_from_uint16_to_type(10, 'uint16')
+            self.assertEqual(a, 10)
