@@ -183,6 +183,8 @@ class mqtt_interface():
                 duplicate_pub_topics.add(register['pub_topic'])
                 duplicate_json_keys[register['pub_topic']] = []
                 retain_setting[register['pub_topic']] = set()
+            if 'json_key' in register and 'set_topic' in register:
+                raise ValueError("Bad YAML configuration. Register with set_topic '{}' has a json_key specified. This is invalid. See https://github.com/tjhowse/modbus4mqtt/issues/23 for details.".format(register['set_topic']))
             all_pub_topics.add(register['pub_topic'])
 
         # Check that all registers with duplicate pub topics have json_keys

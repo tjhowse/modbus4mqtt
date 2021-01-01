@@ -414,6 +414,10 @@ class MQTTTests(unittest.TestCase):
         [               # Retain specified twice and inconsistent
             {'address': 13050, 'json_key': 'A', 'pub_topic': 'ems/EMS_MODE', 'retain': True},
             {'address': 13050, 'json_key': 'B', 'pub_topic': 'ems/EMS_MODE', 'retain': False}
+        ],
+        [               # set_topic and json_key both specified
+            {'address': 13050, 'json_key': 'A', 'pub_topic': 'ems/EMS_MODE', 'set_topic': 'ems/EMS_MODE/set', 'retain': True},
+            {'address': 13050, 'json_key': 'B', 'pub_topic': 'ems/EMS_MODE', 'retain': False}
         ]]
         for valid in valids:
             try:
