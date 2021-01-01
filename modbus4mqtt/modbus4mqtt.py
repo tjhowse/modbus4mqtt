@@ -10,6 +10,8 @@ import paho.mqtt.client as mqtt
 from . import modbus_interface
 from . import version
 
+MAX_DECIMAL_POINTS = 4
+
 class mqtt_interface():
     def __init__(self, hostname, port, username, password, config_file, mqtt_topic_prefix):
         self.hostname = hostname
@@ -95,6 +97,8 @@ class mqtt_interface():
             value = modbus_interface._convert_from_uint16_to_type(value, type)
             # Scale the value, if required.
             value *= register.get('scale', 1)
+            # Clamp the number of decimal points
+            value = round(value, MAX_DECIMAL_POINTS)
             changed = False
             if value != register['value']:
                 changed = True

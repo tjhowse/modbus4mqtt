@@ -150,3 +150,254 @@ registers:
     address: 13137
   - pub_topic: "bat_usage_time/weekend_usage/end_time_2_minutes"
     address: 13138
+  - pub_topic: "solar"
+    json_key: daily_pv_power
+    type: uint16
+    address: 5003
+    table: input
+    pub_only_on_change: false
+    scale: 100
+  - pub_topic: "solar"
+    json_key: lifetime_pv_power
+    type: uint16
+    address: 5004
+    table: input
+    pub_only_on_change: false
+  - pub_topic: "solar"
+    json_key: total_run_time
+    type: uint16
+    address: 5006
+    table: input
+    pub_only_on_change: false
+  - pub_topic: "solar"
+    json_key: internal_temp
+    type: uint16
+    address: 5008
+    table: input
+    pub_only_on_change: false
+    scale: 0.1
+  - pub_topic: "solar"
+    json_key: pv1_voltage
+    type: uint16
+    address: 5011
+    table: input
+    pub_only_on_change: false
+    scale: 0.1
+  - pub_topic: "solar"
+    json_key: pv1_current
+    type: uint16
+    address: 5012
+    table: input
+    pub_only_on_change: false
+    scale: 0.1
+  - pub_topic: "solar"
+    json_key: pv2_voltage
+    type: uint16
+    address: 5013
+    table: input
+    pub_only_on_change: false
+    scale: 0.1
+  - pub_topic: "solar"
+    json_key: pv2_current
+    type: uint16
+    address: 5014
+    table: input
+    pub_only_on_change: false
+    scale: 0.1
+  - pub_topic: "solar"
+    json_key: total_pv_power
+    type: uint16
+    address: 5017
+    table: input
+    pub_only_on_change: false
+  - pub_topic: "solar"
+    json_key: grid_voltage
+    type: uint16
+    address: 5019
+    table: input
+    pub_only_on_change: false
+    scale: 0.1
+  - pub_topic: "solar"
+    json_key: inverter_current
+    type: uint16
+    address: 5022
+    table: input
+    pub_only_on_change: false
+    scale: 0.1
+  - pub_topic: "solar"
+    json_key: inverter_ac_output
+    type: uint16
+    address: 5031
+    table: input
+    pub_only_on_change: false
+  - pub_topic: "solar"
+    json_key: grid_frequency
+    type: uint16
+    address: 5036
+    table: input
+    pub_only_on_change: false
+
+  - pub_topic: "solar"
+    json_key: running_state
+    type: uint16
+    address: 13001
+    table: input
+    pub_only_on_change: false
+    scale: 0.1
+  - pub_topic: "solar"
+    json_key: daily_pv_energy_10
+    type: uint16
+    address: 13002
+    table: input
+    pub_only_on_change: false
+    scale: 0.1
+  - pub_topic: "solar"
+    json_key: total_pv_energy_10
+    type: uint16
+    address: 13003
+    table: input
+    pub_only_on_change: false
+    scale: 0.1
+  - pub_topic: "solar"
+    json_key: daily_export_energy_10
+    type: uint16
+    address: 13005
+    table: input
+    pub_only_on_change: false
+    scale: 0.1
+  - pub_topic: "solar"
+    json_key: total_export_energy_10
+    type: uint16
+    address: 13006
+    table: input
+    pub_only_on_change: false
+    scale: 0.1
+  - pub_topic: "solar"
+    json_key: load_power
+    type: uint16
+    address: 13008
+    table: input
+    pub_only_on_change: false
+  - pub_topic: "solar"
+    json_key: export_power
+    type: int16
+    address: 13010
+    table: input
+    pub_only_on_change: false
+  - pub_topic: "solar"
+    json_key: grid_import_or_export
+    type: int16
+    address: 13011
+    table: input
+    pub_only_on_change: false
+  - pub_topic: "solar"
+    json_key: daily_charge_energy_10
+    type: uint16
+    address: 13012
+    table: input
+    pub_only_on_change: false
+    scale: 0.1
+  - pub_topic: "solar"
+    json_key: total_charge_energy_10
+    type: uint16
+    address: 13013
+    table: input
+    pub_only_on_change: false
+    scale: 0.1
+  - pub_topic: "solar"
+    json_key: co2_emission_reduction
+    type: uint16
+    address: 13015
+    table: input
+    pub_only_on_change: false
+    scale: 0.1
+  - pub_topic: "solar"
+    json_key: daily_use_energy_10
+    type: uint16
+    address: 13017
+    table: input
+    pub_only_on_change: false
+    scale: 0.1
+  - pub_topic: "solar"
+    json_key: total_use_energy_10
+    type: uint16
+    address: 13018
+    table: input
+    pub_only_on_change: false
+    scale: 0.1
+  - pub_topic: "solar"
+    json_key: battery_voltage_10
+    type: uint16
+    address: 13020
+    table: input
+    pub_only_on_change: false
+    scale: 0.1
+  - pub_topic: "solar"
+    json_key: battery_current_10
+    type: uint16
+    address: 13021
+    table: input
+    pub_only_on_change: false
+    scale: 0.1
+  - pub_topic: "solar"
+    json_key: battery_power
+    type: uint16
+    address: 13022
+    table: input
+    pub_only_on_change: false
+  - pub_topic: "solar"
+    json_key: battery_level_10
+    type: uint16
+    address: 13023
+    table: input
+    pub_only_on_change: false
+    scale: 0.1
+  - pub_topic: "solar"
+    json_key: battery_health_10
+    type: uint16
+    address: 13024
+    table: input
+    pub_only_on_change: false
+    scale: 0.1
+  - pub_topic: "solar"
+    json_key: battery_temp_10
+    type: uint16
+    address: 13025
+    table: input
+    pub_only_on_change: false
+    scale: 0.1
+  - pub_topic: "solar"
+    json_key: daily_discharge_energy_10
+    type: uint16
+    address: 13026
+    table: input
+    pub_only_on_change: false
+    scale: 0.1
+  - pub_topic: "solar"
+    json_key: total_discharge_energy_10
+    type: uint16
+    address: 13027
+    table: input
+    pub_only_on_change: false
+    scale: 0.1
+  - pub_topic: "solar"
+    json_key: use_power
+    type: uint16
+    address: 13029
+    table: input
+    pub_only_on_change: false
+    scale: 0.1
+  - pub_topic: "solar"
+    json_key: inverter_current_10
+    type: uint16
+    address: 13031
+    table: input
+    pub_only_on_change: false
+    scale: 0.1
+  - pub_topic: "solar"
+    json_key: pv_power
+    type: uint16
+    address: 13034
+    table: input
+    pub_only_on_change: false
+    scale: 0.1
