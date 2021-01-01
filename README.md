@@ -94,7 +94,7 @@ This section of the YAML lists all the modbus registers that you consider intere
 | ---------- | -------- | ------- | ----------- |
 | address | Required | N/A | The decimal address of the register to read from the device, starting at 0. Many modbus devices enumerate registers beginning at 1, so beware. |
 | pub_topic | Optional | N/A | This is the topic to which the value of this register will be published. |
-| set_topic | Optional | N/A | Values published to this topic will be written to the Modbus device. |
+| set_topic | Optional | N/A | Values published to this topic will be written to the Modbus device. Cannot yet be combined with json_key. See https://github.com/tjhowse/modbus4mqtt/issues/23 for details. |
 | retain | Optional | false | Controls whether the value of this register will be published with the retain bit set. |
 | pub_only_on_change | Optional | true | Controls whether this register will only be published if its value changed from the previous poll. |
 | table | Optional | holding | The Modbus table to read from the device. Must be 'holding' or 'input'. |
