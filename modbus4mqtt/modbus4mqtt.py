@@ -140,7 +140,7 @@ class mqtt_interface():
 
     def _on_message(self, client, userdata, msg):
         # print("got a message: {}: {}".format(msg.topic, msg.payload))
-        # TODO Handle json_key writes.
+        # TODO Handle json_key writes. https://github.com/tjhowse/modbus4mqtt/issues/23
         topic = msg.topic[len(self.prefix):]
         for register in [register for register in self.registers if 'set_topic' in register]:
             if topic != register['set_topic']:
