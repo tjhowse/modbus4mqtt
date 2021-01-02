@@ -10,6 +10,8 @@ import paho.mqtt.client as mqtt
 from . import modbus_interface
 from . import version
 
+MAX_DECIMAL_POINTS = 8
+
 class mqtt_interface():
     def __init__(self, hostname, port, username, password, config_file, mqtt_topic_prefix):
         self.hostname = hostname
@@ -90,8 +92,13 @@ class mqtt_interface():
                 continue
             # Filter the value through the mask, if present.
             value &= register.get('mask', 0xFFFF)
+            # Tweak the value according to the type.
+            type = register.get('type', 'uint16')
+            value = modbus_interface._convert_from_uint16_to_type(value, type)
             # Scale the value, if required.
             value *= register.get('scale', 1)
+            # Clamp the number of decimal points
+            value = round(value, MAX_DECIMAL_POINTS)
             changed = False
             if value != register['value']:
                 changed = True
@@ -165,6 +172,8 @@ class mqtt_interface():
             except ValueError:
                 logging.error("Failed to convert register value for writing. Bad/missing value_map? Topic: {}, Value: {}".format(topic, value))
                 continue
+            type = register.get('type', 'uint16')
+            value = modbus_interface._convert_from_type_to_uint16(value, type)
             self._mb.set_value(register.get('table', 'holding'), register['address'], int(value), register.get('mask', 0xFFFF))
 
     # This throws ValueError exceptions if the imported registers are invalid
@@ -176,9 +185,13 @@ class mqtt_interface():
         duplicate_json_keys = {}
         # Key: shared pub_topics, value: set of retain values (true/false)
         retain_setting = {}
+        valid_types = ['uint16', 'int16']
 
         # Look for duplicate pub_topics
         for register in registers:
+            type = register.get('type', 'uint16')
+            if type not in valid_types:
+                raise ValueError("Bad YAML configuration. Register has invalid type '{}'.".format(type))
             if register['pub_topic'] in all_pub_topics:
                 duplicate_pub_topics.add(register['pub_topic'])
                 duplicate_json_keys[register['pub_topic']] = []

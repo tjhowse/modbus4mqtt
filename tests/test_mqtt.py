@@ -385,6 +385,42 @@ class MQTTTests(unittest.TestCase):
                 mock_mqtt().publish.assert_any_call(MQTT_TOPIC_PREFIX+'/publish2', '{"A": 3}', retain=False)
                 mock_mqtt().publish.assert_any_call(MQTT_TOPIC_PREFIX+'/publish', '{"A": 1, "B": "off"}', retain=True)
 
+    def test_type(self):
+        # Validating the various json_key rules is among the responsibilities of test_register_validation() below.
+        with patch('paho.mqtt.client.Client') as mock_mqtt:
+            with patch('modbus4mqtt.modbus_interface.modbus_interface') as mock_modbus:
+                mock_modbus().connect.side_effect = self.connect_success
+                mock_modbus().get_value.side_effect = self.read_modbus_register
+                mock_modbus().set_value.side_effect = self.write_modbus_register
+
+                m = modbus4mqtt.mqtt_interface('kroopit', 1885, 'brengis', 'pranto', './tests/test_type.yaml', MQTT_TOPIC_PREFIX)
+                m.connect()
+
+                self.modbus_tables['holding'][0] = 0
+                self.modbus_tables['holding'][1] = 32767
+                self.modbus_tables['holding'][2] = 32768
+                self.modbus_tables['holding'][3] = 65535
+                m.poll()
+
+                mock_mqtt().publish.assert_any_call(MQTT_TOPIC_PREFIX+'/publish_uint16_1', 0, retain=False)
+                mock_mqtt().publish.assert_any_call(MQTT_TOPIC_PREFIX+'/publish_uint16_2', 32767, retain=False)
+                mock_mqtt().publish.assert_any_call(MQTT_TOPIC_PREFIX+'/publish_uint16_3', 32768, retain=False)
+                mock_mqtt().publish.assert_any_call(MQTT_TOPIC_PREFIX+'/publish_uint16_4', 65535, retain=False)
+                mock_mqtt().publish.assert_any_call(MQTT_TOPIC_PREFIX+'/publish_int16_1', 0, retain=False)
+                mock_mqtt().publish.assert_any_call(MQTT_TOPIC_PREFIX+'/publish_int16_2', 32767, retain=False)
+                mock_mqtt().publish.assert_any_call(MQTT_TOPIC_PREFIX+'/publish_int16_3', -32768, retain=False)
+                mock_mqtt().publish.assert_any_call(MQTT_TOPIC_PREFIX+'/publish_int16_4', -1, retain=False)
+
+                msg = MQTTMessage(topic=bytes(MQTT_TOPIC_PREFIX+'/publish_int16_1_set', 'utf-8'))
+                msg.payload = b'-2'
+                m._on_message(None, None, msg)
+                self.assertEqual(self.modbus_tables['holding'][0], 65534)
+
+                msg = MQTTMessage(topic=bytes(MQTT_TOPIC_PREFIX+'/publish_uint16_1_set', 'utf-8'))
+                msg.payload = b'65533'
+                m._on_message(None, None, msg)
+                self.assertEqual(self.modbus_tables['holding'][0], 65533)
+
     def test_register_validation(self):
         valids = [[     # Different json_keys for same topic
             {'address': 13049, 'json_key': 'a', 'pub_topic': 'ems/EMS_MODE'},
@@ -402,6 +438,10 @@ class MQTTTests(unittest.TestCase):
         [               # Retain specified twice and consistent
             {'address': 13050, 'json_key': 'A', 'pub_topic': 'ems/EMS_MODE', 'retain': True},
             {'address': 13050, 'json_key': 'B', 'pub_topic': 'ems/EMS_MODE', 'retain': True}
+        ],
+        [               # Valid types specified
+            {'address': 13050, 'pub_topic': 'ems/EMS_MODEA', 'type': 'uint16'},
+            {'address': 13050, 'pub_topic': 'ems/EMS_MODEB', 'type': 'int16'}
         ]]
         invalids = [[   # Duplicate json_key for a topic
             {'address': 13050, 'json_key': 'A', 'pub_topic': 'ems/EMS_MODE'},
@@ -418,6 +458,10 @@ class MQTTTests(unittest.TestCase):
         [               # set_topic and json_key both specified
             {'address': 13050, 'json_key': 'A', 'pub_topic': 'ems/EMS_MODE', 'set_topic': 'ems/EMS_MODE/set', 'retain': True},
             {'address': 13050, 'json_key': 'B', 'pub_topic': 'ems/EMS_MODE', 'retain': False}
+        ],
+        [               # Invalid types specified
+            {'address': 13050, 'pub_topic': 'ems/EMS_MODEA', 'type': 'uint32'},
+            {'address': 13050, 'pub_topic': 'ems/EMS_MODEB', 'type': 'float64'}
         ]]
         for valid in valids:
             try:

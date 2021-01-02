@@ -143,3 +143,23 @@ class modbus_interface():
         except:
             # The result doesn't have a registers attribute, something has gone wrong!
             raise ValueError("Failed to read {} {} table registers starting from {}: {}".format(count, table, start, result))
+
+def _convert_from_uint16_to_type(value, type):
+    type = type.strip().lower()
+    if type == 'uint16':
+        return value
+    elif type == 'int16':
+        if value >= 2**15:
+            return value - 2**16
+        return value
+    raise ValueError("Unrecognised type conversion attempted: uint16 to {}".format(type))
+
+def _convert_from_type_to_uint16(value, type):
+    type = type.strip().lower()
+    if type == 'uint16':
+        return value
+    elif type == 'int16':
+        if value < 0:
+            return value + 2**16
+        return value
+    raise ValueError("Unrecognised type conversion attempted: {} to uint16".format(type))
