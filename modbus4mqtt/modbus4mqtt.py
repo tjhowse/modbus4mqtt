@@ -10,7 +10,7 @@ import paho.mqtt.client as mqtt
 from . import modbus_interface
 from . import version
 
-MAX_DECIMAL_POINTS = 4
+MAX_DECIMAL_POINTS = 8
 
 class mqtt_interface():
     def __init__(self, hostname, port, username, password, config_file, mqtt_topic_prefix):
