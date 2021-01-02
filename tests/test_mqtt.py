@@ -391,6 +391,7 @@ class MQTTTests(unittest.TestCase):
             with patch('modbus4mqtt.modbus_interface.modbus_interface') as mock_modbus:
                 mock_modbus().connect.side_effect = self.connect_success
                 mock_modbus().get_value.side_effect = self.read_modbus_register
+                mock_modbus().set_value.side_effect = self.write_modbus_register
 
                 m = modbus4mqtt.mqtt_interface('kroopit', 1885, 'brengis', 'pranto', './tests/test_type.yaml', MQTT_TOPIC_PREFIX)
                 m.connect()
@@ -409,6 +410,16 @@ class MQTTTests(unittest.TestCase):
                 mock_mqtt().publish.assert_any_call(MQTT_TOPIC_PREFIX+'/publish_int16_2', 32767, retain=False)
                 mock_mqtt().publish.assert_any_call(MQTT_TOPIC_PREFIX+'/publish_int16_3', -32768, retain=False)
                 mock_mqtt().publish.assert_any_call(MQTT_TOPIC_PREFIX+'/publish_int16_4', -1, retain=False)
+
+                msg = MQTTMessage(topic=bytes(MQTT_TOPIC_PREFIX+'/publish_int16_1_set', 'utf-8'))
+                msg.payload = b'-2'
+                m._on_message(None, None, msg)
+                self.assertEqual(self.modbus_tables['holding'][0], 65534)
+
+                msg = MQTTMessage(topic=bytes(MQTT_TOPIC_PREFIX+'/publish_uint16_1_set', 'utf-8'))
+                msg.payload = b'65533'
+                m._on_message(None, None, msg)
+                self.assertEqual(self.modbus_tables['holding'][0], 65533)
 
     def test_register_validation(self):
         valids = [[     # Different json_keys for same topic
