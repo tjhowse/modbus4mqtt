@@ -229,12 +229,12 @@ class mqtt_interface():
             sleep(self.config['update_rate'])
 
 @click.command()
-@click.option('--hostname', default='localhost', help='The hostname or IP address of the MQTT server.')
-@click.option('--port', default=1883, help='The hostname or IP address of the MQTT server.')
-@click.option('--username', default='username', help='The hostname or IP address of the MQTT server.')
-@click.option('--password', default='password', help='The hostname or IP address of the MQTT server.')
-@click.option('--config', default='./Sungrow_SH5k_20.yaml', help='The YAML config file for your modbus device.')
-@click.option('--mqtt_topic_prefix', default='modbus4mqtt', help='Prefixed to everything this publishes')
+@click.option('--hostname', default='localhost', help='The hostname or IP address of the MQTT server.', show_default=True)
+@click.option('--port', default=1883, help='The port of the MQTT server.', show_default=True)
+@click.option('--username', default='username', help='The username to authenticate to the MQTT server.', show_default=True)
+@click.option('--password', default='password', help='The password to authenticate to the MQTT server.', show_default=True)
+@click.option('--config', default='./Sungrow_SH5k_20.yaml', help='The YAML config file for your modbus device.', show_default=True)
+@click.option('--mqtt_topic_prefix', default='modbus4mqtt', help='A prefix for published MQTT topics.', show_default=True)
 def main(hostname, port, username, password, config, mqtt_topic_prefix):
     logging.basicConfig(
         format='%(asctime)s %(levelname)-8s %(message)s',

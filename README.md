@@ -26,14 +26,22 @@ be a complete solution.
 
 ## Installation
 
+### Python module
+
 ```bash
 $ pip3 install --user modbus4mqtt
 $ modbus4mqtt --help
 ```
 
+### Docker container
+
 Alternatively you can run Modbus4MQTT in a Docker container. A [Dockerfile](./Dockerfile) example is provided.
 
-You will need to provide the credentials to connect to your MQTT broker, as well as a path to a YAML file that defines the memory map of your Modbus device. You can download these YAML files from this project's github repo.
+```bash
+$ docker pull tjhowse/modbus4mqtt:latest
+$ docker run modbus4mqtt --help
+```
+When launching inside the docker container you will either need to use one of the built-in YAMLs like `/modbus4mqtt/modbus4mqtt/Sungrow_SH5k_20.yaml`, or map your custom YAML into the container in a volume.
 
 ## YAML definition
 
