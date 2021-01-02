@@ -221,3 +221,14 @@ class ModbusTests(unittest.TestCase):
             self.assertEqual(a, 10)
             a = modbus_interface._convert_from_uint16_to_type(10, 'uint16')
             self.assertEqual(a, 10)
+
+            try:
+                a = modbus_interface._convert_from_uint16_to_type(10, 'float16')
+                self.fail("Silently accepted an invalid type conversion.")
+            except:
+                pass
+            try:
+                a = modbus_interface._convert_from_type_to_uint16(10, 'float16')
+                self.fail("Silently accepted an invalid type conversion.")
+            except:
+                pass
