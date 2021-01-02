@@ -150,6 +150,11 @@ registers:
     address: 13137
   - pub_topic: "bat_usage_time/weekend_usage/end_time_2_minutes"
     address: 13138
+
+    # The following registers are published together in one JSON message to replicate the functionality
+    # of pvstats because I didn't want to change my MQTT -> influxdb pipeline when I migrated from pvstats
+    # to modbus4mqtt for these numbers.
+
   - pub_topic: "solar"
     json_key: daily_pv_power
     type: uint16
@@ -401,3 +406,45 @@ registers:
     table: input
     pub_only_on_change: false
     scale: 0.1
+  - pub_topic: "solar"
+    json_key: mystery_5001
+    type: uint16
+    address: 5001
+    table: input
+    pub_only_on_change: false
+  - pub_topic: "solar"
+    json_key: mystery_5033 # Possibly -100% to 100% ?
+    type: int16
+    address: 5033
+    table: input
+    pub_only_on_change: false
+  - pub_topic: "solar"
+    json_key: mystery_5034 # -1 to 0.
+    type: int16
+    address: 5034
+    table: input
+    pub_only_on_change: false
+  - pub_topic: "solar"
+    json_key: mystery_5035 # -1000 to 1000. Possibly needs a 0.1 scale?
+    type: int16
+    address: 5035
+    table: input
+    pub_only_on_change: false
+  - pub_topic: "solar"
+    json_key: mystery_13030 # Constant 85
+    type: uint16
+    address: 13030
+    table: input
+    pub_only_on_change: false
+  - pub_topic: "solar"
+    json_key: mystery_13036 # 0-15. Four-bit state? Possibly?
+    type: uint16
+    address: 13036
+    table: input
+    pub_only_on_change: false
+  - pub_topic: "solar"
+    json_key: mystery_13037 # Accumulates. Possibly total kWh consumed?
+    type: uint16
+    address: 13037
+    table: input
+    pub_only_on_change: false
