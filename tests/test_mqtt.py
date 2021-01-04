@@ -416,6 +416,11 @@ class MQTTTests(unittest.TestCase):
                 m._on_message(None, None, msg)
                 self.assertEqual(self.modbus_tables['holding'][0], 65534)
 
+                msg = MQTTMessage(topic=bytes(MQTT_TOPIC_PREFIX+'/publish_int16_1_set', 'utf-8'))
+                msg.payload = b'2'
+                m._on_message(None, None, msg)
+                self.assertEqual(self.modbus_tables['holding'][0], 2)
+
                 msg = MQTTMessage(topic=bytes(MQTT_TOPIC_PREFIX+'/publish_uint16_1_set', 'utf-8'))
                 msg.payload = b'65533'
                 m._on_message(None, None, msg)
