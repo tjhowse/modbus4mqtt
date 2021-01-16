@@ -1,0 +1,61 @@
+ip: 192.168.0.xxx
+port: 502
+update_rate: 5
+address_offset: 0
+variant: sungrow
+scan_batching: 1
+registers:
+  - pub_topic: "energy_meter_power" # Feed-in power is negative  and taken-back power is positive (W)
+    address: 5082
+    table: 'input'
+    type: int32
+  - pub_topic: "output_power" #total output power kWh
+    type: uint16
+    address: 5000
+    table: 'input'
+    scale: 0.1
+  - pub_topic: "daily_yield"  #daily yield kWh
+    address: 5002
+    table: 'input'
+    scale: 0.1
+  - pub_topic: "total_yield"  #Total yield kWh
+    address: 5003
+    table: 'input'
+  - pub_topic: "total_running_time"  #Total running time (h)
+    address: 5005
+    table: 'input'
+  - pub_topic: "internal_temperature" #inverter internal temperature 0.1C
+    address: 5007
+    table: 'input'
+    scale: 0.1
+  - pub_topic: "dc_output"  #dc output power (W)
+    address: 5016
+    table: 'input'
+  - pub_topic: "phase_a_voltage" #Phase A Voltage (0.1V)
+    address: 5018
+    table: 'input'
+    scale: 0.1
+  - pub_topic: "phase_a_current" #Phase A Current (0.1A)
+    address: 5021
+    table: 'input'
+    scale: 0.1
+  - pub_topic: "ac_output" #AC output power, total active power (W)
+    address: 5030
+    table: 'input'
+  - pub_topic: "power_factor" #Power factor (0.001)
+    address: 5034
+    table: 'input'
+    scale: 0.001
+  - pub_topic: "grid_frequency" #Grid Frequency (0.1Hz)
+    address: 5035
+    table: 'input'
+    scale: 0.1
+  - pub_topic: "device_state" #Device State  (see comments below for states)
+    address: 5037
+    table: 'input'
+  - pub_topic: "daily_running_time" #Daily running time (1m)
+    address: 5112
+    table: 'input'
+
+    #see https://github.com/tjhowse/modbus4mqtt/files/5732710/TI_20190704_Communication.Protocol.for.Residential.Single-phase.Grid-Connected.Inverters_V10_EN.pdf for full list of registers and details
+

@@ -144,6 +144,14 @@ class modbus_interface():
             # The result doesn't have a registers attribute, something has gone wrong!
             raise ValueError("Failed to read {} {} table registers starting from {}: {}".format(count, table, start, result))
 
+def _convert_from_bytes_to_type(value, type):
+    type = type.strip().lower()
+    if type in ['uint16', 'uint32', 'uint64']:
+        return int.from_bytes(value,byteorder='big',signed=False)
+    elif type in ['int16', 'int32', 'int64']:
+        return int.from_bytes(value,byteorder='big',signed=True)
+    raise ValueError("Unrecognised type conversion attempted: bytes to {}".format(type))
+
 def _convert_from_uint16_to_type(value, type):
     type = type.strip().lower()
     if type == 'uint16':
