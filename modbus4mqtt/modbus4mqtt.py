@@ -13,12 +13,16 @@ from . import version
 MAX_DECIMAL_POINTS = 8
 
 class mqtt_interface():
-    def __init__(self, hostname, port, username, password, config_file, mqtt_topic_prefix):
+    def __init__(self, hostname, port, username, password, config_file, mqtt_topic_prefix, insecure, cafile, cert, key):
         self.hostname = hostname
         self._port = port
         self.username = username
         self.password = password
         self.config = self._load_modbus_config(config_file)
+        self.insecure = insecure
+        self.cafile = cafile
+        self.cert = cert
+        self.key = key
         if not mqtt_topic_prefix.endswith('/'):
             mqtt_topic_prefix = mqtt_topic_prefix + '/'
         self.prefix = mqtt_topic_prefix
@@ -65,6 +69,8 @@ class mqtt_interface():
         self._mqtt_client._on_disconnect = self._on_disconnect
         self._mqtt_client._on_message = self._on_message
         self._mqtt_client._on_subscribe = self._on_subscribe
+        if self.insecure == False:
+            self._mqtt_client.tls_set(ca_certs=self.cafile, certfile=self.cert, keyfile=self.key)
         self._mqtt_client.connect(self.hostname, self._port, 60)
         self._mqtt_client.loop_start()
 
@@ -233,15 +239,19 @@ class mqtt_interface():
 @click.option('--port', default=1883, help='The port of the MQTT server.', show_default=True)
 @click.option('--username', default='username', help='The username to authenticate to the MQTT server.', show_default=True)
 @click.option('--password', default='password', help='The password to authenticate to the MQTT server.', show_default=True)
-@click.option('--config', default='./Sungrow_SH5k_20.yaml', help='The YAML config file for your modbus device.', show_default=True)
 @click.option('--mqtt_topic_prefix', default='modbus4mqtt', help='A prefix for published MQTT topics.', show_default=True)
-def main(hostname, port, username, password, config, mqtt_topic_prefix):
+@click.option('--config', default='./Sungrow_SH5k_20.yaml', help='The YAML config file for your modbus device.', show_default=True)
+@click.option('--insecure', default=True, help='Do not check that the server certificate hostname matches the remote hostname.', show_default=True)
+@click.option('--cafile', help='path to a file containing trusted CA certificates to enable encrypted.', show_default=True)
+@click.option('--cert', default=None, help='client certificate for authentication, if required by server..', show_default=True)
+@click.option('--key', default=None, help='client private key for authentication, if required by server..', show_default=True)
+def main(hostname, port, username, password, config, mqtt_topic_prefix, insecure, cafile, cert, key):
     logging.basicConfig(
         format='%(asctime)s %(levelname)-8s %(message)s',
         level=logging.INFO,
         datefmt='%Y-%m-%d %H:%M:%S')
     logging.info("Starting modbus4mqtt v{}".format(version.version))
-    i = mqtt_interface(hostname, port, username, password, config, mqtt_topic_prefix)
+    i = mqtt_interface(hostname, port, username, password, config, mqtt_topic_prefix, insecure, cafile, cert, key)
     i.connect()
     i.loop_forever()
 
