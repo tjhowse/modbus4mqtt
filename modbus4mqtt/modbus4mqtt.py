@@ -14,7 +14,8 @@ MAX_DECIMAL_POINTS = 8
 
 
 class mqtt_interface():
-    def __init__(self, hostname, port, username, password, config_file, mqtt_topic_prefix, insecure, cafile, cert, key):
+    def __init__(self, hostname, port, username, password, config_file, mqtt_topic_prefix,
+                 insecure=True, cafile=None, cert=None, key=None):
         self.hostname = hostname
         self._port = port
         self.username = username
@@ -172,16 +173,16 @@ class mqtt_interface():
                     # Map the value from the human-readable form into the raw modbus number
                     value = register['value_map'][value]
                 except UnicodeDecodeError:
-                    logging.warning("Failed to decode MQTT payload as UTF-8. \
-                                     Can't compare it to the value_map for register {}".format(register))
+                    logging.warning("Failed to decode MQTT payload as UTF-8. "
+                                    "Can't compare it to the value_map for register {}".format(register))
                     continue
             try:
                 # Scale the value, if required.
                 value = float(value)
                 value = round(value/register.get('scale', 1))
             except ValueError:
-                logging.error("Failed to convert register value for writing. \
-                               Bad/missing value_map? Topic: {}, Value: {}".format(topic, value))
+                logging.error("Failed to convert register value for writing. "
+                              "Bad/missing value_map? Topic: {}, Value: {}".format(topic, value))
                 continue
             type = register.get('type', 'uint16')
             value = modbus_interface._convert_from_type_to_uint16(value, type)
@@ -209,8 +210,8 @@ class mqtt_interface():
                 duplicate_json_keys[register['pub_topic']] = []
                 retain_setting[register['pub_topic']] = set()
             if 'json_key' in register and 'set_topic' in register:
-                raise ValueError("Bad YAML configuration. Register with set_topic '{}' has a json_key specified. \
-                                 This is invalid. See https://github.com/tjhowse/modbus4mqtt/issues/23 for details."
+                raise ValueError("Bad YAML configuration. Register with set_topic '{}' has a json_key specified. "
+                                 "This is invalid. See https://github.com/tjhowse/modbus4mqtt/issues/23 for details."
                                  .format(register['set_topic']))
             all_pub_topics.add(register['pub_topic'])
 
@@ -218,13 +219,13 @@ class mqtt_interface():
         for register in registers:
             if register['pub_topic'] in duplicate_pub_topics:
                 if 'json_key' not in register:
-                    raise ValueError("Bad YAML configuration. pub_topic '{}' duplicated across registers without \
-                                      json_key field. Registers that share a pub_topic must also have a unique \
-                                      json_key.".format(register['pub_topic']))
+                    raise ValueError("Bad YAML configuration. pub_topic '{}' duplicated across registers without "
+                                     "json_key field. Registers that share a pub_topic must also have a unique "
+                                     "json_key.".format(register['pub_topic']))
                 if register['json_key'] in duplicate_json_keys[register['pub_topic']]:
-                    raise ValueError("Bad YAML configuration. pub_topic '{}' duplicated across registers with a \
-                                      duplicated json_key field. Registers that share a pub_topic must also have \
-                                      a unique json_key.".format(register['pub_topic']))
+                    raise ValueError("Bad YAML configuration. pub_topic '{}' duplicated across registers with a "
+                                     "duplicated json_key field. Registers that share a pub_topic must also have "
+                                     "a unique json_key.".format(register['pub_topic']))
                 duplicate_json_keys[register['pub_topic']] += [register['json_key']]
                 if 'retain' in register:
                     retain_setting[register['pub_topic']].add(register['retain'])
