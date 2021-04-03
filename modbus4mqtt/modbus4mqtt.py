@@ -15,7 +15,7 @@ MAX_DECIMAL_POINTS = 8
 
 class mqtt_interface():
     def __init__(self, hostname, port, username, password, config_file, mqtt_topic_prefix,
-                 insecure=True, cafile=None, cert=None, key=None):
+                 insecure=False, cafile=None, cert=None, key=None):
         self.hostname = hostname
         self._port = port
         self.username = username
