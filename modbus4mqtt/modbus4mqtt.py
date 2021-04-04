@@ -15,12 +15,13 @@ MAX_DECIMAL_POINTS = 8
 
 class mqtt_interface():
     def __init__(self, hostname, port, username, password, config_file, mqtt_topic_prefix,
-                 insecure=False, cafile=None, cert=None, key=None):
+                 use_tls=True, insecure=False, cafile=None, cert=None, key=None):
         self.hostname = hostname
         self._port = port
         self.username = username
         self.password = password
         self.config = self._load_modbus_config(config_file)
+        self.use_tls = use_tls
         self.insecure = insecure
         self.cafile = cafile
         self.cert = cert
@@ -71,8 +72,9 @@ class mqtt_interface():
         self._mqtt_client._on_disconnect = self._on_disconnect
         self._mqtt_client._on_message = self._on_message
         self._mqtt_client._on_subscribe = self._on_subscribe
-        if self.insecure is False:
+        if self.use_tls:
             self._mqtt_client.tls_set(ca_certs=self.cafile, certfile=self.cert, keyfile=self.key)
+            self._mqtt_client.tls_insecure_set(self.insecure)
         self._mqtt_client.connect(self.hostname, self._port, 60)
         self._mqtt_client.loop_start()
 
@@ -262,21 +264,24 @@ class mqtt_interface():
               help='A prefix for published MQTT topics.', show_default=True)
 @click.option('--config', default='./Sungrow_SH5k_20.yaml',
               help='The YAML config file for your modbus device.', show_default=True)
+@click.option('--use_tls', default=False,
+              help='Configure network encryption and authentication options. Enables SSL/TLS.', show_default=True)
 @click.option('--insecure', default=True,
               help='Do not check that the server certificate hostname matches the remote hostname.', show_default=True)
 @click.option('--cafile', default=None,
-              help='path to a file containing trusted CA certificates to enable encrypted.', show_default=True)
+              help='The path to a file containing trusted CA certificates to enable encryption.', show_default=True)
 @click.option('--cert', default=None,
-              help='client certificate for authentication, if required by server..', show_default=True)
+              help='Client certificate for authentication, if required by server.', show_default=True)
 @click.option('--key', default=None,
-              help='client private key for authentication, if required by server..', show_default=True)
-def main(hostname, port, username, password, config, mqtt_topic_prefix, insecure, cafile, cert, key):
+              help='Client private key for authentication, if required by server.', show_default=True)
+def main(hostname, port, username, password, config, mqtt_topic_prefix, use_tls, insecure, cafile, cert, key):
     logging.basicConfig(
         format='%(asctime)s %(levelname)-8s %(message)s',
         level=logging.INFO,
         datefmt='%Y-%m-%d %H:%M:%S')
     logging.info("Starting modbus4mqtt v{}".format(version.version))
-    i = mqtt_interface(hostname, port, username, password, config, mqtt_topic_prefix, insecure, cafile, cert, key)
+    i = mqtt_interface(hostname, port, username, password, config, mqtt_topic_prefix,
+                       use_tls, insecure, cafile, cert, key)
     i.connect()
     i.loop_forever()
 
