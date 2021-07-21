@@ -47,12 +47,14 @@ class mqtt_interface():
         else:
             word_order = modbus_interface.WordOrder.HighLow
 
-        self._mb = modbus_interface.modbus_interface(self.config['ip'],
+        self._mb = modbus_interface.modbus_interface(self.config.get('ip', None),
                                                      self.config.get('port', 502),
                                                      self.config.get('update_rate', 5),
                                                      variant=self.config.get('variant', None),
                                                      scan_batching=self.config.get('scan_batching', None),
-                                                     word_order=word_order)
+                                                     word_order=word_order,
+                                                     baudrate=self.config.get('baudrate', 19200),
+                                                     method=self.config.get('method', 'rtu'))
         failed_attempts = 1
         while self._mb.connect():
             logging.warning("Modbus connection attempt {} failed. Retrying...".format(failed_attempts))
