@@ -1,7 +1,7 @@
 from time import time, sleep
 import logging
 from queue import Queue
-from pymodbus.client.sync import ModbusTcpClient, ModbusSocketFramer
+from pymodbus.client.sync import ModbusSerialClient, ModbusTcpClient, ModbusSocketFramer
 from pymodbus import exceptions
 from SungrowModbusTcpClient import SungrowModbusTcpClient
 
@@ -15,9 +15,11 @@ DEFAULT_READ_SLEEP_S = 0.05
 
 class modbus_interface():
 
-    def __init__(self, ip, port=502, update_rate_s=DEFAULT_SCAN_RATE_S, variant=None, scan_batching=None):
+    def __init__(self, ip=None, port=502, update_rate_s=DEFAULT_SCAN_RATE_S, variant=None, scan_batching=None, method='rtu', baudrate=9600):
         self._ip = ip
         self._port = port
+        self._method = method
+        self._baudrate = baudrate
         # This is a dict of sets. Each key represents one table of modbus registers.
         # At the moment it has 'input' and 'holding'
         self._tables = {'input': set(), 'holding': set()}
@@ -48,6 +50,10 @@ class modbus_interface():
             self._mb = SungrowModbusTcpClient.SungrowModbusTcpClient(host=self._ip, port=self._port,
                                               framer=ModbusSocketFramer, timeout=1,
                                               RetryOnEmpty=True, retries=1)
+        elif self._variant == 'serial':
+            self._mb = ModbusSerialClient(method=self._method, port=self._port, baudrate=self._baudrate,
+                                          bytesize=8, parity='N', stopbits=1,
+                                          timeout=1, retries=1)
         else:
             self._mb = ModbusTcpClient(self._ip, self._port,
                                        framer=ModbusSocketFramer, timeout=1,
