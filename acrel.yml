@@ -1,0 +1,18 @@
+variant: serial 
+make: acrel 
+model: acr10r-d16te
+baudrate: 115200
+method: rtu
+port: /dev/ttyUSB6
+update_rate: 5
+address_offset: 0
+scan_batching: 1
+registers:
+  - pub_topic: "solar"
+    table: holding
+    json_key: current_peak_kwh
+    type: uint16
+    address: 73
+    scale: 0.1
+    pub_only_on_change: false
+
