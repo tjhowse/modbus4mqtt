@@ -151,8 +151,7 @@ class modbus_interface():
             return result.registers
         except:
             # The result doesn't have a registers attribute, something has gone wrong!
-            raise ValueError("Failed to read {} {} table registers starting from {}: {}".format(
-                count, table, start, result))
+            raise ValueError("Failed to read {} {} table registers starting from {}: {}".format(count, table, start, result))
 
 
 def _convert_from_uint16_to_type(value, type):

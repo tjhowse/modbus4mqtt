@@ -120,7 +120,7 @@ class ModbusTests(unittest.TestCase):
     def test_sungrow_modbus(self):
         with patch('modbus4mqtt.modbus_interface.SungrowModbusTcpClient') as mock_modbus:
             mock_modbus().connect.side_effect = self.connect_success
-            m = modbus_interface.modbus_interface(None, '/dev/ttyUSB0', variant='sungrow')
+            m = modbus_interface.modbus_interface('1.1.1.1', 111, 2, variant='sungrow')
             m.connect()
 
             self.assertTrue(m._mb, 'Connected client')
