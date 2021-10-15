@@ -3,4 +3,4 @@ ruamel.yaml>=0.16.12
 click
 paho-mqtt
 pymodbus
-SungrowModbusTcpClient>=0.1.5
+SungrowModbusTcpClient>=0.1.6
