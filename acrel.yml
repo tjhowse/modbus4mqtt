@@ -1,0 +1,36 @@
+variant: serial 
+make: acrel 
+model: acr10r-d16te
+baudrate: 9600
+method: rtu
+port: /dev/ttyUSB6
+unit: 3
+update_rate: 5
+address_offset: 0
+scan_batching: 1
+prefix: acrel
+registers:
+  - pub_topic: "meter"
+    table: holding
+    json_key: absorbing_active_energy
+    type: uint16
+    address: 71
+    pub_only_on_change: false
+  - pub_topic: "meter"
+    table: holding
+    json_key: releasing_active_energy
+    type: uint16
+    address: 73
+    pub_only_on_change: false
+  - pub_topic: "meter"
+    table: holding
+    json_key: inductive_reactive_energy 
+    type: uint16
+    address: 75
+    pub_only_on_change: false
+  - pub_topic: "meter"
+    table: holding
+    json_key: capacitive_reactive_energy
+    type: uint16
+    address: 77
+    pub_only_on_change: false

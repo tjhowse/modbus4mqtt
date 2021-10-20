@@ -109,6 +109,22 @@ class ModbusTests(unittest.TestCase):
             self.assertRaises(ValueError, m.add_monitor_register, 'beupe', 5)
             self.assertRaises(ValueError, m.get_value, 'holding', 1000)
 
+    def test_serial_modbus(self):
+        with patch('modbus4mqtt.modbus_interface.ModbusSerialClient') as mock_modbus:
+            mock_modbus().connect.side_effect = self.connect_success
+            m = modbus_interface.modbus_interface(None, '/dev/ttyUSB0', variant='serial')
+            m.connect()
+
+            self.assertTrue(m._mb, 'Connected client')
+
+    def test_sungrow_modbus(self):
+        with patch('modbus4mqtt.modbus_interface.SungrowModbusTcpClient') as mock_modbus:
+            mock_modbus().connect.side_effect = self.connect_success
+            m = modbus_interface.modbus_interface('1.1.1.1', 111, 2, variant='sungrow')
+            m.connect()
+
+            self.assertTrue(m._mb, 'Connected client')
+
     def test_write_queuing(self):
         with patch('modbus4mqtt.modbus_interface.ModbusTcpClient') as mock_modbus:
             mock_modbus().connect.side_effect = self.connect_success
