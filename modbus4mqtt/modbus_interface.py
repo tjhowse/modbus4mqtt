@@ -53,11 +53,14 @@ class modbus_interface():
                                        framer=ModbusSocketFramer, timeout=1,
                                        RetryOnEmpty=True, retries=1)
 
-    def add_monitor_register(self, table, addr):
+    def add_monitor_register(self, table, addr, type='uint16'):
         # Accepts a modbus register and table to monitor
         if table not in self._tables:
             raise ValueError("Unsupported table type. Please only use: {}".format(self._tables.keys()))
-        self._tables[table].add(addr)
+        # Register enough sequential addresses to fill the size of the register type.
+        # Note: Each address provides 2 bytes of data.
+        for i in range(type_length(type)):
+            self._tables[table].add(addr+i)
 
     def poll(self):
         # Polls for the values marked as interesting in self._tables.
@@ -79,12 +82,18 @@ class modbus_interface():
                     start = group + self._scan_batching-1
         self._process_writes()
 
-    def get_value(self, table, addr):
+    def get_value(self, table, addr, type='uint16'):
         if table not in self._values:
             raise ValueError("Unsupported table type. Please only use: {}".format(self._values.keys()))
         if addr not in self._values[table]:
             raise ValueError("Unpolled address. Use add_monitor_register(addr, table) to add a register to the polled list.")
-        return self._values[table][addr]
+        # Read sequential addresses to get enough bytes to satisfy the type of this register.
+        # Note: Each address provides 2 bytes of data.
+        value = bytes(0)
+        for i in range(self.type_length(type)):
+            data = self._values[table][addr + i]
+            value = data.to_bytes(2,'big') + value
+        return value
 
     def set_value(self, table, addr, value, mask=0xFFFF):
         if table != 'holding':
@@ -143,6 +152,17 @@ class modbus_interface():
         except:
             # The result doesn't have a registers attribute, something has gone wrong!
             raise ValueError("Failed to read {} {} table registers starting from {}: {}".format(count, table, start, result))
+
+def type_length(type):
+    # Return the number of addresses needed for the type.
+    # Note: Each address provides 2 bytes of data.
+    if type in ['int16', 'uint16']:
+        return 1
+    elif type in ['int32', 'uint32']:
+        return 2
+    elif type in ['int64', 'uint64']:
+        return 4
+    raise ValueError ("Unsupported type {}".format(type))
 
 def _convert_from_bytes_to_type(value, type):
     type = type.strip().lower()

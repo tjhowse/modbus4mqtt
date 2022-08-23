@@ -41,17 +41,6 @@ class mqtt_interface():
         self.connect_modbus()
         self.connect_mqtt()
 
-    def type_length(self, type):
-        # Return the number of addresses needed for the type.
-        # Note: Each address provides 2 bytes of data.
-        if type in ['int16', 'uint16']:
-            return 1
-        elif type in ['int32', 'uint32']:
-            return 2
-        elif type in ['int64', 'uint64']:
-            return 4
-        raise ValueError ("Unsupported type {}".format(type))
-
     def connect_modbus(self):
         self._mb = modbus_interface.modbus_interface(self.config['ip'],
                                                      self.config.get('port', 502),
@@ -70,10 +59,7 @@ class mqtt_interface():
             sleep(self.modbus_reconnect_sleep_interval)
         # Tells the modbus interface about the registers we consider interesting.
         for register in self.registers:
-            # Register enough sequential addresses to fill the size of the register type.
-            # Note: Each address provides 2 bytes of data.
-            for i in range(self.type_length(register.get('type', 'uint16'))):
-                self._mb.add_monitor_register(register.get('table', 'holding'), register['address']+i)
+            self._mb.add_monitor_register(register.get('table', 'holding'), register['address'], register.get('type', 'uint16'))
             register['value'] = None
 
     def modbus_connection_failed(self):
@@ -110,12 +96,9 @@ class mqtt_interface():
 
         for register in self._get_registers_with('pub_topic'):
             try:
-                # Read sequential addresses to get enough bytes to satisfy the type of this register.
-                # Note: Each address provides 2 bytes of data.
-                value = bytes(0)
-                for i in range(self.type_length(register.get('type', 'uint16'))):
-                    data = self._mb.get_value(register.get('table', 'holding'), register['address'] + i)
-                    value = data.to_bytes(2,'big') + value
+                value = self._mb.get_value( register.get('table', 'holding'),
+                                            register['address'],
+                                            register.get('type', 'uint16'))
             except Exception:
                 logging.warning("Couldn't get value from register {} in table {}".format(register['address'],
                                 register.get('table', 'holding')))
