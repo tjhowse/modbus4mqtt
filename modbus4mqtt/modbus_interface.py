@@ -96,13 +96,18 @@ class modbus_interface():
         value = _convert_from_bytes_to_type(value, type)
         return value
 
-    def set_value(self, table, addr, value, mask=0xFFFF):
+    def set_value(self, table, addr, value, mask=0xFFFF, type='uint16'):
         if table != 'holding':
             # I'm not sure if this is true for all devices. I might support writing to coils later,
             # so leave this door open.
             raise ValueError("Can only set values in the holding table.")
-        # TODO Handle multi-byte writes.
-        self._planned_writes.put((addr, value, mask))
+
+        bytes_to_write = _convert_from_type_to_bytes(value, type)
+        # Put the bytes into _planned_writes stitched into two-byte pairs
+        for i in range(type_length(type)):
+            value = _convert_from_bytes_to_type(bytes_to_write[i*2:i*2+2], 'uint16')
+            self._planned_writes.put((addr+i, value, mask))
+
         self._process_writes()
 
     def _process_writes(self, max_block_s=DEFAULT_WRITE_BLOCK_INTERVAL_S):
@@ -166,30 +171,23 @@ def type_length(type):
         return 4
     raise ValueError ("Unsupported type {}".format(type))
 
-def _convert_from_bytes_to_type(value, type):
-    type = type.strip().lower()
+def type_signed(type):
+    # Returns whether the provided type is signed
     if type in ['uint16', 'uint32', 'uint64']:
-        return int.from_bytes(value,byteorder='big',signed=False)
+        return False
     elif type in ['int16', 'int32', 'int64']:
-        return int.from_bytes(value,byteorder='big',signed=True)
-    raise ValueError("Unrecognised type conversion attempted: bytes to {}".format(type))
+        return True
+    raise ValueError ("Unsupported type {}".format(type))
 
-def _convert_from_uint16_to_type(value, type):
+def _convert_from_bytes_to_type(value, type):
+    # Converts a bytearray storing the provided type into a number of that type.
+    if len(value) != type_length(type)*2:
+        raise ValueError("Expected {} bytes for type {}".format(type_length(type)*2, type))
     type = type.strip().lower()
-    if type == 'uint16':
-        return value
-    elif type == 'int16':
-        if value >= 2**15:
-            return value - 2**16
-        return value
-    raise ValueError("Unrecognised type conversion attempted: uint16 to {}".format(type))
+    signed = type_signed(type)
+    return int.from_bytes(value,byteorder='big',signed=signed)
 
-def _convert_from_type_to_uint16(value, type):
+def _convert_from_type_to_bytes(value, type):
     type = type.strip().lower()
-    if type == 'uint16':
-        return value
-    elif type == 'int16':
-        if value < 0:
-            return value + 2**16
-        return value
-    raise ValueError("Unrecognised type conversion attempted: {} to uint16".format(type))
+    signed = type_signed(type)
+    return int(value).to_bytes(type_length(type)*2,byteorder='big',signed=signed)

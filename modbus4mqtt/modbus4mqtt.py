@@ -189,9 +189,8 @@ class mqtt_interface():
                               "Bad/missing value_map? Topic: {}, Value: {}".format(topic, value))
                 continue
             type = register.get('type', 'uint16')
-            value = modbus_interface._convert_from_type_to_uint16(value, type)
             self._mb.set_value(register.get('table', 'holding'), register['address'], int(value),
-                               register.get('mask', 0xFFFF))
+                               register.get('mask', 0xFFFF), type)
 
     # This throws ValueError exceptions if the imported registers are invalid
     @staticmethod

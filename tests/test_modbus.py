@@ -213,22 +213,22 @@ class ModbusTests(unittest.TestCase):
 
     def test_type_conversions(self):
         with patch('modbus4mqtt.modbus_interface.ModbusTcpClient') as mock_modbus:
-            a = modbus_interface._convert_from_type_to_uint16(-1, 'int16')
-            self.assertEqual(a, 2**16-1)
-            a = modbus_interface._convert_from_uint16_to_type(2**16-1, 'int16')
+            a = modbus_interface._convert_from_type_to_bytes(-1, 'int16')
+            self.assertEqual(a, b'\xff\xff')
+            a = modbus_interface._convert_from_bytes_to_type(b'\xff\xff', 'int16')
             self.assertEqual(a, -1)
-            a = modbus_interface._convert_from_type_to_uint16(10, 'uint16')
-            self.assertEqual(a, 10)
-            a = modbus_interface._convert_from_uint16_to_type(10, 'uint16')
+            a = modbus_interface._convert_from_type_to_bytes(10, 'uint16')
+            self.assertEqual(a, b'\x00\x0a')
+            a = modbus_interface._convert_from_bytes_to_type(b'\x00\x0a', 'uint16')
             self.assertEqual(a, 10)
 
             try:
-                a = modbus_interface._convert_from_uint16_to_type(10, 'float16')
+                a = modbus_interface._convert_from_bytes_to_type(10, 'float16')
                 self.fail("Silently accepted an invalid type conversion.")
             except:
                 pass
             try:
-                a = modbus_interface._convert_from_type_to_uint16(10, 'float16')
+                a = modbus_interface._convert_from_type_to_bytes(10, 'float16')
                 self.fail("Silently accepted an invalid type conversion.")
             except:
                 pass

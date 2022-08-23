@@ -37,7 +37,7 @@ class MQTTTests(unittest.TestCase):
         value = modbus4mqtt.modbus_interface._convert_from_bytes_to_type(value, type)
         return value
 
-    def write_modbus_register(self, table, address, value, mask=0xFFFF):
+    def write_modbus_register(self, table, address, value, mask=0xFFFF, type='uint16'):
         old_value = self.modbus_tables[table][address]
         and_mask = (1<<16)-1-mask
         or_mask = value
