@@ -99,10 +99,9 @@ class mqtt_interface():
                 value = self._mb.get_value( register.get('table', 'holding'),
                                             register['address'],
                                             register.get('type', 'uint16'))
-            except Exception as e:
+            except Exception:
                 logging.warning("Couldn't get value from register {} in table {}".format(register['address'],
                                 register.get('table', 'holding')))
-                logging.exception(e)
                 continue
             # Filter the value through the mask, if present.
             if 'mask' in register:
