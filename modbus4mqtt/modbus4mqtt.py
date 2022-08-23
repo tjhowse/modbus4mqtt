@@ -103,9 +103,6 @@ class mqtt_interface():
                 logging.warning("Couldn't get value from register {} in table {}".format(register['address'],
                                 register.get('table', 'holding')))
                 continue
-            # Tweak the value according to the type.
-            type = register.get('type', 'uint16')
-            value = modbus_interface._convert_from_bytes_to_type(value, type)
             # Filter the value through the mask, if present.
             if 'mask' in register:
                 # masks only make sense for uint
