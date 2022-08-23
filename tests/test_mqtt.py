@@ -27,10 +27,17 @@ class MQTTTests(unittest.TestCase):
     def tearDown(self):
         pass
 
-    def read_modbus_register(self, table, address):
+    def read_modbus_register(self, table, address, type='uint16'):
         if address not in self.modbus_tables[table]:
-            raise ValueError("Invalid address")
-        return self.modbus_tables[table][address]
+            print(self.modbus_tables)
+            raise ValueError("Invalid address {} in table {}".format(address, table))
+        value = bytes(0)
+        for i in range(modbus4mqtt.modbus_interface.type_length(type)):
+            print("Reading address: "+str(address + i))
+            data = self.modbus_tables[table][address + i]
+            value = data.to_bytes(2,'big') + value
+        value = modbus4mqtt.modbus_interface._convert_from_bytes_to_type(value, type)
+        return value
 
     def write_modbus_register(self, table, address, value, mask=0xFFFF):
         old_value = self.modbus_tables[table][address]
@@ -294,7 +301,7 @@ class MQTTTests(unittest.TestCase):
 
                 mock_modbus().add_monitor_register.assert_any_call('holding', 1)
                 mock_modbus().add_monitor_register.assert_any_call('holding', 2)
-                mock_modbus().add_monitor_register.assert_any_call('holding', 2)
+                mock_modbus().add_monitor_register.assert_any_call('holding', 3)
                 mock_mqtt().publish.assert_any_call('prefix/scale_up_no_value_map', 2, retain=False)
                 mock_mqtt().publish.assert_any_call('prefix/scale_down_no_value_map', 1, retain=False)
                 mock_mqtt().publish.assert_any_call('prefix/scale_with_value_map', 'b', retain=False)

@@ -90,7 +90,7 @@ class modbus_interface():
         # Read sequential addresses to get enough bytes to satisfy the type of this register.
         # Note: Each address provides 2 bytes of data.
         value = bytes(0)
-        for i in range(self.type_length(type)):
+        for i in range(type_length(type)):
             data = self._values[table][addr + i]
             value = data.to_bytes(2,'big') + value
         value = _convert_from_bytes_to_type(value, type)
