@@ -35,8 +35,8 @@ class mqtt_interface():
         self.connect_mqtt()
 
     def type_length(self, type):
-		# Return the number of addresses needed for the type.
-		# Note: Each address provides 2 bytes of data.
+        # Return the number of addresses needed for the type.
+        # Note: Each address provides 2 bytes of data.
         if type in ['int16', 'uint16']:
             return 1
         elif type in ['int32', 'uint32']:
@@ -63,8 +63,8 @@ class mqtt_interface():
             sleep(self.modbus_reconnect_sleep_interval)
         # Tells the modbus interface about the registers we consider interesting.
         for register in self.registers:
-			# Register enough sequential addresses to fill the size of the register type.
-			# Note: Each address provides 2 bytes of data.
+            # Register enough sequential addresses to fill the size of the register type.
+            # Note: Each address provides 2 bytes of data.
             for i in range(self.type_length(register.get('type', 'uint16'))):
                 self._mb.add_monitor_register(register.get('table', 'holding'), register['address']+i)
             register['value'] = None
@@ -100,8 +100,8 @@ class mqtt_interface():
 
         for register in self._get_registers_with('pub_topic'):
             try:
-				# Read sequential addresses to get enough bytes to satisfy the type of this register.
-				# Note: Each address provides 2 bytes of data.
+                # Read sequential addresses to get enough bytes to satisfy the type of this register.
+                # Note: Each address provides 2 bytes of data.
                 value = bytes(0)
                 for i in range(self.type_length(register.get('type', 'uint16'))):
                     data = self._mb.get_value(register.get('table', 'holding'), register['address'] + i)
