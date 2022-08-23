@@ -180,9 +180,6 @@ def type_signed(type):
     raise ValueError ("Unsupported type {}".format(type))
 
 def _convert_from_bytes_to_type(value, type):
-    # Converts a bytearray storing the provided type into a number of that type.
-    if len(value) != type_length(type)*2:
-        raise ValueError("Expected {} bytes for type {}".format(type_length(type)*2, type))
     type = type.strip().lower()
     signed = type_signed(type)
     return int.from_bytes(value,byteorder='big',signed=signed)
@@ -190,4 +187,6 @@ def _convert_from_bytes_to_type(value, type):
 def _convert_from_type_to_bytes(value, type):
     type = type.strip().lower()
     signed = type_signed(type)
+    # This can throw an OverflowError in various conditons. This will usually
+    # percolate upwards and spit out an exception from on_message.
     return int(value).to_bytes(type_length(type)*2,byteorder='big',signed=signed)

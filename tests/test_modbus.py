@@ -251,3 +251,74 @@ class ModbusTests(unittest.TestCase):
                 self.fail("Silently accepted an invalid type conversion.")
             except:
                 pass
+
+    def test_multi_byte_write_counts(self):
+        with patch('modbus4mqtt.modbus_interface.ModbusTcpClient') as mock_modbus:
+            mock_modbus().connect.side_effect = self.connect_success
+
+            m = modbus_interface.modbus_interface('1.1.1.1', 111, 2)
+            m.connect()
+            mock_modbus.assert_called_with('1.1.1.1', 111, RetryOnEmpty=True, framer=modbus_interface.ModbusSocketFramer, retries=1, timeout=1)
+
+            for i in range(1,11):
+                m.add_monitor_register('holding', i)
+
+            m.poll()
+            # Write a value in.
+            m.set_value('holding', 1, 65535, 0xFFFF, 'uint16')
+            m.poll()
+            # Confirm that it only wrote one register.
+            mock_modbus().write_register.assert_any_call(1, 65535, unit=1)
+            mock_modbus().reset_mock()
+
+            m.set_value('holding', 1, 689876135, 0xFFFF, 'uint32')
+            m.poll()
+
+            mock_modbus().write_register.assert_any_call(1, int.from_bytes(b'\x29\x1E','big'), unit=1)
+            mock_modbus().write_register.assert_any_call(2, int.from_bytes(b'\xAC\xA7','big'), unit=1)
+            mock_modbus().reset_mock()
+
+            m.set_value('holding', 1, 5464681683516384647, 0xFFFF, 'uint64')
+            m.poll()
+
+            mock_modbus().write_register.assert_any_call(1, int.from_bytes(b'\x4B\xD6','big'), unit=1)
+            mock_modbus().write_register.assert_any_call(2, int.from_bytes(b'\x73\x09','big'), unit=1)
+            mock_modbus().write_register.assert_any_call(3, int.from_bytes(b'\xBC\x93','big'), unit=1)
+            mock_modbus().write_register.assert_any_call(4, int.from_bytes(b'\xE5\x87','big'), unit=1)
+            mock_modbus().reset_mock()
+
+    def test_multi_byte_read_write_values(self):
+        with patch('modbus4mqtt.modbus_interface.ModbusTcpClient') as mock_modbus:
+            mock_modbus().connect.side_effect = self.connect_success
+            mock_modbus().read_holding_registers.side_effect = self.read_holding_registers
+            mock_modbus().write_register.side_effect = self.write_holding_register
+
+            m = modbus_interface.modbus_interface('1.1.1.1', 111, 2, scan_batching=1)
+            m.connect()
+            mock_modbus.assert_called_with('1.1.1.1', 111, RetryOnEmpty=True, framer=modbus_interface.ModbusSocketFramer, retries=1, timeout=1)
+
+            for i in range(1,11):
+                m.add_monitor_register('holding', i)
+
+            m.poll()
+            # Write a value in.
+            m.set_value('holding', 1, 65535, 0xFFFF, 'uint16')
+            m.poll()
+            # Read the value out.
+            self.assertEqual(m.get_value('holding', 1, 'uint16'), 65535)
+            # Read the value out as a different type.
+            self.assertEqual(m.get_value('holding', 1, 'int16'), -1)
+            m.poll()
+
+            # TODO This test fails, possibly due to a genuine bug. Look into it.
+            # Yes, the byte ordering is backwards:
+            # ACA7291E = 689876135
+            # 291EACA7 = 2896636190
+            # Look up the modbus spec for multi-register values. Check which is correct.
+            # Currently write and read disagree on the ordering.
+            m.set_value('holding', 1, 689876135, 0xFFFF, 'uint32')
+            m.poll()
+            # Read the value out.
+            self.assertEqual(m.get_value('holding', 1, 'uint32'), 689876135)
+            # Read the value out as a different type.
+            # self.assertEqual(m.get_value('holding', 1, 'int32'), -1)
