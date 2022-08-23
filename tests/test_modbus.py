@@ -215,12 +215,31 @@ class ModbusTests(unittest.TestCase):
         with patch('modbus4mqtt.modbus_interface.ModbusTcpClient') as mock_modbus:
             a = modbus_interface._convert_from_type_to_bytes(-1, 'int16')
             self.assertEqual(a, b'\xff\xff')
-            a = modbus_interface._convert_from_bytes_to_type(b'\xff\xff', 'int16')
+            a = modbus_interface._convert_from_bytes_to_type(a, 'int16')
             self.assertEqual(a, -1)
             a = modbus_interface._convert_from_type_to_bytes(10, 'uint16')
             self.assertEqual(a, b'\x00\x0a')
-            a = modbus_interface._convert_from_bytes_to_type(b'\x00\x0a', 'uint16')
+            a = modbus_interface._convert_from_bytes_to_type(a, 'uint16')
             self.assertEqual(a, 10)
+
+            a = modbus_interface._convert_from_type_to_bytes(-1, 'int32')
+            self.assertEqual(a, b'\xff\xff\xff\xff')
+            a = modbus_interface._convert_from_bytes_to_type(a, 'int32')
+            self.assertEqual(a, -1)
+            a = modbus_interface._convert_from_type_to_bytes(689876135, 'uint32')
+            self.assertEqual(a, b'\x29\x1E\xAC\xA7')
+            a = modbus_interface._convert_from_bytes_to_type(a, 'uint32')
+            self.assertEqual(a, 689876135)
+
+            a = modbus_interface._convert_from_type_to_bytes(-1, 'int64')
+            self.assertEqual(a, b'\xff\xff\xff\xff\xff\xff\xff\xff')
+            a = modbus_interface._convert_from_bytes_to_type(a, 'int64')
+            self.assertEqual(a, -1)
+            a = modbus_interface._convert_from_type_to_bytes(5464681683516384647, 'uint64')
+            self.assertEqual(a, b'\x4B\xD6\x73\x09\xBC\x93\xE5\x87')
+            a = modbus_interface._convert_from_bytes_to_type(a, 'uint64')
+            self.assertEqual(a, 5464681683516384647)
+
 
             try:
                 a = modbus_interface._convert_from_bytes_to_type(10, 'float16')
