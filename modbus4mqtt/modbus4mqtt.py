@@ -113,7 +113,7 @@ class mqtt_interface():
             type = register.get('type', 'uint16')
             value = modbus_interface._convert_from_bytes_to_type(value, type)
             # Filter the value through the mask, if present.
-            if not register.get('mask') is None:
+            if 'mask' in register:
                 # masks only make sense for uint
                 if register.get('type', 'uint16') in ['uint16', 'uint32', 'uint64']:
                     value &= register.get('mask')
