@@ -42,11 +42,17 @@ class mqtt_interface():
         self.connect_mqtt()
 
     def connect_modbus(self):
+        if self.config.get('word_order', 'highlow').lower() == 'lowhigh':
+            word_order = modbus_interface.WordOrder.LowHigh
+        else:
+            word_order = modbus_interface.WordOrder.HighLow
+
         self._mb = modbus_interface.modbus_interface(self.config['ip'],
                                                      self.config.get('port', 502),
                                                      self.config.get('update_rate', 5),
                                                      variant=self.config.get('variant', None),
-                                                     scan_batching=self.config.get('scan_batching', None))
+                                                     scan_batching=self.config.get('scan_batching', None),
+                                                     word_order=word_order)
         failed_attempts = 1
         while self._mb.connect():
             logging.warning("Modbus connection attempt {} failed. Retrying...".format(failed_attempts))
@@ -59,7 +65,7 @@ class mqtt_interface():
             sleep(self.modbus_reconnect_sleep_interval)
         # Tells the modbus interface about the registers we consider interesting.
         for register in self.registers:
-            self._mb.add_monitor_register(register.get('table', 'holding'), register['address'])
+            self._mb.add_monitor_register(register.get('table', 'holding'), register['address'], register.get('type', 'uint16'))
             register['value'] = None
 
     def modbus_connection_failed(self):
@@ -96,16 +102,18 @@ class mqtt_interface():
 
         for register in self._get_registers_with('pub_topic'):
             try:
-                value = self._mb.get_value(register.get('table', 'holding'), register['address'])
+                value = self._mb.get_value( register.get('table', 'holding'),
+                                            register['address'],
+                                            register.get('type', 'uint16'))
             except Exception:
                 logging.warning("Couldn't get value from register {} in table {}".format(register['address'],
                                 register.get('table', 'holding')))
                 continue
             # Filter the value through the mask, if present.
-            value &= register.get('mask', 0xFFFF)
-            # Tweak the value according to the type.
-            type = register.get('type', 'uint16')
-            value = modbus_interface._convert_from_uint16_to_type(value, type)
+            if 'mask' in register:
+                # masks only make sense for uint
+                if register.get('type', 'uint16') in ['uint16', 'uint32', 'uint64']:
+                    value &= register.get('mask')
             # Scale the value, if required.
             value *= register.get('scale', 1)
             # Clamp the number of decimal points
@@ -187,9 +195,8 @@ class mqtt_interface():
                               "Bad/missing value_map? Topic: {}, Value: {}".format(topic, value))
                 continue
             type = register.get('type', 'uint16')
-            value = modbus_interface._convert_from_type_to_uint16(value, type)
             self._mb.set_value(register.get('table', 'holding'), register['address'], int(value),
-                               register.get('mask', 0xFFFF))
+                               register.get('mask', 0xFFFF), type)
 
     # This throws ValueError exceptions if the imported registers are invalid
     @staticmethod
@@ -200,7 +207,7 @@ class mqtt_interface():
         duplicate_json_keys = {}
         # Key: shared pub_topics, value: set of retain values (true/false)
         retain_setting = {}
-        valid_types = ['uint16', 'int16']
+        valid_types = ['uint16', 'int16', 'uint32', 'int32', 'uint64', 'int64']
 
         # Look for duplicate pub_topics
         for register in registers:

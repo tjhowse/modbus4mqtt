@@ -27,12 +27,17 @@ class MQTTTests(unittest.TestCase):
     def tearDown(self):
         pass
 
-    def read_modbus_register(self, table, address):
+    def read_modbus_register(self, table, address, type='uint16'):
         if address not in self.modbus_tables[table]:
-            raise ValueError("Invalid address")
-        return self.modbus_tables[table][address]
+            raise ValueError("Invalid address {} in table {}".format(address, table))
+        value = bytes(0)
+        for i in range(modbus4mqtt.modbus_interface.type_length(type)):
+            data = self.modbus_tables[table][address + i]
+            value = data.to_bytes(2,'big') + value
+        value = modbus4mqtt.modbus_interface._convert_from_bytes_to_type(value, type)
+        return value
 
-    def write_modbus_register(self, table, address, value, mask=0xFFFF):
+    def write_modbus_register(self, table, address, value, mask=0xFFFF, type='uint16'):
         old_value = self.modbus_tables[table][address]
         and_mask = (1<<16)-1-mask
         or_mask = value
@@ -230,8 +235,8 @@ class MQTTTests(unittest.TestCase):
                     m = modbus4mqtt.mqtt_interface('kroopit', 1885, 'brengis', 'pranto', './tests/test_set_topics.yaml', MQTT_TOPIC_PREFIX)
                     m.connect()
 
-                    mock_modbus().add_monitor_register.assert_any_call('holding', 1)
-                    mock_modbus().add_monitor_register.assert_any_call('holding', 2)
+                    mock_modbus().add_monitor_register.assert_any_call('holding', 1, 'uint16')
+                    mock_modbus().add_monitor_register.assert_any_call('holding', 2, 'uint16')
 
                     mock_mqtt().username_pw_set.assert_called_with('brengis', 'pranto')
                     mock_mqtt().connect.assert_called_with('kroopit', 1885, 60)
@@ -292,9 +297,9 @@ class MQTTTests(unittest.TestCase):
                 m.connect()
                 m.poll()
 
-                mock_modbus().add_monitor_register.assert_any_call('holding', 1)
-                mock_modbus().add_monitor_register.assert_any_call('holding', 2)
-                mock_modbus().add_monitor_register.assert_any_call('holding', 2)
+                mock_modbus().add_monitor_register.assert_any_call('holding', 1, 'uint16')
+                mock_modbus().add_monitor_register.assert_any_call('holding', 2, 'uint16')
+                mock_modbus().add_monitor_register.assert_any_call('holding', 3, 'uint16')
                 mock_mqtt().publish.assert_any_call('prefix/scale_up_no_value_map', 2, retain=False)
                 mock_mqtt().publish.assert_any_call('prefix/scale_down_no_value_map', 1, retain=False)
                 mock_mqtt().publish.assert_any_call('prefix/scale_with_value_map', 'b', retain=False)
@@ -410,6 +415,7 @@ class MQTTTests(unittest.TestCase):
                 mock_mqtt().publish.assert_any_call(MQTT_TOPIC_PREFIX+'/publish_int16_2', 32767, retain=False)
                 mock_mqtt().publish.assert_any_call(MQTT_TOPIC_PREFIX+'/publish_int16_3', -32768, retain=False)
                 mock_mqtt().publish.assert_any_call(MQTT_TOPIC_PREFIX+'/publish_int16_4', -1, retain=False)
+                # TODO expand this to include more types.
 
                 msg = MQTTMessage(topic=bytes(MQTT_TOPIC_PREFIX+'/publish_int16_1_set', 'utf-8'))
                 msg.payload = b'-2'
@@ -446,7 +452,11 @@ class MQTTTests(unittest.TestCase):
         ],
         [               # Valid types specified
             {'address': 13050, 'pub_topic': 'ems/EMS_MODEA', 'type': 'uint16'},
-            {'address': 13050, 'pub_topic': 'ems/EMS_MODEB', 'type': 'int16'}
+            {'address': 13050, 'pub_topic': 'ems/EMS_MODEB', 'type': 'int16'},
+            {'address': 13050, 'pub_topic': 'ems/EMS_MODEC', 'type': 'uint32'},
+            {'address': 13050, 'pub_topic': 'ems/EMS_MODED', 'type': 'int32'},
+            {'address': 13050, 'pub_topic': 'ems/EMS_MODEE', 'type': 'uint64'},
+            {'address': 13050, 'pub_topic': 'ems/EMS_MODEF', 'type': 'int64'}
         ]]
         invalids = [[   # Duplicate json_key for a topic
             {'address': 13050, 'json_key': 'A', 'pub_topic': 'ems/EMS_MODE'},
@@ -465,7 +475,6 @@ class MQTTTests(unittest.TestCase):
             {'address': 13050, 'json_key': 'B', 'pub_topic': 'ems/EMS_MODE', 'retain': False}
         ],
         [               # Invalid types specified
-            {'address': 13050, 'pub_topic': 'ems/EMS_MODEA', 'type': 'uint32'},
             {'address': 13050, 'pub_topic': 'ems/EMS_MODEB', 'type': 'float64'}
         ]]
         for valid in valids:
@@ -481,6 +490,40 @@ class MQTTTests(unittest.TestCase):
                 fail = True
             if not fail:
                 self.fail("Didn't throw an exception checking an invalid register configuration")
+
+    def test_word_order_setting(self):
+        with patch('paho.mqtt.client.Client') as mock_mqtt:
+            with patch('modbus4mqtt.modbus_interface.modbus_interface') as mock_modbus:
+                mock_modbus().connect.side_effect = self.connect_success
+                mock_modbus().get_value.side_effect = self.read_modbus_register
+                mock_modbus().set_value.side_effect = self.write_modbus_register
+
+                # Default value
+                m = modbus4mqtt.mqtt_interface('kroopit', 1885, 'brengis', 'pranto', './tests/test_type.yaml', MQTT_TOPIC_PREFIX)
+                m.connect()
+                mock_modbus.assert_any_call('192.168.1.90', 502, 5, scan_batching=None, variant=None, word_order=modbus4mqtt.modbus_interface.WordOrder.HighLow)
+
+        with patch('paho.mqtt.client.Client') as mock_mqtt:
+            with patch('modbus4mqtt.modbus_interface.modbus_interface') as mock_modbus:
+                mock_modbus().connect.side_effect = self.connect_success
+                mock_modbus().get_value.side_effect = self.read_modbus_register
+                mock_modbus().set_value.side_effect = self.write_modbus_register
+
+                # Explicit HighLow
+                m = modbus4mqtt.mqtt_interface('kroopit', 1885, 'brengis', 'pranto', './tests/test_word_order.yaml', MQTT_TOPIC_PREFIX)
+                m.connect()
+                mock_modbus.assert_any_call('192.168.1.90', 502, 5, scan_batching=None, variant=None, word_order=modbus4mqtt.modbus_interface.WordOrder.HighLow)
+
+        with patch('paho.mqtt.client.Client') as mock_mqtt:
+            with patch('modbus4mqtt.modbus_interface.modbus_interface') as mock_modbus:
+                mock_modbus().connect.side_effect = self.connect_success
+                mock_modbus().get_value.side_effect = self.read_modbus_register
+                mock_modbus().set_value.side_effect = self.write_modbus_register
+
+                # Explicit HighLow
+                m = modbus4mqtt.mqtt_interface('kroopit', 1885, 'brengis', 'pranto', './tests/test_word_order_low_high.yaml', MQTT_TOPIC_PREFIX)
+                m.connect()
+                mock_modbus.assert_any_call('192.168.1.90', 502, 5, scan_batching=None, variant=None, word_order=modbus4mqtt.modbus_interface.WordOrder.LowHigh)
 
 
 if __name__ == "__main__":

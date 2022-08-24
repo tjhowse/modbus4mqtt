@@ -212,23 +212,181 @@ class ModbusTests(unittest.TestCase):
                 self.assertIn("Bad value for scan_batching: {}. Enforcing minimum value of {}".format(bad_scan_batching, modbus_interface.MIN_SCAN_BATCHING), mock_logger.output[-1])
 
     def test_type_conversions(self):
-        with patch('modbus4mqtt.modbus_interface.ModbusTcpClient') as mock_modbus:
-            a = modbus_interface._convert_from_type_to_uint16(-1, 'int16')
-            self.assertEqual(a, 2**16-1)
-            a = modbus_interface._convert_from_uint16_to_type(2**16-1, 'int16')
-            self.assertEqual(a, -1)
-            a = modbus_interface._convert_from_type_to_uint16(10, 'uint16')
-            self.assertEqual(a, 10)
-            a = modbus_interface._convert_from_uint16_to_type(10, 'uint16')
-            self.assertEqual(a, 10)
+        a = modbus_interface._convert_from_type_to_bytes(-1, 'int16')
+        self.assertEqual(a, b'\xff\xff')
+        a = modbus_interface._convert_from_bytes_to_type(a, 'int16')
+        self.assertEqual(a, -1)
+        a = modbus_interface._convert_from_type_to_bytes(10, 'uint16')
+        self.assertEqual(a, b'\x00\x0a')
+        a = modbus_interface._convert_from_bytes_to_type(a, 'uint16')
+        self.assertEqual(a, 10)
 
-            try:
-                a = modbus_interface._convert_from_uint16_to_type(10, 'float16')
-                self.fail("Silently accepted an invalid type conversion.")
-            except:
-                pass
-            try:
-                a = modbus_interface._convert_from_type_to_uint16(10, 'float16')
-                self.fail("Silently accepted an invalid type conversion.")
-            except:
-                pass
+        a = modbus_interface._convert_from_type_to_bytes(-1, 'int32')
+        self.assertEqual(a, b'\xff\xff\xff\xff')
+        a = modbus_interface._convert_from_bytes_to_type(a, 'int32')
+        self.assertEqual(a, -1)
+        a = modbus_interface._convert_from_type_to_bytes(689876135, 'uint32')
+        self.assertEqual(a, b'\x29\x1E\xAC\xA7')
+        a = modbus_interface._convert_from_bytes_to_type(a, 'uint32')
+        self.assertEqual(a, 689876135)
+
+        a = modbus_interface._convert_from_type_to_bytes(-1, 'int64')
+        self.assertEqual(a, b'\xff\xff\xff\xff\xff\xff\xff\xff')
+        a = modbus_interface._convert_from_bytes_to_type(a, 'int64')
+        self.assertEqual(a, -1)
+        a = modbus_interface._convert_from_type_to_bytes(5464681683516384647, 'uint64')
+        self.assertEqual(a, b'\x4B\xD6\x73\x09\xBC\x93\xE5\x87')
+        a = modbus_interface._convert_from_bytes_to_type(a, 'uint64')
+        self.assertEqual(a, 5464681683516384647)
+
+        try:
+            a = modbus_interface._convert_from_bytes_to_type(10, 'float16')
+            self.fail("Silently accepted an invalid type conversion.")
+        except:
+            pass
+        try:
+            a = modbus_interface._convert_from_type_to_bytes(10, 'float16')
+            self.fail("Silently accepted an invalid type conversion.")
+        except:
+            pass
+        try:
+            a = modbus_interface.type_length('float16')
+            self.fail("Silently accepted an invalid type conversion.")
+        except:
+            pass
+
+    def test_multi_byte_write_counts(self):
+        with patch('modbus4mqtt.modbus_interface.ModbusTcpClient') as mock_modbus:
+            mock_modbus().connect.side_effect = self.connect_success
+
+            m = modbus_interface.modbus_interface('1.1.1.1', 111, 2, word_order=modbus_interface.WordOrder.HighLow)
+            # m = modbus_interface.modbus_interface('1.1.1.1', 111, 2, word_order=modbus_interface.WordOrder.LowHigh)
+            m.connect()
+            mock_modbus.assert_called_with('1.1.1.1', 111, RetryOnEmpty=True, framer=modbus_interface.ModbusSocketFramer, retries=1, timeout=1)
+
+            for i in range(1,11):
+                m.add_monitor_register('holding', i)
+
+            m.poll()
+            # Write a value in.
+            m.set_value('holding', 1, 65535, 0xFFFF, 'uint16')
+            m.poll()
+            # Confirm that it only wrote one register.
+            mock_modbus().write_register.assert_any_call(1, 65535, unit=1)
+            mock_modbus().reset_mock()
+
+            m.set_value('holding', 1, 689876135, 0xFFFF, 'uint32')
+            m.poll()
+
+            mock_modbus().write_register.assert_any_call(1, int.from_bytes(b'\x29\x1E','big'), unit=1)
+            mock_modbus().write_register.assert_any_call(2, int.from_bytes(b'\xAC\xA7','big'), unit=1)
+            mock_modbus().reset_mock()
+
+            m.set_value('holding', 1, 5464681683516384647, 0xFFFF, 'uint64')
+            m.poll()
+
+            mock_modbus().write_register.assert_any_call(1, int.from_bytes(b'\x4B\xD6','big'), unit=1)
+            mock_modbus().write_register.assert_any_call(2, int.from_bytes(b'\x73\x09','big'), unit=1)
+            mock_modbus().write_register.assert_any_call(3, int.from_bytes(b'\xBC\x93','big'), unit=1)
+            mock_modbus().write_register.assert_any_call(4, int.from_bytes(b'\xE5\x87','big'), unit=1)
+            mock_modbus().reset_mock()
+
+    def test_multi_byte_write_counts_LowHigh_order(self):
+        with patch('modbus4mqtt.modbus_interface.ModbusTcpClient') as mock_modbus:
+            mock_modbus().connect.side_effect = self.connect_success
+
+            m = modbus_interface.modbus_interface('1.1.1.1', 111, 2, word_order=modbus_interface.WordOrder.LowHigh)
+            m.connect()
+            mock_modbus.assert_called_with('1.1.1.1', 111, RetryOnEmpty=True, framer=modbus_interface.ModbusSocketFramer, retries=1, timeout=1)
+
+            for i in range(1,11):
+                m.add_monitor_register('holding', i)
+            m.set_value('holding', 1, 689876135, 0xFFFF, 'uint32')
+            m.poll()
+
+            mock_modbus().write_register.assert_any_call(1, int.from_bytes(b'\xAC\xA7','big'), unit=1)
+            mock_modbus().write_register.assert_any_call(2, int.from_bytes(b'\x29\x1E','big'), unit=1)
+            mock_modbus().reset_mock()
+
+            m.set_value('holding', 1, 5464681683516384647, 0xFFFF, 'uint64')
+            m.poll()
+
+            mock_modbus().write_register.assert_any_call(1, int.from_bytes(b'\xE5\x87','big'), unit=1)
+            mock_modbus().write_register.assert_any_call(2, int.from_bytes(b'\xBC\x93','big'), unit=1)
+            mock_modbus().write_register.assert_any_call(3, int.from_bytes(b'\x73\x09','big'), unit=1)
+            mock_modbus().write_register.assert_any_call(4, int.from_bytes(b'\x4B\xD6','big'), unit=1)
+            mock_modbus().reset_mock()
+
+    def test_multi_byte_read_write_values(self):
+        with patch('modbus4mqtt.modbus_interface.ModbusTcpClient') as mock_modbus:
+            mock_modbus().connect.side_effect = self.connect_success
+            mock_modbus().read_holding_registers.side_effect = self.read_holding_registers
+            mock_modbus().write_register.side_effect = self.write_holding_register
+
+            m = modbus_interface.modbus_interface('1.1.1.1', 111, 2, scan_batching=1)
+            m.connect()
+            mock_modbus.assert_called_with('1.1.1.1', 111, RetryOnEmpty=True, framer=modbus_interface.ModbusSocketFramer, retries=1, timeout=1)
+
+            for i in range(1,11):
+                m.add_monitor_register('holding', i)
+
+            m.poll()
+            # Write a value in.
+            m.set_value('holding', 1, 65535, 0xFFFF, 'uint16')
+            m.poll()
+            # Read the value out.
+            self.assertEqual(m.get_value('holding', 1, 'uint16'), 65535)
+            # Read the value out as a different type.
+            self.assertEqual(m.get_value('holding', 1, 'int16'), -1)
+            m.poll()
+
+            m.set_value('holding', 1, 4294927687, 0xFFFF, 'uint32')
+            m.poll()
+            # Read the value out.
+            self.assertEqual(m.get_value('holding', 1, 'uint32'), 4294927687)
+            # Read the value out as a different type.
+            self.assertEqual(m.get_value('holding', 1, 'int32'), -39609)
+
+            m.set_value('holding', 1, 18446573203856197441, 0xFFFF, 'uint64')
+            m.poll()
+            # Read the value out.
+            self.assertEqual(m.get_value('holding', 1, 'uint64'), 18446573203856197441)
+            # Read the value out as a different type.
+            self.assertEqual(m.get_value('holding', 1, 'int64'), -170869853354175)
+
+    def test_multi_byte_read_write_values_LowHigh(self):
+        with patch('modbus4mqtt.modbus_interface.ModbusTcpClient') as mock_modbus:
+            mock_modbus().connect.side_effect = self.connect_success
+            mock_modbus().read_holding_registers.side_effect = self.read_holding_registers
+            mock_modbus().write_register.side_effect = self.write_holding_register
+
+            m = modbus_interface.modbus_interface('1.1.1.1', 111, 2, scan_batching=1, word_order=modbus_interface.WordOrder.LowHigh)
+            m.connect()
+            mock_modbus.assert_called_with('1.1.1.1', 111, RetryOnEmpty=True, framer=modbus_interface.ModbusSocketFramer, retries=1, timeout=1)
+
+            for i in range(1,11):
+                m.add_monitor_register('holding', i)
+
+            m.poll()
+            # Write a value in.
+            m.set_value('holding', 1, 65535, 0xFFFF, 'uint16')
+            m.poll()
+            # Read the value out.
+            self.assertEqual(m.get_value('holding', 1, 'uint16'), 65535)
+            # Read the value out as a different type.
+            self.assertEqual(m.get_value('holding', 1, 'int16'), -1)
+            m.poll()
+
+            m.set_value('holding', 1, 4294927687, 0xFFFF, 'uint32')
+            m.poll()
+            # Read the value out.
+            self.assertEqual(m.get_value('holding', 1, 'uint32'), 4294927687)
+            # Read the value out as a different type.
+            self.assertEqual(m.get_value('holding', 1, 'int32'), -39609)
+
+            m.set_value('holding', 1, 18446573203856197441, 0xFFFF, 'uint64')
+            m.poll()
+            # Read the value out.
+            self.assertEqual(m.get_value('holding', 1, 'uint64'), 18446573203856197441)
+            # Read the value out as a different type.
+            self.assertEqual(m.get_value('holding', 1, 'int64'), -170869853354175)
