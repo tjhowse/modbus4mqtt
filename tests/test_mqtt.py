@@ -415,7 +415,6 @@ class MQTTTests(unittest.TestCase):
                 mock_mqtt().publish.assert_any_call(MQTT_TOPIC_PREFIX+'/publish_int16_2', 32767, retain=False)
                 mock_mqtt().publish.assert_any_call(MQTT_TOPIC_PREFIX+'/publish_int16_3', -32768, retain=False)
                 mock_mqtt().publish.assert_any_call(MQTT_TOPIC_PREFIX+'/publish_int16_4', -1, retain=False)
-                # TODO expand this to include more types.
 
                 msg = MQTTMessage(topic=bytes(MQTT_TOPIC_PREFIX+'/publish_int16_1_set', 'utf-8'))
                 msg.payload = b'-2'

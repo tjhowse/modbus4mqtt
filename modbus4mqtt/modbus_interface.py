@@ -96,7 +96,6 @@ class modbus_interface():
         # Read sequential addresses to get enough bytes to satisfy the type of this register.
         # Note: Each address provides 2 bytes of data.
         value = bytes(0)
-        # TODO Make HighLow LowHigh word ordering configurable for multi-register reads.
         type_len = type_length(type)
         for i in range(type_len):
             if self._word_order == WordOrder.HighLow:
