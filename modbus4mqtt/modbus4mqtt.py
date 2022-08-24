@@ -42,11 +42,17 @@ class mqtt_interface():
         self.connect_mqtt()
 
     def connect_modbus(self):
+        if self.config.get('word_order', 'highlow').lower() == 'lowhigh':
+            word_order = modbus_interface.WordOrder.LowHigh
+        else:
+            word_order = modbus_interface.WordOrder.HighLow
+
         self._mb = modbus_interface.modbus_interface(self.config['ip'],
                                                      self.config.get('port', 502),
                                                      self.config.get('update_rate', 5),
                                                      variant=self.config.get('variant', None),
-                                                     scan_batching=self.config.get('scan_batching', None))
+                                                     scan_batching=self.config.get('scan_batching', None),
+                                                     word_order=word_order)
         failed_attempts = 1
         while self._mb.connect():
             logging.warning("Modbus connection attempt {} failed. Retrying...".format(failed_attempts))

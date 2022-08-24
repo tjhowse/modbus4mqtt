@@ -249,6 +249,11 @@ class ModbusTests(unittest.TestCase):
             self.fail("Silently accepted an invalid type conversion.")
         except:
             pass
+        try:
+            a = modbus_interface.type_length('float16')
+            self.fail("Silently accepted an invalid type conversion.")
+        except:
+            pass
 
     def test_multi_byte_write_counts(self):
         with patch('modbus4mqtt.modbus_interface.ModbusTcpClient') as mock_modbus:
