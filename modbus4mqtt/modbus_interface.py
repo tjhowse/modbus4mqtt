@@ -1,4 +1,5 @@
 from time import time, sleep
+from enum import Enum
 import logging
 from queue import Queue
 from pymodbus.client.sync import ModbusTcpClient, ModbusSocketFramer
@@ -13,9 +14,13 @@ DEFAULT_WRITE_BLOCK_INTERVAL_S = 0.2
 DEFAULT_WRITE_SLEEP_S = 0.05
 DEFAULT_READ_SLEEP_S = 0.05
 
+class WordOrder(Enum):
+    HighLow = 1
+    LowHigh = 2
+
 class modbus_interface():
 
-    def __init__(self, ip, port=502, update_rate_s=DEFAULT_SCAN_RATE_S, variant=None, scan_batching=None):
+    def __init__(self, ip, port=502, update_rate_s=DEFAULT_SCAN_RATE_S, variant=None, scan_batching=None, word_order=WordOrder.HighLow):
         self._ip = ip
         self._port = port
         # This is a dict of sets. Each key represents one table of modbus registers.
@@ -29,6 +34,7 @@ class modbus_interface():
         self._writing = False
         self._variant = variant
         self._scan_batching = DEFAULT_SCAN_BATCHING
+        self._word_order = word_order
         if scan_batching is not None:
             if scan_batching < MIN_SCAN_BATCHING:
                 logging.warning("Bad value for scan_batching: {}. Enforcing minimum value of {}".format(scan_batching, MIN_SCAN_BATCHING))
@@ -90,9 +96,14 @@ class modbus_interface():
         # Read sequential addresses to get enough bytes to satisfy the type of this register.
         # Note: Each address provides 2 bytes of data.
         value = bytes(0)
-        for i in range(type_length(type)):
-            data = self._values[table][addr + i]
-            value = data.to_bytes(2,'big') + value
+        # TODO Make HighLow LowHigh word ordering configurable for multi-register reads.
+        type_len = type_length(type)
+        for i in range(type_len):
+            if self._word_order == WordOrder.HighLow:
+                data = self._values[table][addr + i]
+            else:
+                data = self._values[table][addr + (type_len-i-1)]
+            value += data.to_bytes(2,'big')
         value = _convert_from_bytes_to_type(value, type)
         return value
 
@@ -104,8 +115,13 @@ class modbus_interface():
 
         bytes_to_write = _convert_from_type_to_bytes(value, type)
         # Put the bytes into _planned_writes stitched into two-byte pairs
-        for i in range(type_length(type)):
-            value = _convert_from_bytes_to_type(bytes_to_write[i*2:i*2+2], 'uint16')
+
+        type_len = type_length(type)
+        for i in range(type_len):
+            if self._word_order == WordOrder.HighLow:
+                value = _convert_from_bytes_to_type(bytes_to_write[i*2:i*2+2], 'uint16')
+            else:
+                value = _convert_from_bytes_to_type(bytes_to_write[(type_len-i-1)*2:(type_len-i-1)*2+2], 'uint16')
             self._planned_writes.put((addr+i, value, mask))
 
         self._process_writes()
