@@ -335,12 +335,19 @@ class ModbusTests(unittest.TestCase):
             self.assertEqual(m.get_value('holding', 1, 'int16'), -1)
             m.poll()
 
-            m.set_value('holding', 1, 689876135, 0xFFFF, 'uint32')
+            m.set_value('holding', 1, 4294927687, 0xFFFF, 'uint32')
             m.poll()
             # Read the value out.
-            self.assertEqual(m.get_value('holding', 1, 'uint32'), 689876135)
+            self.assertEqual(m.get_value('holding', 1, 'uint32'), 4294927687)
             # Read the value out as a different type.
-            # self.assertEqual(m.get_value('holding', 1, 'int32'), -1)
+            self.assertEqual(m.get_value('holding', 1, 'int32'), -39609)
+
+            m.set_value('holding', 1, 18446573203856197441, 0xFFFF, 'uint64')
+            m.poll()
+            # Read the value out.
+            self.assertEqual(m.get_value('holding', 1, 'uint64'), 18446573203856197441)
+            # Read the value out as a different type.
+            self.assertEqual(m.get_value('holding', 1, 'int64'), -170869853354175)
 
     def test_multi_byte_read_write_values_LowHigh(self):
         with patch('modbus4mqtt.modbus_interface.ModbusTcpClient') as mock_modbus:
@@ -365,9 +372,16 @@ class ModbusTests(unittest.TestCase):
             self.assertEqual(m.get_value('holding', 1, 'int16'), -1)
             m.poll()
 
-            m.set_value('holding', 1, 689876135, 0xFFFF, 'uint32')
+            m.set_value('holding', 1, 4294927687, 0xFFFF, 'uint32')
             m.poll()
             # Read the value out.
-            self.assertEqual(m.get_value('holding', 1, 'uint32'), 689876135)
+            self.assertEqual(m.get_value('holding', 1, 'uint32'), 4294927687)
             # Read the value out as a different type.
-            # self.assertEqual(m.get_value('holding', 1, 'int32'), -1)
+            self.assertEqual(m.get_value('holding', 1, 'int32'), -39609)
+
+            m.set_value('holding', 1, 18446573203856197441, 0xFFFF, 'uint64')
+            m.poll()
+            # Read the value out.
+            self.assertEqual(m.get_value('holding', 1, 'uint64'), 18446573203856197441)
+            # Read the value out as a different type.
+            self.assertEqual(m.get_value('holding', 1, 'int64'), -170869853354175)
