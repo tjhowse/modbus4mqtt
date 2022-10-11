@@ -58,7 +58,7 @@ class modbus_interface():
                                               RetryOnEmpty=True, retries=1)
         elif self._variant == 'serial':
             self._mb = ModbusSerialClient(method=self._method, port=self._port, baudrate=self._baudrate,
-                                          bytesize=8, parity='N', stopbits=1,
+                                          bytesize=8, parity='E', stopbits=1,
                                           timeout=1, retries=1)
         else:
             self._mb = ModbusTcpClient(self._ip, self._port,
