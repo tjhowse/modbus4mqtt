@@ -4,6 +4,7 @@ update_rate: 5
 address_offset: 0
 variant: sungrow
 scan_batching: 100
+word_order: lowhigh
 registers:
   - pub_topic: "ems/EMS_MODE"
     set_topic: "ems/EMS_MODE/set"
@@ -258,7 +259,7 @@ registers:
     scale: 0.1
   - pub_topic: "solar"
     json_key: total_pv_energy_10
-    type: uint16
+    type: uint32
     address: 13002
     table: input
     pub_only_on_change: false
@@ -272,7 +273,7 @@ registers:
     scale: 0.1
   - pub_topic: "solar"
     json_key: total_export_energy_10
-    type: uint16
+    type: uint32
     address: 13005
     table: input
     pub_only_on_change: false
@@ -311,7 +312,7 @@ registers:
     scale: 0.1
   - pub_topic: "solar"
     json_key: co2_emission_reduction
-    type: uint16
+    type: uint32
     address: 13014
     table: input
     pub_only_on_change: false
@@ -325,7 +326,7 @@ registers:
     scale: 0.1
   - pub_topic: "solar"
     json_key: total_use_energy_10
-    type: uint16
+    type: uint32
     address: 13017
     table: input
     pub_only_on_change: false
