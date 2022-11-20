@@ -4,6 +4,9 @@ import logging
 from queue import Queue
 try:
     # Pymodbus >= 3.0
+    # TODO: Once SungrowModbusTcpClient 0.1.7 is released,
+    # we can remove the "<3.0.0" pymodbus restriction and this
+    # will make sense again.
     from pymodbus.client import ModbusTcpClient
     from pymodbus.transaction import ModbusSocketFramer
 except ImportError:
