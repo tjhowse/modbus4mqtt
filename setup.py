@@ -19,7 +19,7 @@ setuptools.setup(
         'paho-mqtt>=1.5.0',
         'pymodbus>=2.3.0',
         'click>=6.7',
-        'SungrowModbusTcpClient>=0.1.6',
+        'SungrowModbusTcpClient>=0.1.7',
     ],
     tests_require=[
         'nose2>=0.9.2',

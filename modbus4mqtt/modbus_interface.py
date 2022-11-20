@@ -2,8 +2,13 @@ from time import time, sleep
 from enum import Enum
 import logging
 from queue import Queue
-from pymodbus.client.sync import ModbusTcpClient, ModbusSocketFramer
-from pymodbus import exceptions
+try:
+    # Pymodbus >= 3.0
+    from pymodbus.client import ModbusTcpClient
+    from pymodbus.transaction import ModbusSocketFramer
+except ImportError:
+    # Pymodbus < 3.0
+    from pymodbus.client.sync import ModbusTcpClient, ModbusSocketFramer
 from SungrowModbusTcpClient import SungrowModbusTcpClient
 
 DEFAULT_SCAN_RATE_S = 5
