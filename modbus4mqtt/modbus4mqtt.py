@@ -31,6 +31,7 @@ class mqtt_interface():
         self.prefix = mqtt_topic_prefix
         self.address_offset = self.config.get('address_offset', 0)
         self.registers = self.config['registers']
+        self.default_slave = self.config.get('slave', 1)
         for register in self.registers:
             register['address'] += self.address_offset
         self.modbus_connect_retries = -1  # Retry forever by default
@@ -47,12 +48,14 @@ class mqtt_interface():
         else:
             word_order = modbus_interface.WordOrder.HighLow
 
-        self._mb = modbus_interface.modbus_interface(self.config['ip'],
+        self._mb = modbus_interface.modbus_interface(self.config.get('ip', None),
                                                      self.config.get('port', 502),
                                                      self.config.get('update_rate', 5),
                                                      variant=self.config.get('variant', None),
                                                      scan_batching=self.config.get('scan_batching', None),
-                                                     word_order=word_order)
+                                                     word_order=word_order,
+                                                     baudrate=self.config.get('baudrate', 19200),
+                                                     method=self.config.get('method', 'rtu'))
         failed_attempts = 1
         while self._mb.connect():
             logging.warning("Modbus connection attempt {} failed. Retrying...".format(failed_attempts))
@@ -65,7 +68,8 @@ class mqtt_interface():
             sleep(self.modbus_reconnect_sleep_interval)
         # Tells the modbus interface about the registers we consider interesting.
         for register in self.registers:
-            self._mb.add_monitor_register(register.get('table', 'holding'), register['address'], register.get('type', 'uint16'))
+            slave = register.get('slave', self.default_slave)
+            self._mb.add_monitor_register(register.get('table', 'holding'), slave, register['address'], register.get('type', 'uint16'))
             register['value'] = None
 
     def modbus_connection_failed(self):
@@ -103,6 +107,7 @@ class mqtt_interface():
         for register in self._get_registers_with('pub_topic'):
             try:
                 value = self._mb.get_value( register.get('table', 'holding'),
+                                            register.get('slave', self.default_slave),
                                             register['address'],
                                             register.get('type', 'uint16'))
             except Exception:
@@ -195,7 +200,8 @@ class mqtt_interface():
                               "Bad/missing value_map? Topic: {}, Value: {}".format(topic, value))
                 continue
             type = register.get('type', 'uint16')
-            self._mb.set_value(register.get('table', 'holding'), register['address'], int(value),
+            slave = register.get('slave', self.default_slave)
+            self._mb.set_value(register.get('table', 'holding'), slave, register['address'], int(value),
                                register.get('mask', 0xFFFF), type)
 
     # This throws ValueError exceptions if the imported registers are invalid
