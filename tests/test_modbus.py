@@ -22,20 +22,26 @@ class ModbusTests(unittest.TestCase):
 
     def setUp(self):
         modbus_interface.DEFAULT_SCAN_BATCHING = 10
-        self.input_registers = [self.modbusRegister(registers=list(range(0,modbus_interface.DEFAULT_SCAN_BATCHING*2)))]
-        self.holding_registers = [self.modbusRegister(registers=list(range(0,modbus_interface.DEFAULT_SCAN_BATCHING*2)))]
+        self.input_registers = [
+            self.modbusRegister(registers=list(range(0,modbus_interface.DEFAULT_SCAN_BATCHING*2))),
+            self.modbusRegister(registers=list(range(0,modbus_interface.DEFAULT_SCAN_BATCHING*2)))
+            ]
+        self.holding_registers = [
+            self.modbusRegister(registers=list(range(0,modbus_interface.DEFAULT_SCAN_BATCHING*2))),
+            self.modbusRegister(registers=list(range(0,modbus_interface.DEFAULT_SCAN_BATCHING*2)))
+            ]
 
     def tearDown(self):
         pass
 
     def read_input_registers(self, start, count, unit):
-        return self.modbusRegister(registers=self.input_registers.registers[unit][start:start+count])
+        return self.modbusRegister(registers=self.input_registers[unit].registers[start:start+count])
 
     def read_holding_registers(self, start, count, unit):
-        return self.modbusRegister(registers=self.holding_registers.registers[unit][start:start+count])
+        return self.modbusRegister(registers=self.holding_registers[unit].registers[start:start+count])
 
     def write_holding_register(self, address, value, unit):
-        self.holding_registers.registers[unit][address] = value
+        self.holding_registers[unit].registers[address] = value
 
     def connect_success(self):
         return False
@@ -59,26 +65,26 @@ class ModbusTests(unittest.TestCase):
             # Confirm registers are added to the correct tables.
             m.add_monitor_register('holding', 1, 5)
             m.add_monitor_register('input', 1, 6)
-            self.assertIn(5, m._tables['holding'])
-            self.assertNotIn(5, m._tables['input'])
-            self.assertIn(6, m._tables['input'])
-            self.assertNotIn(6, m._tables['holding'])
+            self.assertIn(5, m._tables[1]['holding'])
+            self.assertNotIn(5, m._tables[1]['input'])
+            self.assertIn(6, m._tables[1]['input'])
+            self.assertNotIn(6, m._tables[1]['holding'])
 
             m.poll()
 
-            self.assertEqual(m.get_value('holding', 5), 5)
-            self.assertEqual(m.get_value('input', 6), 6)
+            self.assertEqual(m.get_value('holding', 1, 5), 5)
+            self.assertEqual(m.get_value('input', 1, 6), 6)
 
             # Ensure we read a batch of DEFAULT_SCAN_BATCHING registers even though we only
             # added one register in each table as interesting
             mock_modbus().read_holding_registers.assert_any_call(0, 10, unit=1)
             mock_modbus().read_input_registers.assert_any_call(0, 10, unit=1)
 
-            m.set_value('holding', 5, 7)
+            m.set_value('holding', 1, 5, 7)
             m.poll()
             mock_modbus().write_register.assert_any_call(5, 7, unit=1)
 
-            self.assertRaises(ValueError, m.set_value, 'input', 5, 7)
+            self.assertRaises(ValueError, m.set_value, 'input', 1, 5, 7)
 
             mock_modbus().read_holding_registers.reset_mock()
             mock_modbus().read_input_registers.reset_mock()
@@ -87,8 +93,8 @@ class ModbusTests(unittest.TestCase):
             m.add_monitor_register('holding', 1, 15)
             m.add_monitor_register('input', 1, 16)
 
-            self.assertIn(15, m._tables['holding'])
-            self.assertIn(16, m._tables['input'])
+            self.assertIn(15, m._tables[1]['holding'])
+            self.assertIn(16, m._tables[1]['input'])
 
             m.poll()
 
@@ -105,9 +111,9 @@ class ModbusTests(unittest.TestCase):
 
             m.add_monitor_register('holding', 1, 5)
             m.add_monitor_register('input', 1, 6)
-            self.assertRaises(ValueError, m.get_value, 'beupe', 5)
-            self.assertRaises(ValueError, m.add_monitor_register, 'beupe', 5)
-            self.assertRaises(ValueError, m.get_value, 'holding', 1000)
+            self.assertRaises(ValueError, m.get_value, 'beupe', 1, 5)
+            self.assertRaises(ValueError, m.add_monitor_register, 'beupe', 1, 5)
+            self.assertRaises(ValueError, m.get_value, 'holding', 1, 1000)
 
     def test_write_queuing(self):
         with patch('modbus4mqtt.modbus_interface.ModbusTcpClient') as mock_modbus:
@@ -121,11 +127,11 @@ class ModbusTests(unittest.TestCase):
             # Check that the write queuing works properly.
             mock_modbus().write_register.reset_mock()
             m._writing = True
-            m.set_value('holding', 5, 7)
+            m.set_value('holding', 1, 5, 7)
             m.poll()
             mock_modbus().write_register.assert_not_called()
             m._writing = False
-            m.set_value('holding', 6, 8)
+            m.set_value('holding', 1, 6, 8)
             mock_modbus().write_register.assert_any_call(5, 7, unit=1)
             mock_modbus().write_register.assert_any_call(6, 8, unit=1)
 
@@ -139,7 +145,7 @@ class ModbusTests(unittest.TestCase):
                 m.add_monitor_register('holding', 1, 5)
                 # Have the write_register throw an exception
                 mock_modbus().write_register.side_effect = self.throw_exception
-                m.set_value('holding', 5, 7)
+                m.set_value('holding', 1, 5, 7)
                 self.assertIn("ERROR:root:Failed to write to modbus device: Oh noooo!", mock_logger.output[-1])
 
     def test_masked_writes(self):
@@ -152,20 +158,20 @@ class ModbusTests(unittest.TestCase):
             m = modbus_interface.modbus_interface('1.1.1.1', 111, 2)
             m.connect()
 
-            self.holding_registers.registers[1] = 0
+            self.holding_registers[1].registers[1] = 0
             m.add_monitor_register('holding', 1, 1)
 
-            m.set_value('holding', 1, 0x00FF, 0x00F0)
-            self.assertEqual(self.holding_registers.registers[1], 0x00F0)
+            m.set_value('holding', 1, 1, 0x00FF, 0x00F0)
+            self.assertEqual(self.holding_registers[1].registers[1], 0x00F0)
 
-            m.set_value('holding', 1, 0x00FF, 0x000F)
-            self.assertEqual(self.holding_registers.registers[1], 0x00FF)
+            m.set_value('holding', 1, 1, 0x00FF, 0x000F)
+            self.assertEqual(self.holding_registers[1].registers[1], 0x00FF)
 
-            m.set_value('holding', 1, 0xFFFF, 0xFF00)
-            self.assertEqual(self.holding_registers.registers[1], 0xFFFF)
+            m.set_value('holding', 1, 1, 0xFFFF, 0xFF00)
+            self.assertEqual(self.holding_registers[1].registers[1], 0xFFFF)
 
-            m.set_value('holding', 1, 0x0000, 0x0F00)
-            self.assertEqual(self.holding_registers.registers[1], 0xF0FF)
+            m.set_value('holding', 1, 1, 0x0000, 0x0F00)
+            self.assertEqual(self.holding_registers[1].registers[1], 0xF0FF)
 
     def test_scan_batching_of_one(self):
         with patch('modbus4mqtt.modbus_interface.ModbusTcpClient') as mock_modbus:
@@ -185,10 +191,10 @@ class ModbusTests(unittest.TestCase):
 
             m.poll()
 
-            self.assertEqual(m.get_value('holding', 5), 5)
-            self.assertEqual(m.get_value('holding', 6), 6)
-            self.assertEqual(m.get_value('input', 6), 6)
-            self.assertEqual(m.get_value('input', 7), 7)
+            self.assertEqual(m.get_value('holding', 1, 5), 5)
+            self.assertEqual(m.get_value('holding', 1, 6), 6)
+            self.assertEqual(m.get_value('input', 1, 6), 6)
+            self.assertEqual(m.get_value('input', 1, 7), 7)
 
             # Ensure each register is scanned with a separate read call.
             mock_modbus().read_holding_registers.assert_any_call(5, 1, unit=1)
@@ -269,20 +275,20 @@ class ModbusTests(unittest.TestCase):
 
             m.poll()
             # Write a value in.
-            m.set_value('holding', 1, 65535, 0xFFFF, 'uint16')
+            m.set_value('holding', 1, 1, 65535, 0xFFFF, 'uint16')
             m.poll()
             # Confirm that it only wrote one register.
             mock_modbus().write_register.assert_any_call(1, 65535, unit=1)
             mock_modbus().reset_mock()
 
-            m.set_value('holding', 1, 689876135, 0xFFFF, 'uint32')
+            m.set_value('holding', 1, 1, 689876135, 0xFFFF, 'uint32')
             m.poll()
 
             mock_modbus().write_register.assert_any_call(1, int.from_bytes(b'\x29\x1E','big'), unit=1)
             mock_modbus().write_register.assert_any_call(2, int.from_bytes(b'\xAC\xA7','big'), unit=1)
             mock_modbus().reset_mock()
 
-            m.set_value('holding', 1, 5464681683516384647, 0xFFFF, 'uint64')
+            m.set_value('holding', 1, 1, 5464681683516384647, 0xFFFF, 'uint64')
             m.poll()
 
             mock_modbus().write_register.assert_any_call(1, int.from_bytes(b'\x4B\xD6','big'), unit=1)
@@ -301,14 +307,14 @@ class ModbusTests(unittest.TestCase):
 
             for i in range(1,11):
                 m.add_monitor_register('holding', 1, i)
-            m.set_value('holding', 1, 689876135, 0xFFFF, 'uint32')
+            m.set_value('holding', 1, 1, 689876135, 0xFFFF, 'uint32')
             m.poll()
 
             mock_modbus().write_register.assert_any_call(1, int.from_bytes(b'\xAC\xA7','big'), unit=1)
             mock_modbus().write_register.assert_any_call(2, int.from_bytes(b'\x29\x1E','big'), unit=1)
             mock_modbus().reset_mock()
 
-            m.set_value('holding', 1, 5464681683516384647, 0xFFFF, 'uint64')
+            m.set_value('holding', 1, 1, 5464681683516384647, 0xFFFF, 'uint64')
             m.poll()
 
             mock_modbus().write_register.assert_any_call(1, int.from_bytes(b'\xE5\x87','big'), unit=1)
@@ -332,27 +338,27 @@ class ModbusTests(unittest.TestCase):
 
             m.poll()
             # Write a value in.
-            m.set_value('holding', 1, 65535, 0xFFFF, 'uint16')
+            m.set_value('holding', 1, 1, 65535, 0xFFFF, 'uint16')
             m.poll()
             # Read the value out.
-            self.assertEqual(m.get_value('holding', 1, 'uint16'), 65535)
+            self.assertEqual(m.get_value('holding', 1, 1, 'uint16'), 65535)
             # Read the value out as a different type.
-            self.assertEqual(m.get_value('holding', 1, 'int16'), -1)
+            self.assertEqual(m.get_value('holding', 1, 1, 'int16'), -1)
             m.poll()
 
-            m.set_value('holding', 1, 4294927687, 0xFFFF, 'uint32')
+            m.set_value('holding', 1, 1, 4294927687, 0xFFFF, 'uint32')
             m.poll()
             # Read the value out.
-            self.assertEqual(m.get_value('holding', 1, 'uint32'), 4294927687)
+            self.assertEqual(m.get_value('holding', 1, 1, 'uint32'), 4294927687)
             # Read the value out as a different type.
-            self.assertEqual(m.get_value('holding', 1, 'int32'), -39609)
+            self.assertEqual(m.get_value('holding', 1, 1, 'int32'), -39609)
 
-            m.set_value('holding', 1, 18446573203856197441, 0xFFFF, 'uint64')
+            m.set_value('holding', 1, 1, 18446573203856197441, 0xFFFF, 'uint64')
             m.poll()
             # Read the value out.
-            self.assertEqual(m.get_value('holding', 1, 'uint64'), 18446573203856197441)
+            self.assertEqual(m.get_value('holding', 1, 1, 'uint64'), 18446573203856197441)
             # Read the value out as a different type.
-            self.assertEqual(m.get_value('holding', 1, 'int64'), -170869853354175)
+            self.assertEqual(m.get_value('holding', 1, 1, 'int64'), -170869853354175)
 
     def test_multi_byte_read_write_values_LowHigh(self):
         with patch('modbus4mqtt.modbus_interface.ModbusTcpClient') as mock_modbus:
@@ -369,24 +375,24 @@ class ModbusTests(unittest.TestCase):
 
             m.poll()
             # Write a value in.
-            m.set_value('holding', 1, 65535, 0xFFFF, 'uint16')
+            m.set_value('holding', 1, 1, 65535, 0xFFFF, 'uint16')
             m.poll()
             # Read the value out.
-            self.assertEqual(m.get_value('holding', 1, 'uint16'), 65535)
+            self.assertEqual(m.get_value('holding', 1, 1, 'uint16'), 65535)
             # Read the value out as a different type.
-            self.assertEqual(m.get_value('holding', 1, 'int16'), -1)
+            self.assertEqual(m.get_value('holding', 1, 1, 'int16'), -1)
             m.poll()
 
-            m.set_value('holding', 1, 4294927687, 0xFFFF, 'uint32')
+            m.set_value('holding', 1, 1, 4294927687, 0xFFFF, 'uint32')
             m.poll()
             # Read the value out.
-            self.assertEqual(m.get_value('holding', 1, 'uint32'), 4294927687)
+            self.assertEqual(m.get_value('holding', 1, 1, 'uint32'), 4294927687)
             # Read the value out as a different type.
-            self.assertEqual(m.get_value('holding', 1, 'int32'), -39609)
+            self.assertEqual(m.get_value('holding', 1, 1, 'int32'), -39609)
 
-            m.set_value('holding', 1, 18446573203856197441, 0xFFFF, 'uint64')
+            m.set_value('holding', 1, 1, 18446573203856197441, 0xFFFF, 'uint64')
             m.poll()
             # Read the value out.
-            self.assertEqual(m.get_value('holding', 1, 'uint64'), 18446573203856197441)
+            self.assertEqual(m.get_value('holding', 1, 1, 'uint64'), 18446573203856197441)
             # Read the value out as a different type.
-            self.assertEqual(m.get_value('holding', 1, 'int64'), -170869853354175)
+            self.assertEqual(m.get_value('holding', 1, 1, 'int64'), -170869853354175)
