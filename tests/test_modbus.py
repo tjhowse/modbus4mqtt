@@ -22,20 +22,20 @@ class ModbusTests(unittest.TestCase):
 
     def setUp(self):
         modbus_interface.DEFAULT_SCAN_BATCHING = 10
-        self.input_registers = self.modbusRegister(registers=list(range(0,modbus_interface.DEFAULT_SCAN_BATCHING*2)))
-        self.holding_registers = self.modbusRegister(registers=list(range(0,modbus_interface.DEFAULT_SCAN_BATCHING*2)))
+        self.input_registers = [self.modbusRegister(registers=list(range(0,modbus_interface.DEFAULT_SCAN_BATCHING*2)))]
+        self.holding_registers = [self.modbusRegister(registers=list(range(0,modbus_interface.DEFAULT_SCAN_BATCHING*2)))]
 
     def tearDown(self):
         pass
 
     def read_input_registers(self, start, count, unit):
-        return self.modbusRegister(registers=self.input_registers.registers[start:start+count])
+        return self.modbusRegister(registers=self.input_registers.registers[unit][start:start+count])
 
     def read_holding_registers(self, start, count, unit):
-        return self.modbusRegister(registers=self.holding_registers.registers[start:start+count])
+        return self.modbusRegister(registers=self.holding_registers.registers[unit][start:start+count])
 
     def write_holding_register(self, address, value, unit):
-        self.holding_registers.registers[address] = value
+        self.holding_registers.registers[unit][address] = value
 
     def connect_success(self):
         return False
@@ -57,8 +57,8 @@ class ModbusTests(unittest.TestCase):
             mock_modbus.assert_called_with('1.1.1.1', 111, RetryOnEmpty=True, framer=modbus_interface.ModbusSocketFramer, retries=1, timeout=1)
 
             # Confirm registers are added to the correct tables.
-            m.add_monitor_register('holding', 5)
-            m.add_monitor_register('input', 6)
+            m.add_monitor_register('holding', 1, 5)
+            m.add_monitor_register('input', 1, 6)
             self.assertIn(5, m._tables['holding'])
             self.assertNotIn(5, m._tables['input'])
             self.assertIn(6, m._tables['input'])
@@ -84,8 +84,8 @@ class ModbusTests(unittest.TestCase):
             mock_modbus().read_input_registers.reset_mock()
 
             # Ensure this causes two batched reads per table, one from 0-9 and one from 10-19.
-            m.add_monitor_register('holding', 15)
-            m.add_monitor_register('input', 16)
+            m.add_monitor_register('holding', 1, 15)
+            m.add_monitor_register('input', 1, 16)
 
             self.assertIn(15, m._tables['holding'])
             self.assertIn(16, m._tables['input'])
@@ -103,8 +103,8 @@ class ModbusTests(unittest.TestCase):
             m = modbus_interface.modbus_interface('1.1.1.1', 111, 2)
             m.connect()
 
-            m.add_monitor_register('holding', 5)
-            m.add_monitor_register('input', 6)
+            m.add_monitor_register('holding', 1, 5)
+            m.add_monitor_register('input', 1, 6)
             self.assertRaises(ValueError, m.get_value, 'beupe', 5)
             self.assertRaises(ValueError, m.add_monitor_register, 'beupe', 5)
             self.assertRaises(ValueError, m.get_value, 'holding', 1000)
@@ -115,8 +115,8 @@ class ModbusTests(unittest.TestCase):
             m = modbus_interface.modbus_interface('1.1.1.1', 111, 2)
             m.connect()
 
-            m.add_monitor_register('holding', 5)
-            m.add_monitor_register('input', 6)
+            m.add_monitor_register('holding', 1, 5)
+            m.add_monitor_register('input', 1, 6)
 
             # Check that the write queuing works properly.
             mock_modbus().write_register.reset_mock()
@@ -136,7 +136,7 @@ class ModbusTests(unittest.TestCase):
                 m = modbus_interface.modbus_interface('1.1.1.1', 111, 2)
                 m.connect()
 
-                m.add_monitor_register('holding', 5)
+                m.add_monitor_register('holding', 1, 5)
                 # Have the write_register throw an exception
                 mock_modbus().write_register.side_effect = self.throw_exception
                 m.set_value('holding', 5, 7)
@@ -153,7 +153,7 @@ class ModbusTests(unittest.TestCase):
             m.connect()
 
             self.holding_registers.registers[1] = 0
-            m.add_monitor_register('holding', 1)
+            m.add_monitor_register('holding', 1, 1)
 
             m.set_value('holding', 1, 0x00FF, 0x00F0)
             self.assertEqual(self.holding_registers.registers[1], 0x00F0)
@@ -178,10 +178,10 @@ class ModbusTests(unittest.TestCase):
             mock_modbus.assert_called_with('1.1.1.1', 111, RetryOnEmpty=True, framer=modbus_interface.ModbusSocketFramer, retries=1, timeout=1)
 
             # Confirm registers are added to the correct tables.
-            m.add_monitor_register('holding', 5)
-            m.add_monitor_register('holding', 6)
-            m.add_monitor_register('input', 6)
-            m.add_monitor_register('input', 7)
+            m.add_monitor_register('holding', 1, 5)
+            m.add_monitor_register('holding', 1, 6)
+            m.add_monitor_register('input', 1, 6)
+            m.add_monitor_register('input', 1, 7)
 
             m.poll()
 
@@ -265,7 +265,7 @@ class ModbusTests(unittest.TestCase):
             mock_modbus.assert_called_with('1.1.1.1', 111, RetryOnEmpty=True, framer=modbus_interface.ModbusSocketFramer, retries=1, timeout=1)
 
             for i in range(1,11):
-                m.add_monitor_register('holding', i)
+                m.add_monitor_register('holding', 1, i)
 
             m.poll()
             # Write a value in.
@@ -300,7 +300,7 @@ class ModbusTests(unittest.TestCase):
             mock_modbus.assert_called_with('1.1.1.1', 111, RetryOnEmpty=True, framer=modbus_interface.ModbusSocketFramer, retries=1, timeout=1)
 
             for i in range(1,11):
-                m.add_monitor_register('holding', i)
+                m.add_monitor_register('holding', 1, i)
             m.set_value('holding', 1, 689876135, 0xFFFF, 'uint32')
             m.poll()
 
@@ -328,7 +328,7 @@ class ModbusTests(unittest.TestCase):
             mock_modbus.assert_called_with('1.1.1.1', 111, RetryOnEmpty=True, framer=modbus_interface.ModbusSocketFramer, retries=1, timeout=1)
 
             for i in range(1,11):
-                m.add_monitor_register('holding', i)
+                m.add_monitor_register('holding', 1, i)
 
             m.poll()
             # Write a value in.
@@ -365,7 +365,7 @@ class ModbusTests(unittest.TestCase):
             mock_modbus.assert_called_with('1.1.1.1', 111, RetryOnEmpty=True, framer=modbus_interface.ModbusSocketFramer, retries=1, timeout=1)
 
             for i in range(1,11):
-                m.add_monitor_register('holding', i)
+                m.add_monitor_register('holding', 1, i)
 
             m.poll()
             # Write a value in.
