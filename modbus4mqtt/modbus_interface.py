@@ -123,13 +123,15 @@ class modbus_interface():
         bytes_to_write = _convert_from_type_to_bytes(value, type)
         # Put the bytes into _planned_writes stitched into two-byte pairs
 
+
         type_len = type_length(type)
+        value = []
         for i in range(type_len):
             if self._word_order == WordOrder.HighLow:
-                value = _convert_from_bytes_to_type(bytes_to_write[i*2:i*2+2], 'uint16')
+                value.append(_convert_from_bytes_to_type(bytes_to_write[i*2:i*2+2], 'uint16'))
             else:
-                value = _convert_from_bytes_to_type(bytes_to_write[(type_len-i-1)*2:(type_len-i-1)*2+2], 'uint16')
-            self._planned_writes.put((addr+i, value, mask))
+                value.append(_convert_from_bytes_to_type(bytes_to_write[(type_len-i-1)*2:(type_len-i-1)*2+2], 'uint16'))
+        self._planned_writes.put((addr, value, mask))
 
         self._process_writes()
 
@@ -146,7 +148,7 @@ class modbus_interface():
             while not self._planned_writes.empty() and (time() - write_start_time) < max_block_s:
                 addr, value, mask = self._planned_writes.get()
                 if mask == 0xFFFF:
-                    self._mb.write_register(addr, value, unit=0x01)
+                    self._mb.write_registers(addr, value, unit=0x01)
                 else:
                     # https://pymodbus.readthedocs.io/en/latest/source/library/pymodbus.client.html?highlight=mask_write_register#pymodbus.client.common.ModbusClientMixin.mask_write_register
                     # https://www.mathworks.com/help/instrument/modify-the-contents-of-a-holding-register-using-a-mask-write.html
