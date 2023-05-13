@@ -1,0 +1,49 @@
+ip: 192.168.1.xxx #your inverter ip address
+port: 502
+update_rate: 5
+address_offset: -1
+word_order: lowhigh
+registers:
+ - pub_topic: "magic" # control token, must contain 0xE3DC if interpreted correctly
+   address: 40001
+   type: uint16
+   pub_only_on_change: false
+ - pub_topic: "power/sun" # current yield solar panels [kw]
+   address: 40068
+   type: int32
+   pub_only_on_change: false
+ - pub_topic: "power/battery" # current net yield battery [kW]
+   address: 40070
+   type: int32
+   pub_only_on_change: false
+ - pub_topic: "power/house" # current consumption [kW]
+   address: 40072
+   type: int32
+   pub_only_on_change: false
+ - pub_topic: "power/grid" # current yield grid [kW]
+   address: 40074
+   type: int32
+   pub_only_on_change: false
+ - pub_topic: "status/autarchy_percentage" # current percentage of autarchy [0..100][%]
+   address: 40082
+   mask: 0x00FF
+   type: uint16
+   pub_only_on_change: false
+ - pub_topic: "status/domestic_cons_percentage" # current domestic consumption [0..100][%]
+   address: 40082
+   mask: 0xFF00
+   scale: 0.00390625
+   type: uint16
+   pub_only_on_change: false
+ - pub_topic: "battery/soc" # current State of charge battery [0..100][%]
+   address: 40083
+   type: uint16
+   pub_only_on_change: false
+ - pub_topic: "power/sun/string1" # current yield of solar panels attached to string1 [kW]
+   address: 40102
+   type: uint16
+   pub_only_on_change: false
+ - pub_topic: "power/sun/string2" # current yield of solar panels attached to string2 [kW]
+   address: 40103
+   type: uint16
+   pub_only_on_change: false
