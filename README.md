@@ -35,15 +35,18 @@ modbus4mqtt --mqtt_topic_prefix "***" --hostname "***" --config /etc/modbus4mqtt
 
 ## to use a service:
 copy a ./template/.yaml file to /etc/modbus4mqtt 
-
+```bash
 systemctl start modbusmqtt@"yourfile(include!.yaml)" 
 
 systemctl status modbusmqtt@"yourfile(include!.yaml)"
 
+systemctl enable modbusmqtt@"yourfile(include!.yaml)"
+```
 the service uses the hostname as prefix
 
 u can change this by editing the service file in /etc/systemd/system/
-
+the autostart file can be used instead:
+every .yaml in /etc/modbus4mqtt/ will be started be this script. use cron or similar 
 
 # below to be done !! :
 
