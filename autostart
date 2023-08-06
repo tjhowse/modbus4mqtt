@@ -1,7 +1,7 @@
 #!/bin/bash
 # add 
 # @reboot /etc/modbus4mqtt/autostart to your crontab
-# u can also use 
+# u can alternativly use 
 # */2 * * * * /etc/modbus4mqtt/autostart
 # every config.yaml in directory will be launched as own instanceof the service
 # adjust path to your destination
