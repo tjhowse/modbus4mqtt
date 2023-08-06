@@ -6,6 +6,7 @@ Wants=network-online.target
 After=network-online.target
 
 [Service]
+# %H means Hostname of the system a topic_prefix. use complete name for service start "modbus4mqtt@TCPRTU1.yaml"
 ExecStart=/usr/local/bin/modbus4mqtt --mqtt_topic_prefix %H --config /etc/modbus4mqtt/%I
 Restart=always
 RestartSec=30
