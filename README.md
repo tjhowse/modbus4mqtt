@@ -1,31 +1,50 @@
 # Modbus4MQTT
-this is my fork from modbus4mqtt
+this is my rebuild of my fork from a fork from a fork from modbus4mqtt by tjhowse.
 
 https://github.com/tjhowse/modbus4mqtt
+
 https://pypi.org/project/modbus4mqtt/
-
-![](https://github.com/tjhowse/modbus4mqtt/workflows/Unit%20Tests/badge.svg)
-
-[![codecov](https://codecov.io/gh/tjhowse/modbus4mqtt/branch/master/graph/badge.svg)](https://codecov.io/gh/tjhowse/modbus4mq
-
 
 
 ## Installation
 
 ```bash
+apt install python3-pip
 pip3 install modbus4mqtt
 pip3 install ccorp-yaml-include-relative-path
+mkdir /etc/modbus4mqtt
+git clone https://github.com/Pubaluba/modbus4mqtt_rebuild
 
-ln -s  /usr/local/lib/python3.6/dist-packages/modbus4mqtt /etc/modbus4mqtt
+cd modbus4mqtt_rebuild
+#move the service file to systemd
+mv modbus4mqtt@.service /etc/systemd/system
+systemctl daemon-reload
+#move the python file to replace the original
+mv *.py /usr/local/lib/python3.6/dist-packages/modbus4mqtt
+#if there's an error
+mv *.py /usr/local/lib/python3.10/dist-packages/modbus4mqtt
+#move the remaining to configdir
+mv * /etc/modbus4mqtt
 
-git clone https://github.com/Pubaluba/modbus4mqtt_w_float
-
-cd modbus4mqtt_w_float/modbus4mqtt
-
-cp * /etc/modbus4mqtt/
+cd  /etc/modbus4mqtt/
 modbus4mqtt --help
 
+test your config (example:)
+modbus4mqtt --mqtt_topic_prefix "***" --hostname "***" --config /etc/modbus4mqtt/TCPRTU1.yaml
 ```
+
+## to use a service:
+copy a ./template/.yaml file to /etc/modbus4mqtt 
+systemctl start modbusmqtt@"yourfile(include!.yaml)"
+systemctl status modbusmqtt@"yourfile(include!.yaml)"
+
+the service uses the hostname as prefix
+u can change this by editing the service file in /etc/systemd/system/
+
+
+# below to be done !! :
+
+
 
 # Yaml Configuration
 
@@ -41,7 +60,7 @@ word_order: highlow
 ```
 | Field name | Required | Default | Description |
 | ---------- | -------- | ------- | ----------- |
-| ip | Required | N/A | The IP address of the modbus device to be polled. Presently only modbus TCP/IP is supported. |
+|url | Required | N/A | The IP address of the modbus device to be polled. Presently only modbus TCP/IP is supported. |
 | port | Optional | 502 | The port on the modbus device to connect to. |
 | update_rate | Optional | 5 | The number of seconds between polls of the modbus device. |
 | address_offset | Optional | 0 | This offset is applied to every register address to accommodate different Modbus addressing systems. In many Modbus devices the first register is enumerated as 1, other times 0. See section 4.4 of the Modbus spec. |
