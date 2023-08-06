@@ -1,6 +1,6 @@
 #/etc/systemd/system/modbus4mqtt@.service
 [Unit]
-Description=check easywind online
+Description=modbus4mqtt service
 Documentation=none
 Wants=network-online.target
 After=network-online.target
