@@ -296,10 +296,8 @@ def type_length(type):
         return 1
     elif type in ['int32', 'uint32', 'float']:
         return 2
-    elif type in ['int64', 'uint64']:
+    elif type in ['int64', 'uint64', 'double']:
         return 4
-    elif type in ['double']
-        return 8
     raise ValueError ("Unsupported type {}".format(type))
 
 def type_signed(type):
@@ -312,28 +310,24 @@ def type_signed(type):
 
 def _convert_from_bytes_to_type(value, type, word_order):
     type = type.strip().lower()
-    if type in ( 'float' ):
+    if type in ( 'float', 'double' ):
       type = '>float' if word_order == WordOrder.HighLow else '<float'
     if type in ( 'float_be', '>float' ):
       return struct.unpack('>f', value)[0]
     elif type in ( 'float_le', '<float' ):
       return struct.unpack('<f', value)[0]
-    elif type in ( 'double' ):
-      return struct.unpack('>f', value)[0]
     else:
       signed = type_signed(type)
       return int.from_bytes(value,byteorder='big',signed=signed)
 
 def _convert_from_type_to_bytes(value, type, word_order):
     type = type.strip().lower()
-    if type in ( 'float' ):
+    if type in ( 'float' , 'double'):
       type = '>float' if word_order == WordOrder.HighLow else '<float'
     if type in ( 'float', 'float_be', '>float' ):
       return struct.pack('>f', value)
     elif type in ( 'float_le', '<float' ):
       return struct.pack('<f', value)
-    elif type in ('double'):
-      return struct.pack('>f', value)
     else:
       signed = type_signed(type)
       # This can throw an OverflowError in various conditons. This will usually
