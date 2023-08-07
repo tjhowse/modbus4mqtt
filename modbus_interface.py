@@ -286,7 +286,7 @@ valid_types = [ 'uint16', 'int16'
               , 'float'
               , 'float_be', '>float'
               , 'float_le', '<float'
-              , 'double'
+              , 'double', 'float64
               ]
 
 def type_length(type):
@@ -296,7 +296,7 @@ def type_length(type):
         return 1
     elif type in ['int32', 'uint32', 'float']:
         return 2
-    elif type in ['int64', 'uint64', 'double']:
+    elif type in ['int64', 'uint64', 'double', 'float64']:
         return 4
     raise ValueError ("Unsupported type {}".format(type))
 
@@ -310,7 +310,7 @@ def type_signed(type):
 
 def _convert_from_bytes_to_type(value, type, word_order):
     type = type.strip().lower()
-    if type in ( 'float', 'double' ):
+    if type in ( 'float', 'double', 'float64' ):
       type = '>float' if word_order == WordOrder.HighLow else '<float'
     if type in ( 'float_be', '>float' ):
       return struct.unpack('>f', value)[0]
@@ -322,7 +322,7 @@ def _convert_from_bytes_to_type(value, type, word_order):
 
 def _convert_from_type_to_bytes(value, type, word_order):
     type = type.strip().lower()
-    if type in ( 'float' , 'double'):
+    if type in ( 'float' , 'double', 'float64' ):
       type = '>float' if word_order == WordOrder.HighLow else '<float'
     if type in ( 'float', 'float_be', '>float' ):
       return struct.pack('>f', value)
