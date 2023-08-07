@@ -286,6 +286,7 @@ valid_types = [ 'uint16', 'int16'
               , 'float'
               , 'float_be', '>float'
               , 'float_le', '<float'
+              , 'double'
               ]
 
 def type_length(type):
@@ -297,6 +298,8 @@ def type_length(type):
         return 2
     elif type in ['int64', 'uint64']:
         return 4
+    elif type in ['double']
+        return 8
     raise ValueError ("Unsupported type {}".format(type))
 
 def type_signed(type):
@@ -315,6 +318,8 @@ def _convert_from_bytes_to_type(value, type, word_order):
       return struct.unpack('>f', value)[0]
     elif type in ( 'float_le', '<float' ):
       return struct.unpack('<f', value)[0]
+    elif type in ( 'double' ):
+      return struct.unpack('>f', value)[0]
     else:
       signed = type_signed(type)
       return int.from_bytes(value,byteorder='big',signed=signed)
@@ -327,6 +332,8 @@ def _convert_from_type_to_bytes(value, type, word_order):
       return struct.pack('>f', value)
     elif type in ( 'float_le', '<float' ):
       return struct.pack('<f', value)
+    elif type in ('double'):
+      return struct.pack('>f', value)
     else:
       signed = type_signed(type)
       # This can throw an OverflowError in various conditons. This will usually
