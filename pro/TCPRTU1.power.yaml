@@ -7,7 +7,7 @@ word_order: highlow
 sort_json_keys: False
 registers:
   - pub_topic: Leistungen
-    json_key: Leistung_1
+    json_key: "Leistung 1"
     unit: 0x01
     address: 53
     type: float
@@ -15,7 +15,7 @@ registers:
     pub_only_on_change: false
     scale: 1
   - pub_topic: Leistungen
-    json_key: Leistung_2
+    json_key: "Leistung 2"
     unit: 0x02
     address: 53
     type: float
@@ -23,7 +23,7 @@ registers:
     pub_only_on_change: false
     scale: 1
   - pub_topic: Leistungen
-    json_key: Leistung_3
+    json_key: "Leistung 3"
     unit: 0x03
     address: 53
     type: float
@@ -31,7 +31,7 @@ registers:
     pub_only_on_change: false
     scale: 1
   - pub_topic: Leistungen
-    json_key: Leistung_4
+    json_key: "Leistung 4"
     unit: 0x04
     address: 53
     type: float
@@ -39,7 +39,7 @@ registers:
     pub_only_on_change: false
     scale: 1
   - pub_topic: Leistungen
-    json_key: Leistung_5
+    json_key: "Leistung 5"
     unit: 0x05
     address: 53
     type: float
@@ -47,7 +47,7 @@ registers:
     pub_only_on_change: false
     scale: 1
   - pub_topic: Leistungen
-    json_key: Leistung_6
+    json_key: "Leistung 6"
     unit: 0x06
     address: 53
     type: float
@@ -55,7 +55,7 @@ registers:
     pub_only_on_change: false
     scale: 1
   - pub_topic: Leistungen
-    json_key: Leistung_7
+    json_key: "Leistung 7"
     unit: 0x07
     address: 53
     type: float
@@ -63,7 +63,7 @@ registers:
     pub_only_on_change: false
     scale: 1
   - pub_topic: Leistungen
-    json_key: Leistung_8
+    json_key: "Leistung 8"
     unit: 0x08
     address: 53
     type: float
