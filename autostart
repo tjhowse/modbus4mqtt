@@ -1,13 +1,12 @@
 #!/bin/bash
 # add 
 # @reboot /etc/modbus4mqtt/autostart to your crontab
-# u can alternativly use 
-# */2 * * * * /etc/modbus4mqtt/autostart
+# 
 # every config.yaml in directory will be launched as own instance of the service
 # adjust path to your destination
 sleep 10
 cd /etc/modbus4mqtt/config/
 for f in  $( ls *.yaml); do
-         systemctl start modbus4mqtt@$f.service
+         systemctl start modbus4mqttloop@$f.service
         echo $f
 done
