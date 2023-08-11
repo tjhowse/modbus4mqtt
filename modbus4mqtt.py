@@ -420,12 +420,10 @@ def main(hostname, port, username, password, config, mqtt_topic_prefix, use_tls,
     logging.info("Starting modbus4mqtt {}".format(version))
     i = mqtt_interface(hostname, port, username, password, config, mqtt_topic_prefix,
                        use_tls, insecure, cafile, cert, key)
-    i.connect()
+  i.connect()
   if loop == 'True':
     i.loop_forever()
-  else:
-    i.singlerun()
-    
-
-if __name__ == '__main__':
+    else:
+      i.singlerun()
+      if __name__ == '__main__':
     main()
