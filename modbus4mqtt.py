@@ -10,7 +10,7 @@ import click
 import paho.mqtt.client as mqtt
 
 from . import modbus_interface
-version = "EW.0.7"
+version = "EW.0.8"
 MAX_DECIMAL_POINTS = 3
 DEFAULT_SCAN_RATE_S = 5
 
@@ -22,7 +22,7 @@ def set_json_message_value(message, json_key, value):
       if json_key not in target:
         target[json_key] = dict()
       target = target[json_key]
-  
+
   old = target.get(json_keys[-1], None)
   if old is not None:
     if not isinstance(old, list):
@@ -123,16 +123,16 @@ class mqtt_interface():
 
     def getRegisterError(self, registerKey):
       return self._errors.get(registerKey, False)
-      
+
     def _setRegisterError(self, registerKey):
       if registerKey in self._errors:
         return False
       self._errors[registerKey] = True
       return True
-      
+
     def _clearRegisterError(self, registerKey):
       self._errors.pop(registerKey, None)
-      
+
     def poll(self):
         try:
             self._mb.poll()
@@ -356,7 +356,7 @@ class mqtt_interface():
             address_offset = device.get('address_offset', self.address_offset)
             duplicate_json_key = device.get('duplicate_json_key', 'warn')
             sort_json_keys = device.get('sort_json_keys', True)
-            
+
             for register in device_registers:
               if unit is not None:
                 register['unit'] = unit
@@ -371,7 +371,7 @@ class mqtt_interface():
               register['device'] = self.get_DeviceUnit(register, unit)
             mqtt_interface._validate_registers(device_registers, duplicate_json_key)
             registers += device_registers
-        
+
         mqtt_interface._validate_registers(registers, 'ignore')
         self.registers = registers
         return result
@@ -382,6 +382,9 @@ class mqtt_interface():
             self.poll()
             sleep(self.config.get('update_rate', DEFAULT_SCAN_RATE_S))
 
+    def singlerun(self):
+            self.poll()
+            sleep(5)
 
 @click.command()
 @click.option('--hostname', default='localhost',
@@ -406,7 +409,10 @@ class mqtt_interface():
               help='Client certificate for authentication, if required by server.', show_default=True)
 @click.option('--key', default=None,
               help='Client private key for authentication, if required by server.', show_default=True)
-def main(hostname, port, username, password, config, mqtt_topic_prefix, use_tls, insecure, cafile, cert, key):
+@click.option('--loop', default='False',
+              help='use True if you want to disable oneshot and use update_rate in loop.', show_default=True)
+
+def main(hostname, port, username, password, config, mqtt_topic_prefix, use_tls, insecure, cafile, cert, key, loop):
     logging.basicConfig(
         format='%(asctime)s %(levelname)-8s %(message)s',
         level=logging.INFO,
@@ -415,8 +421,10 @@ def main(hostname, port, username, password, config, mqtt_topic_prefix, use_tls,
     i = mqtt_interface(hostname, port, username, password, config, mqtt_topic_prefix,
                        use_tls, insecure, cafile, cert, key)
     i.connect()
-    i.loop_forever()
-
+    if loop == 'True':
+       i.loop_forever()
+    else:
+       i.singlerun()
 
 if __name__ == '__main__':
     main()

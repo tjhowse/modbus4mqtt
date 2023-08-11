@@ -286,6 +286,9 @@ valid_types = [ 'uint16', 'int16'
               , 'float'
               , 'float_be', '>float'
               , 'float_le', '<float'
+              , 'double'
+              , 'double_be', '>double'
+              , 'double_le', '<double'
               ]
 
 def type_length(type):
@@ -293,9 +296,9 @@ def type_length(type):
     # Note: Each address provides 2 bytes of data.
     if type in ['int16', 'uint16']:
         return 1
-    elif type in ['int32', 'uint32', 'float']:
+    elif type in ['int32', 'uint32', 'float', 'float_be', '>float', 'float_le', '<float']:
         return 2
-    elif type in ['int64', 'uint64']:
+    elif type in ['int64', 'uint64', 'double', 'double_be', '>double', 'double_le', '<double']:
         return 4
     raise ValueError ("Unsupported type {}".format(type))
 
@@ -309,12 +312,18 @@ def type_signed(type):
 
 def _convert_from_bytes_to_type(value, type, word_order):
     type = type.strip().lower()
-    if type in ( 'float' ):
+    if type in ( 'float'):
       type = '>float' if word_order == WordOrder.HighLow else '<float'
+    if type in ( 'double'):
+      type = '>double' if word_order == WordOrder.HighLow else '<double'
     if type in ( 'float_be', '>float' ):
       return struct.unpack('>f', value)[0]
     elif type in ( 'float_le', '<float' ):
       return struct.unpack('<f', value)[0]
+    elif type in ( 'double_be', '>double' ):
+      return struct.unpack('>d', value)[0]
+    elif type in ( 'double_le', '<double' ):
+      return struct.unpack('<d', value)[0]
     else:
       signed = type_signed(type)
       return int.from_bytes(value,byteorder='big',signed=signed)
@@ -323,10 +332,16 @@ def _convert_from_type_to_bytes(value, type, word_order):
     type = type.strip().lower()
     if type in ( 'float' ):
       type = '>float' if word_order == WordOrder.HighLow else '<float'
-    if type in ( 'float', 'float_be', '>float' ):
+    if type in ( 'double'):
+      type = '>double' if word_order == WordOrder.HighLow else '<double'
+    if type in ( 'float_be', '>float' ):
       return struct.pack('>f', value)
     elif type in ( 'float_le', '<float' ):
       return struct.pack('<f', value)
+    elif type in ( 'double_be', '>double' ):
+      return struct.pack('>d', value)[0]
+    elif type in ( 'double_le', '<double' ):
+      return struct.pack('<d', value)[0]
     else:
       signed = type_signed(type)
       # This can throw an OverflowError in various conditons. This will usually
