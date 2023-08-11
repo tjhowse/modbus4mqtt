@@ -1,6 +1,6 @@
 #/etc/systemd/system/modbus4mqtt@.service
 [Unit]
-Description=check easywind online
+Description=Poll once and transmit to mqtt
 Documentation=none
 Wants=network-online.target
 After=network-online.target
