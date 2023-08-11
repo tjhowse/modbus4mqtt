@@ -1,5 +1,13 @@
 # Modbus4MQTT
 this is my rebuild of my fork from a fork from a fork from modbus4mqtt by tjhowse.
+I have added Double (float64), multiple servicefiles, singlerun option (default) , 
+cleaned up wrong templates. updated readme.
+
+
+thanks to tjhowse for the main project
+thanks to JPSteindlberger for float support
+thanks to a-s-z-home for float support and modbus_interface with units and serial support
+
 
 https://github.com/tjhowse/modbus4mqtt
 
@@ -17,9 +25,9 @@ git clone https://github.com/Pubaluba/modbus4mqtt_rebuild
 
 cd modbus4mqtt_rebuild
 #move the service file to systemd
-mv modbus4mqtt@.service /etc/systemd/system
+mv *.service /etc/systemd/system/
 systemctl daemon-reload
-#move the python file to replace the original
+#move the python file to replace the original installed by pip
 mv *.py /usr/local/lib/python3.6/dist-packages/modbus4mqtt
 #if there's an error
 mv *.py /usr/local/lib/python3.10/dist-packages/modbus4mqtt
@@ -31,22 +39,37 @@ modbus4mqtt --help
 
 test your config (example:)
 modbus4mqtt --mqtt_topic_prefix "***" --hostname "***" --config /etc/modbus4mqtt/TCPRTU1.yaml
+
+if your want to run in loop, use "--loop True" else a singlerun will be performed to preserve correct timestamps
+unse 
 ```
+## use cron for singlerun:
 
-## to use a service:
-copy a ./template/.yaml file to /etc/modbus4mqtt 
+you can use cron every 5 min for yiled data: 
+*/5 * * * *  /etc/modbus4mqtt/autorunconfig
+
+you can use cron every 10 sec for power data  (one start more !)
+*/10 * * * * * /etc/modbus4mqtt/autorunpro
+
+both scripts use the servicefiles modbus4mqttconfig@ / modbusmqttpro@.service
+
+
+## to use a service with "updaterate" setting:
+please be awere of inconsistent timestamp. running multiple services @ different devices will loop different because a simple sllep command is used after polling.
+
+copy a ./template/.yaml file to /etc/modbus4mqtt/config/ 
 ```bash
-systemctl start modbusmqtt@"yourfile(include!.yaml)" 
+systemctl start modbusmqttloop@"yourfile(include!.yaml)" 
 
-systemctl status modbusmqtt@"yourfile(include!.yaml)"
+systemctl status modbusmqttloop@"yourfile(include!.yaml)"
 
-systemctl enable modbusmqtt@"yourfile(include!.yaml)"
+systemctl enable modbusmqttloop@"yourfile(include!.yaml)"
 ```
 the service uses the hostname as prefix
 
 u can change this by editing the service file in /etc/systemd/system/
 the autostart file can be used instead:
-every .yaml in /etc/modbus4mqtt/ will be started be this script. use cron or similar 
+every .yaml in /etc/modbus4mqtt/config will be started be this script. use cron or similar 
 
 # below to be done !! :
 
@@ -57,16 +80,16 @@ every .yaml in /etc/modbus4mqtt/ will be started be this script. use cron or sim
 ### Modbus device settings
 ```yaml
 
-ip: 192.168.1.89
-port: 502
-update_rate: 30
+url: tcp://192.168.1.89:502
+#url: serial:///dev/ttyUSB1?comset=8E1
+update_rate: 30  # only used for "--loop True"
 address_offset: 0 
 scan_batching: 100
 word_order: highlow
 ```
 | Field name | Required | Default | Description |
 | ---------- | -------- | ------- | ----------- |
-|url | Required | N/A | The IP address of the modbus device to be polled. Presently only modbus TCP/IP is supported. |
+|url | Required | N/A | The  address of the modbus device to be polled. modbus TCP/IP and serial is supported. I suggest using mbusd https://github.com/3cky/mbusd for serial devices if you want to pull multiple data with different rates. Serial does not support multiple clients when opend |
 | port | Optional | 502 | The port on the modbus device to connect to. |
 | update_rate | Optional | 5 | The number of seconds between polls of the modbus device. |
 | address_offset | Optional | 0 | This offset is applied to every register address to accommodate different Modbus addressing systems. In many Modbus devices the first register is enumerated as 1, other times 0. See section 4.4 of the Modbus spec. |
@@ -76,6 +99,7 @@ word_order: highlow
 
 ### Register settings
 ```yaml
+
 registers:
   - pub_topic: "forced_charge/mode"
     set_topic: "forced_charge/mode/set"
@@ -86,6 +110,7 @@ registers:
     value_map:
       enabled: 170
       disabled: 85
+    unit: 8  ## defaults to 1
   - pub_topic: "forced_charge/period_1/start_hours"
     set_topic: "forced_charge/period_1/start_hours/set"
     pub_only_on_change: true
@@ -109,6 +134,22 @@ registers:
   - pub_topic: "minutes_online"
     address: 13016
     type: uint32
+
+  - pub_topic: "Yield"
+    json_key: "PV inverter"    # use "" for spaces
+    address: 53
+    unit: 8
+    type: float
+
+  - pub_topic: "Yield"
+    json_key: Windturbine
+    address: 210
+    unit: 255
+    type: double
+
+  - 
+
+
 ```
 
 This section of the YAML lists all the modbus registers that you consider interesting.
@@ -123,6 +164,6 @@ This section of the YAML lists all the modbus registers that you consider intere
 | table | Optional | holding | The Modbus table to read from the device. Must be 'holding' or 'input'. |
 | value_map | Optional | N/A | A series of human-readable and raw values for the setting. This will be used to translate between human-readable values via MQTT to raw values via Modbus. If a value_map is set for a register the interface will reject raw values sent via MQTT. If value_map is not set the interface will try to set the Modbus register to that value. Note that the scale is applied after the value is read from Modbus and before it is written to Modbus. |
 | scale | Optional | 1 | After reading a value from the Modbus register it will be multiplied by this scalar before being published to MQTT. Values published on this register's `set_topic` will be divided by this scalar before being written to Modbus. |
-| mask | Optional | 0xFFFF | This is a 16-bit number that can be used to select a part of a Modbus register to be referenced by this register. For example a mask of `0xFF00` will map to the most significant byte of the 16-bit Modbus register at `address`. A mask of `0x0001` will reference only the least significant bit of this register. |
-| json_key | Optional | N/A | The value of this register will be published to its pub_topic in JSON format. E.G. `{ key: value }` Registers with a json_key specified can share a pub_topic. All registers with shared pub_topics must have a json_key specified. In this way, multiple registers can be published to the same topic in a single JSON message. If any of the registers that share a pub_topic have the retain field set that will affect the published JSON message. Conflicting retain settings are invalid. The keys will be alphabetically sorted. |
-| type | Optional | uint16 | The type of the value stored at the modbus address provided. Only uint16 (unsigned 16-bit integer), int16 (signed 16-bit integer), uint32, int32, uint64 and int64 are currently supported. |
+| mask | Optional | 0xFFFF | This is a 16-bit number that can be used to select a part of a Modbus register to be referenced by this register. For example a mask of `0xFF00` will map to the most significant byte of the 16-bit Modbus register at `address`. A mask of `0x0001` will reference only the least significant bit of this register. only to be used @ unsigned integer 16/32/64 bit |
+| json_key | Optional | N/A | The value of this register will be published to its pub_topic in JSON format. E.G. `{ key: value }` Registers with a json_key specified can share a pub_topic. All registers with shared pub_topics must have a json_key specified. In this way, multiple registers can be published to the same topic in a single JSON message. If any of the registers that share a pub_topic have the retain field set that will affect the published JSON message. Conflicting retain settings are invalid. The keys will be alphabetically sorted. Keys with spaces must use ".. .." |
+| type | Optional | uint16 | The type of the value stored at the modbus address provided. uint16 (unsigned 16-bit integer), int16 (signed 16-bit integer), uint32, int32, uint64 and int64 , float , float_be (big Endian), float_le (little Endian) double, double_be, double_le are supported. |
