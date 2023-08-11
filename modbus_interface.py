@@ -287,7 +287,7 @@ valid_types = [ 'uint16', 'int16'
               , 'float_be', '>float'
               , 'float_le', '<float'
               , 'double'
-              , 'double_be', '>double',
+              , 'double_be', '>double'
               , 'double_le', '<double'
               ]
 
