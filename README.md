@@ -71,9 +71,6 @@ u can change this by editing the service file in /etc/systemd/system/
 the autostart file can be used instead:
 every .yaml in /etc/modbus4mqtt/config will be started be this script. use cron or similar 
 
-# below to be done !! :
-
-
 
 # Yaml Configuration
 
