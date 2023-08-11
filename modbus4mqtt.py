@@ -376,13 +376,13 @@ class mqtt_interface():
         self.registers = registers
         return result
 
-    def loop_forever(self)     
+    def loop_forever(self):
     while True:
             # TODO this properly.
             self.poll()
             sleep(self.config.get('update_rate', DEFAULT_SCAN_RATE_S))
       
-    def singlerun(self)
+    def singlerun(self):
             self.poll()
             sleep(5) #grant time forbpublish data
 
