@@ -377,7 +377,7 @@ class mqtt_interface():
         return result
 
     def loop_forever(self):
-    while True:
+      while True:
             # TODO this properly.
             self.poll()
             sleep(self.config.get('update_rate', DEFAULT_SCAN_RATE_S))
