@@ -10,7 +10,7 @@ import click
 import paho.mqtt.client as mqtt
 
 from . import modbus_interface
-version = "EW.0.7"
+version = "EW.0.8"
 MAX_DECIMAL_POINTS = 3
 DEFAULT_SCAN_RATE_S = 5
 
