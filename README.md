@@ -4,11 +4,11 @@ I have added Double (float64), multiple servicefiles, singlerun option (default)
 cleaned up wrong templates. updated readme.
 
 
-thanks to tjhowse for the main project
-thanks to JPSteindlberger for float support
-thanks to a-s-z-home for float support and modbus_interface with units and serial support
+##### thanks to tjhowse for the main project
+##### thanks to JPSteindlberger for float support
+##### thanks to a-s-z-home for float support and modbus_interface with units and serial support
 
-
+#
 https://github.com/tjhowse/modbus4mqtt
 
 https://pypi.org/project/modbus4mqtt/
@@ -17,21 +17,35 @@ https://pypi.org/project/modbus4mqtt/
 ## Installation
 
 ```bash
-apt install python3-pip
-pip3 install modbus4mqtt
-pip3 install ccorp-yaml-include-relative-path
-mkdir /etc/modbus4mqtt
 git clone https://github.com/Pubaluba/modbus4mqtt_rebuild
-
 cd modbus4mqtt_rebuild
+
+apt install python3-pip
+pip3 install -r requirements.txt
+
+
 #move the service file to systemd
 mv *.service /etc/systemd/system/
 systemctl daemon-reload
-#move the python file to replace the original installed by pip
+
+#install the python file to dist
+python3 --version
+
+if 3.6.*
+mkdir /usr/local/lib/python3.6/dist-packages/modbus4mqtt
 mv *.py /usr/local/lib/python3.6/dist-packages/modbus4mqtt
-#if there's an error
+
+if 3.10.*
+mkdir /usr/local/lib/python3.10/dist-packages/modbus4mqtt
 mv *.py /usr/local/lib/python3.10/dist-packages/modbus4mqtt
+
+
+#move the binary 
+mv modbus4mqtt /usr/local/bin/
+chmod 777 /usr/local/bin/modbus4mqtt
+
 #move the remaining to configdir
+mkdir /etc/modbus4mqtt
 mv * /etc/modbus4mqtt
 
 cd  /etc/modbus4mqtt/
@@ -44,12 +58,14 @@ if your want to run in loop, use "--loop True" else a singlerun will be performe
 unse 
 ```
 ## use cron for singlerun:
-
-you can use cron every 5 min for yiled data: 
-*/5 * * * *  /etc/modbus4mqtt/autorunconfig
+```bash
+crontab -e 
+```
+you can use cron every 5 min for yield data: 
+##### */5 * * * *  /etc/modbus4mqtt/autorunconfig
 
 you can use cron every 10 sec for power data  (one start more !)
-*/10 * * * * * /etc/modbus4mqtt/autorunpro
+##### */10 * * * * * /etc/modbus4mqtt/autorunpro
 
 both scripts use the servicefiles modbus4mqttconfig@ / modbusmqttpro@.service
 
@@ -72,6 +88,12 @@ the autostart file can be used instead:
 every .yaml in /etc/modbus4mqtt/config will be started be this script. use cron or similar 
 
 
+## use the commandline
+```bash
+modbus4mqtt --help
+```
+make you own command, script, servicefile, etc
+
 # Yaml Configuration
 
 ### Modbus device settings
@@ -87,7 +109,6 @@ word_order: highlow
 | Field name | Required | Default | Description |
 | ---------- | -------- | ------- | ----------- |
 |url | Required | N/A | The  address of the modbus device to be polled. modbus TCP/IP and serial is supported. I suggest using mbusd https://github.com/3cky/mbusd for serial devices if you want to pull multiple data with different rates. Serial does not support multiple clients when opend |
-| port | Optional | 502 | The port on the modbus device to connect to. |
 | update_rate | Optional | 5 | The number of seconds between polls of the modbus device. |
 | address_offset | Optional | 0 | This offset is applied to every register address to accommodate different Modbus addressing systems. In many Modbus devices the first register is enumerated as 1, other times 0. See section 4.4 of the Modbus spec. |
 | variant | Optional | N/A | Allows variants of the ModbusTcpClient library to be used. Setting this to 'sungrow' enables support of SungrowModbusTcpClient. This library transparently decrypts the modbus comms with sungrow SH inverters running newer firmware versions. |
