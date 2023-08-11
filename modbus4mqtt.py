@@ -381,7 +381,10 @@ class mqtt_interface():
             # TODO this properly.
             self.poll()
             sleep(self.config.get('update_rate', DEFAULT_SCAN_RATE_S))
-
+      
+    def singlerun(self)
+            self.poll()
+            sleep(5) #grant time forbpublish data
 
 @click.command()
 @click.option('--hostname', default='localhost',
@@ -406,10 +409,10 @@ class mqtt_interface():
               help='Client certificate for authentication, if required by server.', show_default=True)
 @click.option('--key', default=None,
               help='Client private key for authentication, if required by server.', show_default=True)
-@click.option('--loop', default=True,
-              help='use False if you want to disable loop.', show_default=True)
+@click.option('--loop', default='False',
+              help='use True if you want to use scanrate loop.', show_default=True)
 
-def main(hostname, port, username, password, config, mqtt_topic_prefix, use_tls, insecure, cafile, cert, key):
+def main(hostname, port, username, password, config, mqtt_topic_prefix, use_tls, insecure, cafile, cert, key, loop):
     logging.basicConfig(
         format='%(asctime)s %(levelname)-8s %(message)s',
         level=logging.INFO,
@@ -421,8 +424,7 @@ def main(hostname, port, username, password, config, mqtt_topic_prefix, use_tls,
   if loop == 'True':
     i.loop_forever()
   else:
-    self.poll()
-    sleep(5)
+    i.singlerun()
     
 
 if __name__ == '__main__':
