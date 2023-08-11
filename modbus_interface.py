@@ -296,9 +296,9 @@ def type_length(type):
     # Note: Each address provides 2 bytes of data.
     if type in ['int16', 'uint16']:
         return 1
-    elif type in ['int32', 'uint32', 'float']:
+    elif type in ['int32', 'uint32', 'float', 'float_be', '>float', 'float_le', '<float']:
         return 2
-    elif type in ['int64', 'uint64', 'double', 'float64']:
+    elif type in ['int64', 'uint64', 'double', 'double_be', '>double', 'double_le', '<double']:
         return 4
     raise ValueError ("Unsupported type {}".format(type))
 
