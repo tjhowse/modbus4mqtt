@@ -6,7 +6,7 @@
 # every config.yaml in directory will be launched as own instance of the service
 # adjust path to your destination
 sleep 10
-cd /etc/modbus4mqtt/
+cd /etc/modbus4mqtt/config/
 for f in  $( ls *.yaml); do
          systemctl start modbus4mqtt@$f.service
         echo $f
