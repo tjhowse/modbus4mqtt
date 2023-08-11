@@ -376,10 +376,8 @@ class mqtt_interface():
         self.registers = registers
         return result
 
-    def loop_forever(self):
-       self.poll()
-            sleep(self.config.get('update_rate', DEFAULT_SCAN_RATE_S))
-      while loop == True:
+    def loop_forever(self)     
+    while True:
             # TODO this properly.
             self.poll()
             sleep(self.config.get('update_rate', DEFAULT_SCAN_RATE_S))
@@ -420,8 +418,12 @@ def main(hostname, port, username, password, config, mqtt_topic_prefix, use_tls,
     i = mqtt_interface(hostname, port, username, password, config, mqtt_topic_prefix,
                        use_tls, insecure, cafile, cert, key)
     i.connect()
+  if loop == 'True':
     i.loop_forever()
-
+  else:
+    self.poll()
+    sleep(5)
+    
 
 if __name__ == '__main__':
     main()
