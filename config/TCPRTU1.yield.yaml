@@ -6,16 +6,16 @@ scan_batching: 4
 word_order: highlow
 sort_json_keys: False
 registers:
-  - pub_topic: Netzanschluss
-    json_key: Bezug
+  - pub_topic: Verbrauch
+    json_key: "Zaehler 1"
     unit: 0x01
     address: 73
     type: float
     table: 'input'
     pub_only_on_change: true
     scale: 1
-  - pub_topic: Netzanschluss
-    json_key: Einspeisung
+  - pub_topic: Erzeugung
+    json_key: "Zaehler 1"
     unit: 0x01
     address: 75
     type: float
