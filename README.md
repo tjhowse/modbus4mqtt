@@ -67,6 +67,17 @@ you can use cron every 5 min for yield data:
 you can use cron every 10 sec for power data  (one start more/ not every Version)
 ##### */10 * * * * * /etc/modbus4mqtt/autorunpro
 
+alternativ for 10 sec interval:
+```bash
+* * * * * /etc/modbus4mqtt/autorunpro
+* * * * * (sleep 10 ; /etc/modbus4mqtt/autorunpro)
+* * * * * (sleep 20 ; /etc/modbus4mqtt/autorunpro)
+* * * * * (sleep 30 ; /etc/modbus4mqtt/autorunpro)
+* * * * * (sleep 40 ; /etc/modbus4mqtt/autorunpro)
+* * * * * (sleep 50 ; /etc/modbus4mqtt/autorunpro)
+```
+
+
 both scripts use the servicefiles modbus4mqttconfig@ / modbusmqttpro@.service
 
 
