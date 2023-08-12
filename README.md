@@ -75,11 +75,11 @@ please be awere of inconsistent timestamp. running multiple services @ different
 
 copy a ./template/.yaml file to /etc/modbus4mqtt/config/ 
 ```bash
-systemctl start modbusmqttloop@"yourfile(include!.yaml)" 
+systemctl start modbus4mqttloop@"yourfile(include!.yaml)" 
 
-systemctl status modbusmqttloop@"yourfile(include!.yaml)"
+systemctl status modbus4mqttloop@"yourfile(include!.yaml)"
 
-systemctl enable modbusmqttloop@"yourfile(include!.yaml)"
+systemctl enable modbus4mqttloop@"yourfile(include!.yaml)"
 ```
 the service uses the hostname as prefix
 
