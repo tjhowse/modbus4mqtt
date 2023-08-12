@@ -64,7 +64,7 @@ crontab -e
 you can use cron every 5 min for yield data: 
 ##### */5 * * * *  /etc/modbus4mqtt/autorunconfig
 
-you can use cron every 10 sec for power data  (one start more !)
+you can use cron every 10 sec for power data  (one start more/ not every Version)
 ##### */10 * * * * * /etc/modbus4mqtt/autorunpro
 
 both scripts use the servicefiles modbus4mqttconfig@ / modbusmqttpro@.service
