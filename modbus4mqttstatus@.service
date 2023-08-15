@@ -1,0 +1,12 @@
+#/etc/systemd/system/modbus4mqttstatus@.service
+[Unit]
+Description=Modbus4MQTT status service
+Documentation=none
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+ExecStart=/usr/local/bin/modbus4mqtt --mqtt_topic_prefix %H --loop False --config /etc/modbus4mqtt/status/%I 
+
+[Install]
+WantedBy=default.target
