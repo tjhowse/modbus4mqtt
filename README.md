@@ -51,11 +51,16 @@ chmod 777 /etc/modbus4mqtt/*
 #move the binary 
 mv modbus4mqtt /usr/local/bin/
 
+#create config folders
+mkdir status
+mkdir loop
+mkdir power
+
 #first run
 modbus4mqtt --help
 
 #test your config (example:)
-modbus4mqtt --mqtt_topic_prefix "***" --hostname "***" --config /etc/modbus4mqtt/TCPRTU1.yaml
+modbus4mqtt --mqtt_topic_prefix "***" --hostname "***" --config /etc/modbus4mqtt/****.yaml
 
 if your want to run a single run, use "--loop False" 
 ```
