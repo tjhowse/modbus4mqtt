@@ -8,7 +8,7 @@ sort_json_keys: False
 registers:
   - pub_topic: "Speicher"
     json_key: 'Entladung'
-    unit: 0x03
+    unit: 3
     address: 30597
     type: uint32
     table: 'holding'
@@ -16,7 +16,7 @@ registers:
     scale: 0.001
   - pub_topic: "Speicher"
     json_key: 'Ladung'
-    unit: 0x03
+    unit: 3
     address: 30595
     type: uint32
     table: 'holding'
@@ -24,9 +24,25 @@ registers:
     scale: 0.001
   - pub_topic: "Speicher"
     json_key: 'Ladezustand'
-    unit: 0x03
+    unit: 3
     address: 30845
     type: uint32
+    table: 'holding'
+    pub_only_on_change: false
+    scale: 1
+  - pub_topic: "Speicher"
+    json_key: "SoH"
+    unit: 3
+    address: 847
+    type: uint32
+    table: 'holding'
+    pub_only_on_change: false
+    scale: 1
+  - pub_topic: "Speicher"
+    json_key: "SoC"
+    unit: 3
+    address: 845
+    type: int32
     table: 'holding'
     pub_only_on_change: false
     scale: 1
