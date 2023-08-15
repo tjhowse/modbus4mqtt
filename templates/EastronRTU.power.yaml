@@ -1,7 +1,7 @@
 url: tcp://127.0.0.1:500
 #url: serial:///dev/ttysWK0
 update_rate: 30
-address_offset: 1
+address_offset: 0
 scan_batching: 4
 word_order: highlow
 sort_json_keys: False
@@ -9,7 +9,7 @@ registers:
   - pub_topic: Leistungen
     json_key: Leistung_1
     unit: 0x01
-    address: 53
+    address: 52
     type: float
     table: 'input'
     pub_only_on_change: false
@@ -17,7 +17,7 @@ registers:
   - pub_topic: Leistungen
     json_key: Leistung_2
     unit: 0x02
-    address: 53
+    address: 52
     type: float
     table: 'input'
     pub_only_on_change: false
@@ -25,7 +25,7 @@ registers:
   - pub_topic: Leistungen
     json_key: Leistung_3
     unit: 0x03
-    address: 53
+    address: 52
     type: float
     table: 'input'
     pub_only_on_change: false
@@ -33,7 +33,7 @@ registers:
   - pub_topic: Leistungen
     json_key: Leistung_4
     unit: 0x04
-    address: 53
+    address: 52
     type: float
     table: 'input'
     pub_only_on_change: false
@@ -41,7 +41,7 @@ registers:
   - pub_topic: Leistungen
     json_key: Leistung_5
     unit: 0x05
-    address: 53
+    address: 52
     type: float
     table: 'input'
     pub_only_on_change: false
@@ -49,7 +49,7 @@ registers:
   - pub_topic: Leistungen
     json_key: Leistung_6
     unit: 0x06
-    address: 53
+    address: 52
     type: float
     table: 'input'
     pub_only_on_change: false
@@ -57,7 +57,7 @@ registers:
   - pub_topic: Leistungen
     json_key: Leistung_7
     unit: 0x07
-    address: 53
+    address: 52
     type: float
     table: 'input'
     pub_only_on_change: false
@@ -65,7 +65,7 @@ registers:
   - pub_topic: Leistungen
     json_key: Leistung_8
     unit: 0x08
-    address: 53
+    address: 52
     type: float
     table: 'input'
     pub_only_on_change: false
