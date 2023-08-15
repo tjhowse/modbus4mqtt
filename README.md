@@ -1,7 +1,7 @@
 # Modbus4MQTT
 this is my rebuild of my fork from a fork from a fork from modbus4mqtt by tjhowse.
 I have added Double (float64), multiple servicefiles, singlerun option (--loop False), 
-cleaned up wrong templates. updated readme.
+cleaned up wrong templates. updated readme and installation.
 
 
 ##### thanks to tjhowse for the main project
