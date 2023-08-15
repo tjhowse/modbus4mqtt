@@ -384,7 +384,7 @@ class mqtt_interface():
 
     def singlerun(self):
             self.poll()
-            sleep(5)
+            sleep(10)
 
 @click.command()
 @click.option('--hostname', default='localhost',
