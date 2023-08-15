@@ -1,7 +1,7 @@
 url: tcp://127.0.0.1:500
 #url: serial:///dev/ttysWK0
 update_rate: 30
-address_offset: 1
+address_offset: 0
 scan_batching: 4
 word_order: highlow
 sort_json_keys: False
@@ -9,7 +9,7 @@ registers:
   - pub_topic: Verbrauch
     json_key: "Zaehler 1"
     unit: 1
-    address: 73
+    address: 72
     type: float
     table: 'input'
     pub_only_on_change: true
@@ -17,7 +17,7 @@ registers:
   - pub_topic: Erzeugung
     json_key: "Zaehler 1"
     unit: 0x01
-    address: 75
+    address: 74
     type: float
     table: 'input'
     pub_only_on_change: true
@@ -25,7 +25,7 @@ registers:
   - pub_topic: Verbrauch
     json_key: "Zaehler 2"
     unit: 0x02
-    address: 73
+    address: 72
     type: float
     table: 'input'
     pub_only_on_change: true
@@ -33,7 +33,7 @@ registers:
   - pub_topic: Erzeugung
     json_key: "Zaehler 2"
     unit: 0x02
-    address: 75
+    address: 74
     type: float
     table: 'input'
     pub_only_on_change: true
@@ -41,7 +41,7 @@ registers:
   - pub_topic: Verbrauch
     json_key: "Zaehler 3"
     unit: 0x03
-    address: 73
+    address: 72
     type: float
     table: 'input'
     pub_only_on_change: true
@@ -49,7 +49,7 @@ registers:
   - pub_topic: Erzeugung
     json_key: "Zaehler 3"
     unit: 0x03
-    address: 75
+    address: 74
     type: float
     table: 'input'
     pub_only_on_change: true
@@ -57,7 +57,7 @@ registers:
   - pub_topic: Verbrauch
     json_key: "Zaehler 4"
     unit: 0x04
-    address: 73
+    address: 72
     type: float
     table: 'input'
     pub_only_on_change: true
@@ -65,7 +65,7 @@ registers:
   - pub_topic: Erzeugung
     json_key: "Zaehler 4"
     unit: 0x04
-    address: 75
+    address: 74
     type: float
     table: 'input'
     pub_only_on_change: true
@@ -73,7 +73,7 @@ registers:
   - pub_topic: Verbrauch
     json_key: "Zaehler 5"
     unit: 0x05
-    address: 73
+    address: 72
     type: float
     table: 'input'
     pub_only_on_change: true
@@ -81,7 +81,7 @@ registers:
   - pub_topic: Erzeugung
     json_key: "Zaehler 5"
     unit: 0x05
-    address: 75
+    address: 74
     type: float
     table: 'input'
     pub_only_on_change: true
@@ -89,7 +89,7 @@ registers:
   - pub_topic: Verbrauch
     json_key: "Zaehler 6"
     unit: 0x06
-    address: 73
+    address: 72
     type: float
     table: 'input'
     pub_only_on_change: true
@@ -97,7 +97,7 @@ registers:
   - pub_topic: Erzeugung
     json_key: "Zaehler 6"
     unit: 0x06
-    address: 75
+    address: 74
     type: float
     table: 'input'
     pub_only_on_change: true
@@ -105,7 +105,7 @@ registers:
   - pub_topic: Verbrauch
     json_key: "Zaehler 7"
     unit: 0x07
-    address: 73
+    address: 72
     type: float
     table: 'input'
     pub_only_on_change: true
@@ -113,7 +113,7 @@ registers:
   - pub_topic: Erzeugung
     json_key: "Zaehler 7"
     unit: 0x07
-    address: 75
+    address: 74
     type: float
     table: 'input'
     pub_only_on_change: true
@@ -121,7 +121,7 @@ registers:
   - pub_topic: Verbrauch
     json_key: "Zaehler 8"
     unit: 0x08
-    address: 73
+    address: 72
     type: float
     table: 'input'
     pub_only_on_change: true
@@ -129,7 +129,7 @@ registers:
   - pub_topic: Erzeugung
     json_key: "Zaehler 8"
     unit: 0x08
-    address: 75
+    address: 74
     type: float
     table: 'input'
     pub_only_on_change: true
