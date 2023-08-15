@@ -61,8 +61,9 @@ modbus4mqtt --help
 
 #test your config (example:)
 modbus4mqtt --mqtt_topic_prefix "***" --hostname "***" --config /etc/modbus4mqtt/****.yaml
+test.sh /complete/path/to/config
 
-if your want to run a single run, use "--loop False" 
+if your want to run a single run, add "--loop False" 
 ```
 
 ## use cron for singlerun:
