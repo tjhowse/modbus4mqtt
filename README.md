@@ -37,13 +37,13 @@ systemctl daemon-reload
 python3 --version
 #install the python-file to dist
 
-if 3.6.*
-mkdir /usr/local/lib/python3.6/dist-packages/modbus4mqtt
-mv *.py /usr/local/lib/python3.6/dist-packages/modbus4mqtt
+#if 3.6.*
+#mkdir /usr/local/lib/python3.6/dist-packages/modbus4mqtt
+#mv *.py /usr/local/lib/python3.6/dist-packages/modbus4mqtt
 
-if 3.10.*
-mkdir /usr/local/lib/python3.10/dist-packages/modbus4mqtt
-mv *.py /usr/local/lib/python3.10/dist-packages/modbus4mqtt
+#if 3.10.*
+#mkdir /usr/local/lib/python3.10/dist-packages/modbus4mqtt
+#mv *.py /usr/local/lib/python3.10/dist-packages/modbus4mqtt
 
 #make executeable
 chmod 777 /etc/modbus4mqtt/*
