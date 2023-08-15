@@ -1,7 +1,6 @@
 url: tcp://172.31.12.202:502
 #url: serial:///dev/ttysWK0
-#unit: '0x13' wrong position !
-update_rate: 60
+update_rate: 600
 address_offset: 0
 scan_batching: 2
 word_order: highlow
