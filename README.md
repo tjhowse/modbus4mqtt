@@ -1,7 +1,7 @@
 # Modbus4MQTT
 this is my rebuild of my fork from a fork from a fork from modbus4mqtt by tjhowse.
-I have added Double (float64), multiple servicefiles, singlerun option (--loop False), 
-cleaned up wrong templates. updated readme and installation.
+I have added Double (float64), multiple servicefiles,  singlerun option (--loop False), 
+cleaned up wrong templates. Removed docker as i use service files. updated readme and installation.
 
 
 ##### thanks to tjhowse for the main project
@@ -35,7 +35,7 @@ systemctl daemon-reload
 
 #get your phyton version
 python3 --version
-#install the python file to dist
+#install the python-file to dist
 
 if 3.6.*
 mkdir /usr/local/lib/python3.6/dist-packages/modbus4mqtt
