@@ -69,7 +69,7 @@ if your want to run a single run, add "--loop False"
 ## use cron for singlerun:
 I have provided unix service files. the 
 #### autopower and the autostatus scripts
-do not loop ! they need to be called every time. the servicefiles dont have restart settings. both use the corresponding folder
+do not loop ! they need to be called every time. the servicefiles dont have restart settings. both use the corresponding folder.  if you us LTE/Mobile data, you can save data with defined intervall.
 
 ```bash
 crontab -e 
