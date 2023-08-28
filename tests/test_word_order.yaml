@@ -1,7 +1,0 @@
-ip: 192.168.1.90
-word_order: highlow
-registers:
-  - pub_topic: "publish_uint16_1"
-    set_topic: "publish_uint16_1_set"
-    address: 0
-    type: uint16

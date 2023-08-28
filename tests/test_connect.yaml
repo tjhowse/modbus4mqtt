@@ -1,8 +1,0 @@
-ip: 192.168.1.90
-port: 502
-update_rate: 1
-registers:
-  - set_topic: "subscribe"
-    address: 1
-  - pub_topic: "publish"
-    address: 2

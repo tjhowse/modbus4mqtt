@@ -4,3 +4,4 @@ click
 paho-mqtt
 pymodbus>=2.3.0,<3.0.0
 SungrowModbusTcpClient>=0.1.6
+ccorp-yaml-include-relative-path

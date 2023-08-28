@@ -1,0 +1,8 @@
+#!/bin/bash
+#add this with "@reboot" to your crontab
+#every config.yaml in directory will be launched as own instance
+cd /etc/modbus4mqtt/status/
+for f in  $( ls *.yaml); do
+        systemctl start modbus4mqttstatus@$f.service
+        echo $f  #for debug in bash
+done

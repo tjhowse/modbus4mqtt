@@ -1,0 +1,17 @@
+url: tcp://172.31.12.203:502
+#url: serial:///dev/ttysWK0
+update_rate: 60
+address_offset: 0
+scan_batching: 2
+word_order: highlow
+sort_json_keys: False
+registers:
+  - pub_topic: "Leistungen"
+    json_key: 'Speicher'
+    unit: 0x03
+    address: 30775
+    type: int32
+    table: 'holding'
+    pub_only_on_change: true
+    scale: 1
+ 

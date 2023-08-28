@@ -1,0 +1,14 @@
+#/etc/systemd/system/modbus4mqttloop@.service
+[Unit]
+Description=Modbus4MQTT loop service 
+Documentation=none
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+ExecStart=/usr/local/bin/modbus4mqtt --mqtt_topic_prefix %H --config /etc/modbus4mqtt/loop/%I 
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target
