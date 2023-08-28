@@ -34,16 +34,11 @@ mv *.service /etc/systemd/system/
 systemctl daemon-reload
 
 #get your phyton version
-python3 --version
+version=$(python3 --version | cut -c 8- | cut -f1,2 -d'.')
 #install the python-file to dist
+mkdir /usr/local/lib/python$version/dist-packages/modbus4mqtt
+mv *.py /usr/local/lib/python$version/dist-packages/modbus4mqtt
 
-#if 3.6.*
-#mkdir /usr/local/lib/python3.6/dist-packages/modbus4mqtt
-#mv *.py /usr/local/lib/python3.6/dist-packages/modbus4mqtt
-
-#if 3.10.*
-#mkdir /usr/local/lib/python3.10/dist-packages/modbus4mqtt
-#mv *.py /usr/local/lib/python3.10/dist-packages/modbus4mqtt
 
 #make executeable
 chmod 777 /etc/modbus4mqtt/*
