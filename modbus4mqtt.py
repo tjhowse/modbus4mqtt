@@ -410,7 +410,7 @@ class mqtt_interface():
 @click.option('--key', default=None,
               help='Client private key for authentication, if required by server.', show_default=True)
 @click.option('--loop', default='True',
-              help='use True if you want to disable oneshot and use update_rate in loop.', show_default=True)
+              help='use False if you want to disable looping with update_rate and only want to run run 1 poll.', show_default=True)
 
 def main(hostname, port, username, password, config, mqtt_topic_prefix, use_tls, insecure, cafile, cert, key, loop):
     logging.basicConfig(
