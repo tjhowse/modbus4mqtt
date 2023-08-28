@@ -25,7 +25,7 @@ git clone https://github.com/Pubaluba/modbus4mqtt_rebuild
 mv modbus4mqtt_rebuild /etc/modbus4mqtt
 cd /etc/modbus4mqtt
 
-#install phyton and requirements
+#install python and requirements
 apt install python3-pip
 pip3 install -r requirements.txt
 
@@ -33,7 +33,7 @@ pip3 install -r requirements.txt
 mv *.service /etc/systemd/system/
 systemctl daemon-reload
 
-#get your phyton version
+#get your python version
 version=$(python3 --version | cut -c 8- | cut -f1,2 -d'.')
 #install the python-file to dist
 mkdir /usr/local/lib/python$version/dist-packages/modbus4mqtt
@@ -64,7 +64,11 @@ if your want to run a single run, add "--loop False"
 ## use cron for singlerun:
 I have provided unix service files. the 
 #### autopower and the autostatus scripts
-do not loop ! they need to be called every time. the servicefiles dont have restart settings. both use the corresponding folder.  if you us LTE/Mobile data, you can save data with defined intervall.
+do not loop ! they need to be called every time. 
+
+these script are starting every yaml in related folder as own Service. 
+
+the servicefiles dont have restart settings. both use the corresponding folder.  if you us LTE/Mobile data, you can save data with defined intervall.
 
 ```bash
 crontab -e 
