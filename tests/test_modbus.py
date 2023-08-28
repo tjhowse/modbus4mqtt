@@ -46,6 +46,30 @@ class ModbusTests(unittest.TestCase):
     def throw_exception(self, addr, value, unit):
         raise ValueError('Oh noooo!')
 
+    def perform_variant_test(self, mock_modbus, variant, expected_framer):
+        mock_modbus().connect.side_effect = self.connect_success
+        mock_modbus().read_input_registers.side_effect = self.read_input_registers
+        mock_modbus().read_holding_registers.side_effect = self.read_holding_registers
+
+        m = modbus_interface.modbus_interface('1.1.1.1', 111, 2, variant)
+        m.connect()
+        mock_modbus.assert_called_with('1.1.1.1', 111, RetryOnEmpty=True, framer=expected_framer, retries=1, timeout=1)
+
+    def test_connection_variants(self):
+        with patch('modbus4mqtt.modbus_interface.ModbusTcpClient') as mock_modbus:
+            self.perform_variant_test(mock_modbus, None, modbus_interface.ModbusSocketFramer)
+            self.perform_variant_test(mock_modbus, 'tcp', modbus_interface.ModbusSocketFramer)
+            self.perform_variant_test(mock_modbus, 'rtu-over-tcp', modbus_interface.ModbusRtuFramer)
+        with patch('modbus4mqtt.modbus_interface.ModbusUdpClient') as mock_modbus:
+            self.perform_variant_test(mock_modbus, 'udp', modbus_interface.ModbusSocketFramer)
+            self.perform_variant_test(mock_modbus, 'binary-over-udp', modbus_interface.ModbusBinaryFramer)
+
+        m = modbus_interface.modbus_interface('1.1.1.1', 111, 2, 'notexisiting')
+        self.assertRaises(ValueError, m.connect)
+
+        m = modbus_interface.modbus_interface('1.1.1.1', 111, 2, 'notexisiting-over-tcp')
+        self.assertRaises(ValueError, m.connect)
+
     def test_connect(self):
         with patch('modbus4mqtt.modbus_interface.ModbusTcpClient') as mock_modbus:
             mock_modbus().connect.side_effect = self.connect_success
