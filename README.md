@@ -68,7 +68,7 @@ do not loop ! they need to be called every time.
 
 these script are starting every yaml in related folder as own Service. 
 
-the servicefiles dont have restart settings. both use the corresponding folder.  if you us LTE/Mobile data, you can save data with defined intervall.
+the servicefiles dont have restart settings. both also use the related folder and are running without being delayed by other instances. if you us LTE/Mobile data, you can save data with defined intervall.
 
 ```bash
 crontab -e 
