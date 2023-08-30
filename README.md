@@ -68,7 +68,7 @@ word_order: highlow
 | word_order | Optional | 'highlow' | Must be either `highlow` or `lowhigh`. This determines how multi-word values are interpreted. `highlow` means a 32-bit number at address 1 will have its high two bytes stored in register 1, and its low two bytes stored in register 2. The default is typically correct, as modbus has a big-endian memory structure, but this is not universal. |
 
 ### Modbus variants
-The variant is splitted into two: The connection variant and the framer variant using the format `<framer>-over-<connection>` or just `<connection>`.
+The variant is split into two: The connection variant and the framer variant using the format `<framer>-over-<connection>` or just `<connection>`.
 For example `rtu-over-tcp` or `ascii-over-tls`. The framer is optional allowing to simply specify `tcp`, which makes it use the default modbus-TCP framer.
 Supported framer variants are: `ascii`, [`binary`](https://jamod.sourceforge.net/kb/modbus_bin.html), `rtu` and `socket`.
 The following connection variants are supported: `tcp`, `udp`, `tls`, `sungrow`, with the latter one transparently decrypting traffic from sungrow SH inverters running newer firmware versions.
