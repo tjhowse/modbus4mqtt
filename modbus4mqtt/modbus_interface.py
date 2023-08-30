@@ -7,11 +7,12 @@ try:
     # TODO: Once SungrowModbusTcpClient 0.1.7 is released,
     # we can remove the "<3.0.0" pymodbus restriction and this
     # will make sense again.
-    from pymodbus.client import ModbusTcpClient
-    from pymodbus.transaction import ModbusSocketFramer
+    from pymodbus.client import ModbusTcpClient, ModbusUdpClient, ModbusTlsClient
+    from pymodbus.transaction import ModbusAsciiFramer, ModbusBinaryFramer, ModbusRtuFramer, ModbusSocketFramer
 except ImportError:
     # Pymodbus < 3.0
-    from pymodbus.client.sync import ModbusTcpClient, ModbusSocketFramer
+    from pymodbus.client.sync import ModbusTcpClient, ModbusUdpClient, ModbusTlsClient, \
+        ModbusAsciiFramer, ModbusBinaryFramer, ModbusRtuFramer, ModbusSocketFramer
 from SungrowModbusTcpClient import SungrowModbusTcpClient
 
 DEFAULT_SCAN_RATE_S = 5
@@ -55,17 +56,41 @@ class modbus_interface():
 
     def connect(self):
         # Connects to the modbus device
-        if self._variant == 'sungrow':
-            # Some later versions of the sungrow inverter firmware encrypts the payloads of
-            # the modbus traffic. https://github.com/rpvelloso/Sungrow-Modbus is a drop-in
-            # replacement for ModbusTcpClient that manages decrypting the traffic for us.
-            self._mb = SungrowModbusTcpClient.SungrowModbusTcpClient(host=self._ip, port=self._port,
-                                              framer=ModbusSocketFramer, timeout=1,
-                                              RetryOnEmpty=True, retries=1)
+        clients = {
+            "tcp": ModbusTcpClient,
+            "tls": ModbusTlsClient,
+            "udp": ModbusUdpClient,
+            "sungrow": SungrowModbusTcpClient.SungrowModbusTcpClient,
+            # if 'serial' modbus is required at some point, the configuration
+            # needs to be changed to provide file, baudrate etc.
+            # "serial": (ModbusSerialClient, ModbusRtuFramer),
+        }
+        framers = {
+            "ascii": ModbusAsciiFramer,
+            "binary": ModbusBinaryFramer,
+            "rtu": ModbusRtuFramer,
+            "socket": ModbusSocketFramer,
+        }
+
+        if self._variant is None:
+            desired_framer, desired_client = None, 'tcp'
+        elif "-over-" in self._variant:
+            desired_framer, desired_client = self._variant.split('-over-')
         else:
-            self._mb = ModbusTcpClient(self._ip, self._port,
-                                       framer=ModbusSocketFramer, timeout=1,
-                                       RetryOnEmpty=True, retries=1)
+            desired_framer, desired_client = None, self._variant
+
+        if desired_client not in clients:
+            raise ValueError("Unknown modbus client: {}".format(desired_client))
+        if desired_framer is not None and desired_framer not in framers:
+            raise ValueError("Unknown modbus framer: {}".format(desired_framer))
+
+        client = clients[desired_client]
+        if desired_framer is None:
+            framer = ModbusSocketFramer
+        else:
+            framer = framers[desired_framer]
+
+        self._mb = client(self._ip, self._port, RetryOnEmpty=True, framer=framer, retries=1, timeout=1)
 
     def add_monitor_register(self, table, addr, type='uint16'):
         # Accepts a modbus register and table to monitor
