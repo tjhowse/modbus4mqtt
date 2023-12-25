@@ -27,9 +27,22 @@ class WordOrder(Enum):
     HighLow = 1
     LowHigh = 2
 
+class WriteMode(Enum):
+    Single = 1
+    Multi = 2
+
 class modbus_interface():
 
-    def __init__(self, ip, port=502, update_rate_s=DEFAULT_SCAN_RATE_S, variant=None, scan_batching=None, word_order=WordOrder.HighLow):
+    def __init__(self,
+            ip,
+            port=502,
+            update_rate_s=DEFAULT_SCAN_RATE_S,
+            device_address=0x01,
+            write_mode=WriteMode.Single,
+            variant=None,
+            scan_batching=None,
+            word_order=WordOrder.HighLow
+        ):
         self._ip = ip
         self._port = port
         # This is a dict of sets. Each key represents one table of modbus registers.
@@ -41,6 +54,8 @@ class modbus_interface():
 
         self._planned_writes = Queue()
         self._writing = False
+        self._write_mode = write_mode
+        self._unit = device_address
         self._variant = variant
         self._scan_batching = DEFAULT_SCAN_BATCHING
         self._word_order = word_order
@@ -158,6 +173,12 @@ class modbus_interface():
 
         self._process_writes()
 
+    def _perform_write(self, addr, value):
+        if self._write_mode == WriteMode.Single:
+            self._mb.write_register(addr, value, unit=self._unit)
+        else:
+            self._mb.write_registers(addr, [value], unit=self._unit)
+
     def _process_writes(self, max_block_s=DEFAULT_WRITE_BLOCK_INTERVAL_S):
         # TODO I am not entirely happy with this system. It's supposed to prevent
         # anything overwhelming the modbus interface with a heap of rapid writes,
@@ -171,7 +192,7 @@ class modbus_interface():
             while not self._planned_writes.empty() and (time() - write_start_time) < max_block_s:
                 addr, value, mask = self._planned_writes.get()
                 if mask == 0xFFFF:
-                    self._mb.write_register(addr, value, unit=0x01)
+                    self._perform_write(addr, value)
                 else:
                     # https://pymodbus.readthedocs.io/en/latest/source/library/pymodbus.client.html?highlight=mask_write_register#pymodbus.client.common.ModbusClientMixin.mask_write_register
                     # https://www.mathworks.com/help/instrument/modify-the-contents-of-a-holding-register-using-a-mask-write.html
@@ -187,7 +208,7 @@ class modbus_interface():
                     and_mask = (1<<16)-1-mask
                     or_mask = value
                     new_value = (old_value & and_mask) | (or_mask & (mask))
-                    self._mb.write_register(addr, new_value, unit=0x01)
+                    self._perform_write(addr, new_value)
                 sleep(DEFAULT_WRITE_SLEEP_S)
         except Exception as e:
             # BUG catch only the specific exception that means pymodbus failed to write to a register
@@ -199,9 +220,9 @@ class modbus_interface():
     def _scan_value_range(self, table, start, count):
         result = None
         if table == 'input':
-            result = self._mb.read_input_registers(start, count, unit=0x01)
+            result = self._mb.read_input_registers(start, count, unit=self._unit)
         elif table == 'holding':
-            result = self._mb.read_holding_registers(start, count, unit=0x01)
+            result = self._mb.read_holding_registers(start, count, unit=self._unit)
         try:
             return result.registers
         except:
