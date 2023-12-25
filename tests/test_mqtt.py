@@ -490,6 +490,18 @@ class MQTTTests(unittest.TestCase):
             if not fail:
                 self.fail("Didn't throw an exception checking an invalid register configuration")
 
+    def assert_modbus_call(self, mock_modbus, word_order=modbus4mqtt.modbus_interface.WordOrder.HighLow):
+        mock_modbus.assert_any_call(
+                ip='192.168.1.90',
+                port=502,
+                update_rate_s=5,
+                device_address=1,
+                write_mode=modbus4mqtt.modbus_interface.WriteMode.Single,
+                variant=None,
+                scan_batching=None,
+                word_order=word_order
+            )
+
     def test_word_order_setting(self):
         with patch('paho.mqtt.client.Client') as mock_mqtt:
             with patch('modbus4mqtt.modbus_interface.modbus_interface') as mock_modbus:
@@ -500,7 +512,7 @@ class MQTTTests(unittest.TestCase):
                 # Default value
                 m = modbus4mqtt.mqtt_interface('kroopit', 1885, 'brengis', 'pranto', './tests/test_type.yaml', MQTT_TOPIC_PREFIX)
                 m.connect()
-                mock_modbus.assert_any_call('192.168.1.90', 502, 5, scan_batching=None, variant=None, word_order=modbus4mqtt.modbus_interface.WordOrder.HighLow)
+                self.assert_modbus_call(mock_modbus)
 
         with patch('paho.mqtt.client.Client') as mock_mqtt:
             with patch('modbus4mqtt.modbus_interface.modbus_interface') as mock_modbus:
@@ -511,7 +523,7 @@ class MQTTTests(unittest.TestCase):
                 # Explicit HighLow
                 m = modbus4mqtt.mqtt_interface('kroopit', 1885, 'brengis', 'pranto', './tests/test_word_order.yaml', MQTT_TOPIC_PREFIX)
                 m.connect()
-                mock_modbus.assert_any_call('192.168.1.90', 502, 5, scan_batching=None, variant=None, word_order=modbus4mqtt.modbus_interface.WordOrder.HighLow)
+                self.assert_modbus_call(mock_modbus)
 
         with patch('paho.mqtt.client.Client') as mock_mqtt:
             with patch('modbus4mqtt.modbus_interface.modbus_interface') as mock_modbus:
@@ -522,7 +534,7 @@ class MQTTTests(unittest.TestCase):
                 # Explicit HighLow
                 m = modbus4mqtt.mqtt_interface('kroopit', 1885, 'brengis', 'pranto', './tests/test_word_order_low_high.yaml', MQTT_TOPIC_PREFIX)
                 m.connect()
-                mock_modbus.assert_any_call('192.168.1.90', 502, 5, scan_batching=None, variant=None, word_order=modbus4mqtt.modbus_interface.WordOrder.LowHigh)
+                self.assert_modbus_call(mock_modbus, modbus4mqtt.modbus_interface.WordOrder.LowHigh)
 
 
 if __name__ == "__main__":

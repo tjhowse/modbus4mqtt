@@ -51,7 +51,7 @@ class ModbusTests(unittest.TestCase):
         mock_modbus().read_input_registers.side_effect = self.read_input_registers
         mock_modbus().read_holding_registers.side_effect = self.read_holding_registers
 
-        m = modbus_interface.modbus_interface('1.1.1.1', 111, 2, variant)
+        m = modbus_interface.modbus_interface(ip='1.1.1.1', port=111, variant=variant)
         m.connect()
         mock_modbus.assert_called_with('1.1.1.1', 111, RetryOnEmpty=True, framer=expected_framer, retries=1, timeout=1)
 
@@ -64,10 +64,10 @@ class ModbusTests(unittest.TestCase):
             self.perform_variant_test(mock_modbus, 'udp', modbus_interface.ModbusSocketFramer)
             self.perform_variant_test(mock_modbus, 'binary-over-udp', modbus_interface.ModbusBinaryFramer)
 
-        m = modbus_interface.modbus_interface('1.1.1.1', 111, 2, 'notexisiting')
+        m = modbus_interface.modbus_interface(ip='1.1.1.1', port=111, variant='notexisiting')
         self.assertRaises(ValueError, m.connect)
 
-        m = modbus_interface.modbus_interface('1.1.1.1', 111, 2, 'notexisiting-over-tcp')
+        m = modbus_interface.modbus_interface(ip='1.1.1.1', port=111, variant='notexisiting-over-tcp')
         self.assertRaises(ValueError, m.connect)
 
     def test_connect(self):
@@ -76,7 +76,7 @@ class ModbusTests(unittest.TestCase):
             mock_modbus().read_input_registers.side_effect = self.read_input_registers
             mock_modbus().read_holding_registers.side_effect = self.read_holding_registers
 
-            m = modbus_interface.modbus_interface('1.1.1.1', 111, 2)
+            m = modbus_interface.modbus_interface(ip='1.1.1.1', port=111)
             m.connect()
             mock_modbus.assert_called_with('1.1.1.1', 111, RetryOnEmpty=True, framer=modbus_interface.ModbusSocketFramer, retries=1, timeout=1)
 
