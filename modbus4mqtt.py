@@ -219,7 +219,8 @@ class mqtt_interface():
             elif changed:
                 retain = register.get('retain', False)
                 self._mqtt_client.publish(self.prefix+register['pub_topic'], value, retain=retain)
-
+        # Transmit Data-Timestamp
+        self._mqtt_client.publish(self.prefix+'last-data', time.time() )
         # Transmit the queued JSON messages.
         for topic, message in json_messages.items():
           if json_messages_changed[topic]:
