@@ -11,7 +11,7 @@ import paho.mqtt.client as mqtt
 import threading
 
 from . import modbus_interface
-version = "EW.0.81"
+version = "EW.0.9"
 MAX_DECIMAL_POINTS = 3
 DEFAULT_SCAN_RATE_S = 5
 
