@@ -61,9 +61,11 @@ word_order: highlow
 | ---------- | -------- | ------- | ----------- |
 | ip | Required | N/A | The IP address of the modbus device to be polled. Presently only modbus TCP/IP is supported. |
 | port | Optional | 502 | The port on the modbus device to connect to. |
+| device_address | Optional | 1 | The modbus device address ("unit") of the target device |
 | update_rate | Optional | 5 | The number of seconds between polls of the modbus device. |
 | address_offset | Optional | 0 | This offset is applied to every register address to accommodate different Modbus addressing systems. In many Modbus devices the first register is enumerated as 1, other times 0. See section 4.4 of the Modbus spec. |
 | variant | Optional | 'tcp' | Allows modbus variants to be specified. See below list for supported variants. |
+| write_mode | Optional | 'single' | Which modbus write function code to use `single` for `06` or `multi` for `16` |
 | scan_batching | Optional | 100 | Must be between 1 and 100 inclusive. Modbus read operations are more efficient in bigger batches of contiguous registers, but different devices have different limits on the size of the batched reads. This setting can also be helpful when building a modbus register map for an uncharted device. In some modbus devices a single invalid register in a read range will fail the entire read operation. By setting `scan_batching` to `1` each register will be scanned individually. This will be very inefficient and should not be used in production as it will saturate the link with many read operations. |
 | word_order | Optional | 'highlow' | Must be either `highlow` or `lowhigh`. This determines how multi-word values are interpreted. `highlow` means a 32-bit number at address 1 will have its high two bytes stored in register 1, and its low two bytes stored in register 2. The default is typically correct, as modbus has a big-endian memory structure, but this is not universal. |
 
