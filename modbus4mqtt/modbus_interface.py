@@ -23,13 +23,29 @@ DEFAULT_WRITE_BLOCK_INTERVAL_S = 0.2
 DEFAULT_WRITE_SLEEP_S = 0.05
 DEFAULT_READ_SLEEP_S = 0.05
 
+
 class WordOrder(Enum):
     HighLow = 1
     LowHigh = 2
 
+
+class WriteMode(Enum):
+    Single = 1
+    Multi = 2
+
+
 class modbus_interface():
 
-    def __init__(self, ip, port=502, update_rate_s=DEFAULT_SCAN_RATE_S, variant=None, scan_batching=None, word_order=WordOrder.HighLow):
+    def __init__(self,
+                 ip,
+                 port=502,
+                 update_rate_s=DEFAULT_SCAN_RATE_S,
+                 device_address=0x01,
+                 write_mode=WriteMode.Single,
+                 variant=None,
+                 scan_batching=None,
+                 word_order=WordOrder.HighLow
+                 ):
         self._ip = ip
         self._port = port
         # This is a dict of sets. Each key represents one table of modbus registers.
@@ -41,6 +57,8 @@ class modbus_interface():
 
         self._planned_writes = Queue()
         self._writing = False
+        self._write_mode = write_mode
+        self._unit = device_address
         self._variant = variant
         self._scan_batching = DEFAULT_SCAN_BATCHING
         self._word_order = word_order
@@ -135,7 +153,7 @@ class modbus_interface():
                 data = self._values[table][addr + i]
             else:
                 data = self._values[table][addr + (type_len-i-1)]
-            value += data.to_bytes(2,'big')
+            value += data.to_bytes(2, 'big')
         value = _convert_from_bytes_to_type(value, type)
         return value
 
@@ -158,6 +176,12 @@ class modbus_interface():
 
         self._process_writes()
 
+    def _perform_write(self, addr, value):
+        if self._write_mode == WriteMode.Single:
+            self._mb.write_register(addr, value, unit=self._unit)
+        else:
+            self._mb.write_registers(addr, [value], unit=self._unit)
+
     def _process_writes(self, max_block_s=DEFAULT_WRITE_BLOCK_INTERVAL_S):
         # TODO I am not entirely happy with this system. It's supposed to prevent
         # anything overwhelming the modbus interface with a heap of rapid writes,
@@ -171,7 +195,7 @@ class modbus_interface():
             while not self._planned_writes.empty() and (time() - write_start_time) < max_block_s:
                 addr, value, mask = self._planned_writes.get()
                 if mask == 0xFFFF:
-                    self._mb.write_register(addr, value, unit=0x01)
+                    self._perform_write(addr, value)
                 else:
                     # https://pymodbus.readthedocs.io/en/latest/source/library/pymodbus.client.html?highlight=mask_write_register#pymodbus.client.common.ModbusClientMixin.mask_write_register
                     # https://www.mathworks.com/help/instrument/modify-the-contents-of-a-holding-register-using-a-mask-write.html
@@ -184,10 +208,10 @@ class modbus_interface():
                     # result = self._mb.mask_write_register(address=addr, and_mask=(1<<16)-1-mask, or_mask=value, unit=0x01)
                     # print("Result: {}".format(result))
                     old_value = self._scan_value_range('holding', addr, 1)[0]
-                    and_mask = (1<<16)-1-mask
+                    and_mask = (1 << 16) - 1 - mask
                     or_mask = value
                     new_value = (old_value & and_mask) | (or_mask & (mask))
-                    self._mb.write_register(addr, new_value, unit=0x01)
+                    self._perform_write(addr, new_value)
                 sleep(DEFAULT_WRITE_SLEEP_S)
         except Exception as e:
             # BUG catch only the specific exception that means pymodbus failed to write to a register
@@ -199,14 +223,15 @@ class modbus_interface():
     def _scan_value_range(self, table, start, count):
         result = None
         if table == 'input':
-            result = self._mb.read_input_registers(start, count, unit=0x01)
+            result = self._mb.read_input_registers(start, count, unit=self._unit)
         elif table == 'holding':
-            result = self._mb.read_holding_registers(start, count, unit=0x01)
+            result = self._mb.read_holding_registers(start, count, unit=self._unit)
         try:
             return result.registers
         except:
             # The result doesn't have a registers attribute, something has gone wrong!
             raise ValueError("Failed to read {} {} table registers starting from {}: {}".format(count, table, start, result))
+
 
 def type_length(type):
     # Return the number of addresses needed for the type.
@@ -217,7 +242,8 @@ def type_length(type):
         return 2
     elif type in ['int64', 'uint64']:
         return 4
-    raise ValueError ("Unsupported type {}".format(type))
+    raise ValueError("Unsupported type {}".format(type))
+
 
 def type_signed(type):
     # Returns whether the provided type is signed
@@ -225,16 +251,18 @@ def type_signed(type):
         return False
     elif type in ['int16', 'int32', 'int64']:
         return True
-    raise ValueError ("Unsupported type {}".format(type))
+    raise ValueError("Unsupported type {}".format(type))
+
 
 def _convert_from_bytes_to_type(value, type):
     type = type.strip().lower()
     signed = type_signed(type)
-    return int.from_bytes(value,byteorder='big',signed=signed)
+    return int.from_bytes(value, byteorder='big', signed=signed)
+
 
 def _convert_from_type_to_bytes(value, type):
     type = type.strip().lower()
     signed = type_signed(type)
     # This can throw an OverflowError in various conditons. This will usually
     # percolate upwards and spit out an exception from on_message.
-    return int(value).to_bytes(type_length(type)*2,byteorder='big',signed=signed)
+    return int(value).to_bytes(type_length(type) * 2, byteorder='big', signed=signed)
