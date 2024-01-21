@@ -141,7 +141,7 @@ class mqtt_interface():
                 if register['pub_topic'] not in json_messages:
                     json_messages[register['pub_topic']] = {}
                     json_messages_retain[register['pub_topic']] = False
-                json_messages[register['pub_topic']][register['json_key']] = value
+                self._update_json(json_messages[register['pub_topic']], register['json_key'].split("."), value)
                 if 'retain' in register:
                     json_messages_retain[register['pub_topic']] = register['retain']
             else:
@@ -152,6 +152,16 @@ class mqtt_interface():
         for topic, message in json_messages.items():
             m = json.dumps(message, sort_keys=True)
             self._mqtt_client.publish(self.prefix+topic, m, retain=json_messages_retain[topic])
+
+    def _update_json(self, targetArray, path, value):
+        if len(path) == 1:
+            targetArray[path[0]] = value
+        else:
+            if path[0] not in targetArray:
+                targetArray[path[0]] = {}
+            subpath = path.copy()
+            subpath.pop(0)
+            self._update_json(targetArray[path[0]], subpath, value)
 
     def _on_connect(self, client, userdata, flags, rc):
         if rc == 0:
