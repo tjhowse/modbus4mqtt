@@ -8,9 +8,10 @@ from collections import defaultdict, OrderedDict
 from ccorp.ruamel.yaml.include import YAML
 import click
 import paho.mqtt.client as mqtt
+import threading
 
 from . import modbus_interface
-version = "EW.0.81"
+version = "EW.0.9"
 MAX_DECIMAL_POINTS = 3
 DEFAULT_SCAN_RATE_S = 5
 
@@ -380,8 +381,10 @@ class mqtt_interface():
     def loop_forever(self):
         while True:
             # TODO this properly.
-            self.poll()
+            pollthread = threading.Thread(target = self.poll, args = ())
+            pollthread.start()
             sleep(self.config.get('update_rate', DEFAULT_SCAN_RATE_S))
+            pollthread.join()
 
     def singlerun(self):
             self.poll()
