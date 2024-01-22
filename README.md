@@ -186,7 +186,14 @@ registers:
     unit: 255
     type: double
 
-  - 
+  - set_topic: Stop/set     # u need to create to topic on your mqtt-server by yourself, 
+    address: 4              # can be used to "control" multiple devices at once.
+    unit: 255               # the device-specific value is not pulished ! :-D 
+    type: uint16
+    pub_only_on_change: true
+    value_map:
+     "false": 0
+     "true": 1
 
 
 ```
