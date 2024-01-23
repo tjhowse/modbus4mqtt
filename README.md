@@ -88,7 +88,8 @@ you can use cron every 10 sec for power data
 ```
 
 ## to use a service with "updaterate" setting:
-please be awere of inconsistent timestamp. running multiple services @ different devices will loop different because a simple sleep command is used after polling. if a read request of 8 rtu devices has a duration of 2.6 seconds, the update_rate rate will be 32.6 if you set 30. 
+with version 0.9, the poll of the devices is threaded. after the sleep (update_rate) is past, the thread is restartet. still, a little amount of time is 
+spend for the script, so a update_rate of "3" results in example 3.012345 seconds depending on CPU speed. if poll has to poll multiple devices and times-out with some of them to more then 3 seconds in our example, the poll finisches before a new thread gets started an the time raises above 3 seconds.
 
 copy a ./template/.yaml file to /etc/modbus4mqtt/loop/ 
 ```bash
