@@ -50,10 +50,10 @@ class modbus_interface():
         self._port = port
         # This is a dict of sets. Each key represents one table of modbus registers.
         # At the moment it has 'input' and 'holding'
-        self._tables = {'input': set(), 'holding': set()}
+        self._tables = {'input': set(), 'holding': set(), 'do': set(), 'di': set()}
 
         # This is a dicts of dicts. These hold the current values of the interesting registers
-        self._values = {'input': {}, 'holding': {}}
+        self._values = {'input': {}, 'holding': {}, 'do': {}, 'di': {}}
 
         self._planned_writes = Queue()
         self._writing = False
@@ -226,11 +226,18 @@ class modbus_interface():
             result = self._mb.read_input_registers(start, count, unit=self._unit)
         elif table == 'holding':
             result = self._mb.read_holding_registers(start, count, unit=self._unit)
+        elif table == 'do':
+            result = self._mb.read_do(start, count, unit=self._unit)
+        elif table == 'di':
+            result = self._mb.read_discrete_inputs(start, count, unit=self._unit)
         try:
-            return result.registers
+            if table == 'input' or table == 'holding':
+                return result.registers
+            elif table == 'do' or table == 'di':
+                return result.bits
         except:
-            # The result doesn't have a registers attribute, something has gone wrong!
-            raise ValueError("Failed to read {} {} table registers starting from {}: {}".format(count, table, start, result))
+            # The result doesn't have either registers or bits attribute, something has gone wrong!
+            raise ValueError("Failed to read {} {} table data starting from {}: {}".format(count, table, start, result))
 
 
 def type_length(type):
