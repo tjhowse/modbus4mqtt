@@ -50,10 +50,10 @@ class modbus_interface():
         self._port = port
         # This is a dict of sets. Each key represents one table of modbus registers.
         # At the moment it has 'input' and 'holding'
-        self._tables = {'input': set(), 'holding': set()}
+        self._tables = {'input': set(), 'holding': set(), 'coils': set()}
 
         # This is a dicts of dicts. These hold the current values of the interesting registers
-        self._values = {'input': {}, 'holding': {}}
+        self._values = {'input': {}, 'holding': {}, 'coils': {}}
 
         self._planned_writes = Queue()
         self._writing = False
@@ -144,17 +144,20 @@ class modbus_interface():
             raise ValueError("Unsupported table type. Please only use: {}".format(self._values.keys()))
         if addr not in self._values[table]:
             raise ValueError("Unpolled address. Use add_monitor_register(addr, table) to add a register to the polled list.")
-        # Read sequential addresses to get enough bytes to satisfy the type of this register.
-        # Note: Each address provides 2 bytes of data.
-        value = bytes(0)
-        type_len = type_length(type)
-        for i in range(type_len):
-            if self._word_order == WordOrder.HighLow:
-                data = self._values[table][addr + i]
-            else:
-                data = self._values[table][addr + (type_len-i-1)]
-            value += data.to_bytes(2, 'big')
-        value = _convert_from_bytes_to_type(value, type)
+        if table == 'coils':
+            value = self._values[table][addr]
+        else:
+            # Read sequential addresses to get enough bytes to satisfy the type of this register.
+            # Note: Each address provides 2 bytes of data.
+            value = bytes(0)
+            type_len = type_length(type)
+            for i in range(type_len):
+                if self._word_order == WordOrder.HighLow:
+                    data = self._values[table][addr + i]
+                else:
+                    data = self._values[table][addr + (type_len-i-1)]
+                value += data.to_bytes(2, 'big')
+            value = _convert_from_bytes_to_type(value, type)
         return value
 
     def set_value(self, table, addr, value, mask=0xFFFF, type='uint16'):
@@ -226,12 +229,16 @@ class modbus_interface():
             result = self._mb.read_input_registers(start, count, unit=self._unit)
         elif table == 'holding':
             result = self._mb.read_holding_registers(start, count, unit=self._unit)
+        elif table == 'coils':
+            result = self._mb.read_coils(start, count, unit=self._unit)
         try:
-            return result.registers
+            if table in ['input', 'holding']:
+                return result.registers
+            else:
+                return result.bits
         except:
             # The result doesn't have a registers attribute, something has gone wrong!
             raise ValueError("Failed to read {} {} table registers starting from {}: {}".format(count, table, start, result))
-
 
 def type_length(type):
     # Return the number of addresses needed for the type.
