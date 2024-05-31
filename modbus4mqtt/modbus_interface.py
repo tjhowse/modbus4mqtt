@@ -161,6 +161,9 @@ class modbus_interface():
         return value
 
     def set_value(self, table, addr, value, mask=0xFFFF, type='uint16'):
+        if table == 'coils':
+            self._mb.write_coil(addr, value)
+            return
         if table != 'holding':
             # I'm not sure if this is true for all devices. I might support writing to coils later,
             # so leave this door open.
