@@ -1,7 +1,7 @@
 setuptools
 ruamel.yaml>=0.16.12
 click
-paho-mqtt
+paho-mqtt>=1.5.0,<2
 pymodbus>=2.3.0,<3.0.0
 SungrowModbusTcpClient>=0.1.6
 ccorp-yaml-include-relative-path
