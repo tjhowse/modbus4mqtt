@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 from time import sleep
+from datetime import datetime
 import json
 import logging
 from ruamel.yaml import YAML
@@ -63,6 +64,13 @@ class mqtt_interface():
         failed_attempts = 1
         while self._mb.connect():
             logging.warning("Modbus connection attempt {} failed. Retrying...".format(failed_attempts))
+            if failed_attempts == 1:
+                self._mqtt_client.publish(self.prefix + 'modbus4mqtt/modbus_status',
+                                          json.dumps({
+                                              "status": "offline",
+                                              "timestamp": datetime.now().astimezone().strftime('%Y-%m-%dT%H:%M:%S%z')
+                                          })
+                                          )
             failed_attempts += 1
             if self.modbus_connect_retries != -1 and failed_attempts > self.modbus_connect_retries:
                 logging.error("Failed to connect to modbus. Giving up.")
@@ -70,6 +78,12 @@ class mqtt_interface():
                 # This weird break is here because we mock out modbus_connection_failed in the tests
                 break
             sleep(self.modbus_reconnect_sleep_interval)
+        self._mqtt_client.publish(self.prefix + 'modbus4mqtt/modbus_status',
+                                  json.dumps({
+                                      "status": "online",
+                                      "timestamp": datetime.now().astimezone().strftime('%Y-%m-%dT%H:%M:%S%z')
+                                  })
+                                  )
         # Tells the modbus interface about the registers we consider interesting.
         for register in self.registers:
             self._mb.add_monitor_register(register.get('table', 'holding'), register['address'], register.get('type', 'uint16'))
@@ -100,6 +114,12 @@ class mqtt_interface():
             self._mb.poll()
         except Exception as e:
             logging.exception("Failed to poll modbus device, attempting to reconnect: {}".format(e))
+            self._mqtt_client.publish(self.prefix + 'modbus4mqtt/modbus_status',
+                                      json.dumps({
+                                          "status": "reconnecting",
+                                          "timestamp": datetime.now().astimezone().strftime('%Y-%m-%dT%H:%M:%S%z')
+                                      })
+                                      )
             self.connect_modbus()
             return
 
