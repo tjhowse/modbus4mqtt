@@ -102,7 +102,12 @@ class mqtt_interface():
         if self.use_tls:
             self._mqtt_client.tls_set(ca_certs=self.cafile, certfile=self.cert, keyfile=self.key)
             self._mqtt_client.tls_insecure_set(self.insecure)
-        self._mqtt_client.will_set(self.prefix + 'modbus4mqtt', 'modbus4mqtt v{} disconnected.'.format(version.version))
+        lwt_message = json.dumps({
+            "status": "offline",
+            "version": f"v{version.version}",
+            "timestamp": datetime.now().isoformat()
+        })
+        self._mqtt_client.will_set(self.prefix + 'modbus4mqtt', lwt_message)
         self._mqtt_client.connect(self.hostname, self._port, 60)
         self._mqtt_client.loop_start()
 
@@ -184,7 +189,13 @@ class mqtt_interface():
         for register in self._get_registers_with('set_topic'):
             self._mqtt_client.subscribe(self.prefix+register['set_topic'])
             print("Subscribed to {}".format(self.prefix+register['set_topic']))
-        self._mqtt_client.publish(self.prefix+'modbus4mqtt', 'modbus4mqtt v{} connected.'.format(version.version))
+        self._mqtt_client.publish(self.prefix+'modbus4mqtt',
+                                  json.dumps({
+                                        "status": "online",
+                                        "version": f"{version.version}",
+                                        "timestamp": datetime.now().astimezone().strftime('%Y-%m-%dT%H:%M:%S%z')
+                                  })
+                                  )
 
     def _on_disconnect(self, client, userdata, rc):
         logging.warning("Disconnected from MQTT. Attempting to reconnect.")
