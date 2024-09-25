@@ -288,8 +288,14 @@ class mqtt_interface():
               help='Client certificate for authentication, if required by server.', show_default=True)
 @click.option('--key', default=None,
               help='Client private key for authentication, if required by server.', show_default=True)
-def main(hostname, port, username, password, config, mqtt_topic_prefix, use_tls, insecure, cafile, cert, key):
+@click.option('--logfile', default=None,
+              help='Log file path on disk. Only logging to STDOUT by default', show_default=True)
+def main(hostname, port, username, password, config, mqtt_topic_prefix, use_tls, insecure, cafile, cert, key, logfile):
     logging.basicConfig(
+        handlers=[
+            *([logging.FileHandler(logfile)] if logfile else []),
+            logging.StreamHandler()
+        ],
         format='%(asctime)s %(levelname)-8s %(message)s',
         level=logging.INFO,
         datefmt='%Y-%m-%d %H:%M:%S')
