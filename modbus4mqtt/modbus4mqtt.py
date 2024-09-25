@@ -64,7 +64,7 @@ class mqtt_interface():
         failed_attempts = 1
         while self._mb.connect():
             logging.warning("Modbus connection attempt {} failed. Retrying...".format(failed_attempts))
-            if failed_attempts == 1:
+            if failed_attempts == 1 and self._mqtt_client.is_connected():
                 self._mqtt_client.publish(self.prefix + 'modbus4mqtt/modbus_status',
                                           json.dumps({
                                               "status": "offline",
@@ -78,12 +78,13 @@ class mqtt_interface():
                 # This weird break is here because we mock out modbus_connection_failed in the tests
                 break
             sleep(self.modbus_reconnect_sleep_interval)
-        self._mqtt_client.publish(self.prefix + 'modbus4mqtt/modbus_status',
-                                  json.dumps({
-                                      "status": "online",
-                                      "timestamp": datetime.now().astimezone().strftime('%Y-%m-%dT%H:%M:%S%z')
-                                  })
-                                  )
+        if self._mqtt_client.is_connected():
+            self._mqtt_client.publish(self.prefix + 'modbus4mqtt/modbus_status',
+                                      json.dumps({
+                                          "status": "online",
+                                          "timestamp": datetime.now().astimezone().strftime('%Y-%m-%dT%H:%M:%S%z')
+                                      })
+                                      )
         # Tells the modbus interface about the registers we consider interesting.
         for register in self.registers:
             self._mb.add_monitor_register(register.get('table', 'holding'), register['address'], register.get('type', 'uint16'))
