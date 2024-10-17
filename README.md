@@ -8,7 +8,7 @@ https://pypi.org/project/modbus4mqtt/
 
 [![codecov](https://codecov.io/gh/tjhowse/modbus4mqtt/branch/master/graph/badge.svg)](https://codecov.io/gh/tjhowse/modbus4mqtt)
 
-This is a gateway that translates between modbus TCP/IP and MQTT.
+This is a gateway that translates between modbus and MQTT.
 
 The mapping of modbus registers to MQTT topics is in a simple YAML file.
 
@@ -61,11 +61,19 @@ word_order: highlow
 | ---------- | -------- | ------- | ----------- |
 | ip | Required | N/A | The IP address of the modbus device to be polled. Presently only modbus TCP/IP is supported. |
 | port | Optional | 502 | The port on the modbus device to connect to. |
+| device_address | Optional | 1 | The modbus device address ("unit") of the target device |
 | update_rate | Optional | 5 | The number of seconds between polls of the modbus device. |
 | address_offset | Optional | 0 | This offset is applied to every register address to accommodate different Modbus addressing systems. In many Modbus devices the first register is enumerated as 1, other times 0. See section 4.4 of the Modbus spec. |
-| variant | Optional | N/A | Allows variants of the ModbusTcpClient library to be used. Setting this to 'sungrow' enables support of SungrowModbusTcpClient. This library transparently decrypts the modbus comms with sungrow SH inverters running newer firmware versions. |
+| variant | Optional | 'tcp' | Allows modbus variants to be specified. See below list for supported variants. |
+| write_mode | Optional | 'single' | Which modbus write function code to use `single` for `06` or `multi` for `16` |
 | scan_batching | Optional | 100 | Must be between 1 and 100 inclusive. Modbus read operations are more efficient in bigger batches of contiguous registers, but different devices have different limits on the size of the batched reads. This setting can also be helpful when building a modbus register map for an uncharted device. In some modbus devices a single invalid register in a read range will fail the entire read operation. By setting `scan_batching` to `1` each register will be scanned individually. This will be very inefficient and should not be used in production as it will saturate the link with many read operations. |
 | word_order | Optional | 'highlow' | Must be either `highlow` or `lowhigh`. This determines how multi-word values are interpreted. `highlow` means a 32-bit number at address 1 will have its high two bytes stored in register 1, and its low two bytes stored in register 2. The default is typically correct, as modbus has a big-endian memory structure, but this is not universal. |
+
+### Modbus variants
+The variant is split into two: The connection variant and the framer variant using the format `<framer>-over-<connection>` or just `<connection>`.
+For example `rtu-over-tcp` or `ascii-over-tls`. The framer is optional allowing to simply specify `tcp`, which makes it use the default modbus-TCP framer.
+Supported framer variants are: `ascii`, [`binary`](https://jamod.sourceforge.net/kb/modbus_bin.html), `rtu` and `socket`.
+The following connection variants are supported: `tcp`, `udp`, `tls`, `sungrow`, with the latter one transparently decrypting traffic from sungrow SH inverters running newer firmware versions.
 
 ### Register settings
 ```yaml
