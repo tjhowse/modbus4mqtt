@@ -124,19 +124,25 @@ class modbus_interface():
         for table in self._tables:
             # This batches up modbus reads in chunks of self._scan_batching
             start = -1
-            for k in sorted(self._tables[table]):
-                group = int(k) - int(k) % self._scan_batching
-                if (start < group):
+            lastIndex = len(self._tables[table]) - 1
+            for i, k in enumerate(sorted(self._tables[table])):
+                if start < 0:
+                    start = k
+                    lastk = k
+                # Start polling if we collected _scan_batching items or of we're in the last loop iteration
+                if ((k - start) >= (self._scan_batching - 1) or i == lastIndex):
+                    end = lastk - start + 2 #read one more in case the last one is 32 bit
                     try:
-                        values = self._scan_value_range(table, group, self._scan_batching)
-                        for x in range(0, self._scan_batching):
-                            key = group + x
+                        values = self._scan_value_range(table, start, end)
+                        for x in range(0, end):
+                            key = start + x
                             self._values[table][key] = values[x]
                         # Avoid back-to-back read operations that could overwhelm some modbus devices.
                         sleep(DEFAULT_READ_SLEEP_S)
+                        start = k if (k - start + 1) > self._scan_batching else -1
                     except ValueError as e:
                         logging.exception("{}".format(e))
-                    start = group + self._scan_batching-1
+                lastk = k
         self._process_writes()
 
     def get_value(self, table, addr, type='uint16'):
