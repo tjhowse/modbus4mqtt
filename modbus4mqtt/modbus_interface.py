@@ -131,7 +131,8 @@ class modbus_interface():
                     lastk = k
                 # Start polling if we collected _scan_batching items or of we're in the last loop iteration
                 if ((k - start) >= (self._scan_batching - 1) or i == lastIndex):
-                    end = lastk - start + 2 #read one more in case the last one is 32 bit
+                    # read one more in case the last one is 32 bit
+                    end = lastk - start + 2
                     try:
                         values = self._scan_value_range(table, start, end)
                         for x in range(0, end):
