@@ -47,9 +47,16 @@ class mqtt_interface():
         else:
             word_order = modbus_interface.WordOrder.HighLow
 
-        self._mb = modbus_interface.modbus_interface(self.config['ip'],
-                                                     self.config.get('port', 502),
-                                                     self.config.get('update_rate', 5),
+        if self.config.get('write_mode', 'single').lower() == 'multi':
+            write_mode = modbus_interface.WriteMode.Multi
+        else:
+            write_mode = modbus_interface.WriteMode.Single
+
+        self._mb = modbus_interface.modbus_interface(ip=self.config['ip'],
+                                                     port=self.config.get('port', 502),
+                                                     update_rate_s=self.config.get('update_rate', 5),
+                                                     device_address=self.config.get('device_address', 0x01),
+                                                     write_mode=write_mode,
                                                      variant=self.config.get('variant', None),
                                                      scan_batching=self.config.get('scan_batching', None),
                                                      word_order=word_order)

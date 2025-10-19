@@ -37,6 +37,10 @@ class ModbusTests(unittest.TestCase):
     def write_holding_register(self, address, value, unit):
         self.holding_registers.registers[address] = value
 
+    def write_holding_registers(self, address, values, unit):
+        self.assertEquals(len(values), 1)
+        self.holding_registers.registers[address] = values[0]
+
     def connect_success(self):
         return False
 
@@ -46,13 +50,37 @@ class ModbusTests(unittest.TestCase):
     def throw_exception(self, addr, value, unit):
         raise ValueError('Oh noooo!')
 
+    def perform_variant_test(self, mock_modbus, variant, expected_framer):
+        mock_modbus().connect.side_effect = self.connect_success
+        mock_modbus().read_input_registers.side_effect = self.read_input_registers
+        mock_modbus().read_holding_registers.side_effect = self.read_holding_registers
+
+        m = modbus_interface.modbus_interface(ip='1.1.1.1', port=111, variant=variant)
+        m.connect()
+        mock_modbus.assert_called_with('1.1.1.1', 111, RetryOnEmpty=True, framer=expected_framer, retries=1, timeout=1)
+
+    def test_connection_variants(self):
+        with patch('modbus4mqtt.modbus_interface.ModbusTcpClient') as mock_modbus:
+            self.perform_variant_test(mock_modbus, None, modbus_interface.ModbusSocketFramer)
+            self.perform_variant_test(mock_modbus, 'tcp', modbus_interface.ModbusSocketFramer)
+            self.perform_variant_test(mock_modbus, 'rtu-over-tcp', modbus_interface.ModbusRtuFramer)
+        with patch('modbus4mqtt.modbus_interface.ModbusUdpClient') as mock_modbus:
+            self.perform_variant_test(mock_modbus, 'udp', modbus_interface.ModbusSocketFramer)
+            self.perform_variant_test(mock_modbus, 'binary-over-udp', modbus_interface.ModbusBinaryFramer)
+
+        m = modbus_interface.modbus_interface(ip='1.1.1.1', port=111, variant='notexisiting')
+        self.assertRaises(ValueError, m.connect)
+
+        m = modbus_interface.modbus_interface(ip='1.1.1.1', port=111, variant='notexisiting-over-tcp')
+        self.assertRaises(ValueError, m.connect)
+
     def test_connect(self):
         with patch('modbus4mqtt.modbus_interface.ModbusTcpClient') as mock_modbus:
             mock_modbus().connect.side_effect = self.connect_success
             mock_modbus().read_input_registers.side_effect = self.read_input_registers
             mock_modbus().read_holding_registers.side_effect = self.read_holding_registers
 
-            m = modbus_interface.modbus_interface('1.1.1.1', 111, 2)
+            m = modbus_interface.modbus_interface(ip='1.1.1.1', port=111)
             m.connect()
             mock_modbus.assert_called_with('1.1.1.1', 111, RetryOnEmpty=True, framer=modbus_interface.ModbusSocketFramer, retries=1, timeout=1)
 
@@ -317,13 +345,14 @@ class ModbusTests(unittest.TestCase):
             mock_modbus().write_register.assert_any_call(4, int.from_bytes(b'\x4B\xD6','big'), unit=1)
             mock_modbus().reset_mock()
 
-    def test_multi_byte_read_write_values(self):
+    def perform_multi_byte_read_write_values_test(self, write_mode):
         with patch('modbus4mqtt.modbus_interface.ModbusTcpClient') as mock_modbus:
             mock_modbus().connect.side_effect = self.connect_success
             mock_modbus().read_holding_registers.side_effect = self.read_holding_registers
             mock_modbus().write_register.side_effect = self.write_holding_register
+            mock_modbus().write_registers.side_effect = self.write_holding_registers
 
-            m = modbus_interface.modbus_interface('1.1.1.1', 111, 2, scan_batching=1)
+            m = modbus_interface.modbus_interface('1.1.1.1', 111, 2, scan_batching=1, write_mode=write_mode)
             m.connect()
             mock_modbus.assert_called_with('1.1.1.1', 111, RetryOnEmpty=True, framer=modbus_interface.ModbusSocketFramer, retries=1, timeout=1)
 
@@ -353,6 +382,10 @@ class ModbusTests(unittest.TestCase):
             self.assertEqual(m.get_value('holding', 1, 'uint64'), 18446573203856197441)
             # Read the value out as a different type.
             self.assertEqual(m.get_value('holding', 1, 'int64'), -170869853354175)
+
+    def test_multi_byte_read_write_values(self):
+        self.perform_multi_byte_read_write_values_test(modbus_interface.WriteMode.Single)
+        self.perform_multi_byte_read_write_values_test(modbus_interface.WriteMode.Multi)
 
     def test_multi_byte_read_write_values_LowHigh(self):
         with patch('modbus4mqtt.modbus_interface.ModbusTcpClient') as mock_modbus:
