@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "modbus4mqtt"
-version = "0.8.0"
+version = "1.0.0"
 description = "A YAML-defined bidirectional Modbus to MQTT interface"
 authors = [
     { name = "Travis Howse", email = "tjhowse@gmail.com" }

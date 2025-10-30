@@ -112,21 +112,28 @@ class modbus_interface():
     def poll(self):
         # Polls for the values marked as interesting in self._tables.
         for table in self._tables:
+            if len(self._tables[table]) == 0:
+                continue
             # This batches up modbus reads in chunks of self._scan_batching
-            start = -1
+            last_address = max(self._tables[table])
+            end_of_previous_read_range = -1
             for k in sorted(self._tables[table]):
-                group = int(k) - int(k) % self._scan_batching
-                if (start < group):
-                    try:
-                        values = self._scan_value_range(table, group, self._scan_batching)
-                        for x in range(0, self._scan_batching):
-                            key = group + x
-                            self._values[table][key] = values[x]
-                        # Avoid back-to-back read operations that could overwhelm some modbus devices.
-                        sleep(DEFAULT_READ_SLEEP_S)
-                    except ValueError as e:
-                        logging.exception("{}".format(e))
-                    start = group + self._scan_batching-1
+                if int(k) <= end_of_previous_read_range:
+                    # We've already read this address in a previous batch read.
+                    continue
+                batch_start = int(k)
+                # Ensure we don't read past the last interesting address, in case it's on a boundary.
+                batch_size = min(self._scan_batching, last_address - batch_start + 1)
+                try:
+                    values = self._scan_value_range(table, batch_start, batch_size)
+                    for x in range(0, batch_size):
+                        key = batch_start + x
+                        self._values[table][key] = values[x]
+                    # Avoid back-to-back read operations that could overwhelm some modbus devices.
+                    sleep(DEFAULT_READ_SLEEP_S)
+                except ValueError as e:
+                    logging.exception("{}".format(e))
+                end_of_previous_read_range = batch_start + batch_size-1
         self._process_writes()
 
     def get_value(self, table, addr, type='uint16'):

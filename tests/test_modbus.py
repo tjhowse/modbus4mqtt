@@ -22,8 +22,8 @@ class ModbusTests(unittest.TestCase):
 
     def setUp(self):
         modbus_interface.DEFAULT_SCAN_BATCHING = 10
-        self.input_registers = self.modbusRegister(registers=list(range(0,modbus_interface.DEFAULT_SCAN_BATCHING*2)))
-        self.holding_registers = self.modbusRegister(registers=list(range(0,modbus_interface.DEFAULT_SCAN_BATCHING*2)))
+        self.input_registers = self.modbusRegister(registers=list(range(0,modbus_interface.DEFAULT_SCAN_BATCHING*10)))
+        self.holding_registers = self.modbusRegister(registers=list(range(0,modbus_interface.DEFAULT_SCAN_BATCHING*10)))
 
     def tearDown(self):
         pass
@@ -94,14 +94,12 @@ class ModbusTests(unittest.TestCase):
 
             m.poll()
 
+            # Just scan a single register, make sure we get a single count=1 read each.
             self.assertEqual(m.get_value('holding', 5), 5)
             self.assertEqual(m.get_value('input', 6), 6)
 
-
-            # Ensure we read a batch of DEFAULT_SCAN_BATCHING registers even though we only
-            # added one register in each table as interesting
-            mock_modbus().read_holding_registers.assert_any_call(address=0, count=10, device_id=1)
-            mock_modbus().read_input_registers.assert_any_call(address=0, count=10, device_id=1)
+            mock_modbus().read_holding_registers.assert_any_call(address=5, count=1, device_id=1)
+            mock_modbus().read_input_registers.assert_any_call(address=6, count=1, device_id=1)
 
             m.set_value('holding', 5, 7)
             m.poll()
@@ -113,19 +111,58 @@ class ModbusTests(unittest.TestCase):
             mock_modbus().read_holding_registers.reset_mock()
             mock_modbus().read_input_registers.reset_mock()
 
-            # Ensure this causes two batched reads per table, one from 0-9 and one from 10-19.
+            # Ensure these registers are polled as a part of a bigger batched read.
+            m.add_monitor_register('holding', 14)
+            m.add_monitor_register('input', 15)
+
+            self.assertIn(14, m._tables['holding'])
+            self.assertIn(15, m._tables['input'])
+
+            mock_modbus().read_holding_registers.reset_mock()
+            mock_modbus().read_input_registers.reset_mock()
+
+            m.poll()
+
+            mock_modbus().read_holding_registers.assert_any_call(address=5, count=10, device_id=1)
+            mock_modbus().read_input_registers.assert_any_call(address=6, count=10, device_id=1)
+
+            # Add a register beyond the end of the previous batched read to ensure we do another batched read.
             m.add_monitor_register('holding', 15)
             m.add_monitor_register('input', 16)
 
             self.assertIn(15, m._tables['holding'])
             self.assertIn(16, m._tables['input'])
 
+            mock_modbus().read_holding_registers.reset_mock()
+            mock_modbus().read_input_registers.reset_mock()
+
             m.poll()
 
-            mock_modbus().read_holding_registers.assert_any_call(address=0, count=10, device_id=1)
-            mock_modbus().read_holding_registers.assert_any_call(address=10, count=10, device_id=1)
-            mock_modbus().read_input_registers.assert_any_call(address=0, count=10, device_id=1)
-            mock_modbus().read_input_registers.assert_any_call(address=10, count=10, device_id=1)
+            mock_modbus().read_holding_registers.assert_any_call(address=5, count=10, device_id=1)
+            mock_modbus().read_holding_registers.assert_any_call(address=15, count=1, device_id=1)
+            mock_modbus().read_input_registers.assert_any_call(address=6, count=10, device_id=1)
+            mock_modbus().read_input_registers.assert_any_call(address=16, count=1, device_id=1)
+
+            # Add a 32b register straddling the boundary of the end of the batch.
+            m.add_monitor_register('holding', 24, type='uint32')
+            m.add_monitor_register('input', 25, type='uint32')
+
+            self.assertIn(24, m._tables['holding'])
+            self.assertIn(25, m._tables['holding'])
+            self.assertIn(25, m._tables['input'])
+            self.assertIn(26, m._tables['input'])
+
+            mock_modbus().read_holding_registers.reset_mock()
+            mock_modbus().read_input_registers.reset_mock()
+
+            m.poll()
+
+            mock_modbus().read_holding_registers.assert_any_call(address=5, count=10, device_id=1)
+            mock_modbus().read_holding_registers.assert_any_call(address=15, count=10, device_id=1)
+            mock_modbus().read_holding_registers.assert_any_call(address=25, count=1, device_id=1)
+            mock_modbus().read_input_registers.assert_any_call(address=6, count=10, device_id=1)
+            mock_modbus().read_input_registers.assert_any_call(address=16, count=10, device_id=1)
+            mock_modbus().read_input_registers.assert_any_call(address=26, count=1, device_id=1)
 
     def test_invalid_tables_and_addresses(self):
         with patch('modbus4mqtt.modbus_interface.ModbusTcpClient') as mock_modbus:
