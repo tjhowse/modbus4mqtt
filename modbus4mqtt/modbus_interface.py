@@ -38,22 +38,22 @@ class modbus_interface():
                  scan_batching=None,
                  word_order=WordOrder.HighLow
                  ):
-        self._ip = ip
-        self._port = port
+        self._ip: str = ip
+        self._port: int = port
         # This is a dict of sets. Each key represents one table of modbus registers.
         # At the moment it has 'input' and 'holding'
-        self._tables = {'input': set(), 'holding': set()}
+        self._tables: dict[str, set[int]] = {'input': set(), 'holding': set()}
 
         # This is a dicts of dicts. These hold the current values of the interesting registers
-        self._values = {'input': {}, 'holding': {}}
+        self._values: dict[str, dict[int, int]] = {'input': {}, 'holding': {}}
 
-        self._planned_writes = Queue()
-        self._writing = False
-        self._write_mode = write_mode
-        self._unit = device_address
-        self._variant = variant
-        self._scan_batching = DEFAULT_SCAN_BATCHING
-        self._word_order = word_order
+        self._planned_writes: Queue = Queue()
+        self._writing: bool = False
+        self._write_mode: WriteMode = write_mode
+        self._unit: int = device_address
+        self._variant: str | None = variant
+        self._scan_batching: int = DEFAULT_SCAN_BATCHING
+        self._word_order: WordOrder = word_order
         if scan_batching is not None:
             if scan_batching < MIN_SCAN_BATCHING:
                 logging.warning("Bad value for scan_batching: {}. Enforcing minimum value of {}".format(scan_batching, MIN_SCAN_BATCHING))
