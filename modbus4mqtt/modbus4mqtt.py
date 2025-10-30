@@ -40,8 +40,8 @@ class mqtt_interface():
 
     def connect(self):
         # Connects to modbus and MQTT.
-        self.connect_modbus()
         self.connect_mqtt()
+        self.connect_modbus()
 
     def connect_modbus(self):
         if self.config.get('word_order', 'highlow').lower() == 'lowhigh':
