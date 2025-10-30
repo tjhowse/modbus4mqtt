@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-from time import sleep
+from time import sleep, monotonic
 from datetime import datetime
 import json
 import logging
@@ -293,9 +293,10 @@ class mqtt_interface():
 
     def loop_forever(self):
         while True:
-            # TODO this properly.
+            next_update_time_s = monotonic() + self.config['update_rate']
             self.poll()
-            sleep(self.config['update_rate'])
+            sleep(max(0, next_update_time_s - monotonic()))
+
 
 
 @click.command()
