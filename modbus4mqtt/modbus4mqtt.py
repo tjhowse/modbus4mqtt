@@ -94,7 +94,8 @@ class mqtt_interface():
         exit(1)
 
     def connect_mqtt(self):
-        self._mqtt_client = mqtt.Client()
+        # TODO Upgrade to Paho MQTT v2 callback API: https://eclipse.dev/paho/files/paho.mqtt.python/html/migrations.html
+        self._mqtt_client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION1)
         self._mqtt_client.username_pw_set(self.username, self.password)
         self._mqtt_client._on_connect = self._on_connect
         self._mqtt_client._on_disconnect = self._on_disconnect
