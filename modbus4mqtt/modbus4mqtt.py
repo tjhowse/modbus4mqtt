@@ -94,13 +94,11 @@ class mqtt_interface():
         exit(1)
 
     def connect_mqtt(self):
-        # TODO Upgrade to Paho MQTT v2 callback API: https://eclipse.dev/paho/files/paho.mqtt.python/html/migrations.html
-        self._mqtt_client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION1)
+        self._mqtt_client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
         self._mqtt_client.username_pw_set(self.username, self.password)
         self._mqtt_client._on_connect = self._on_connect
         self._mqtt_client._on_disconnect = self._on_disconnect
         self._mqtt_client._on_message = self._on_message
-        self._mqtt_client._on_subscribe = self._on_subscribe
         if self.use_tls:
             self._mqtt_client.tls_set(ca_certs=self.cafile, certfile=self.cert, keyfile=self.key)
             self._mqtt_client.tls_insecure_set(self.insecure)
@@ -181,8 +179,8 @@ class mqtt_interface():
             m = json.dumps(message, sort_keys=True)
             self._mqtt_client.publish(self.prefix+topic, m, retain=json_messages_retain[topic])
 
-    def _on_connect(self, client, userdata, flags, rc):
-        if rc == 0:
+    def _on_connect(self, client, userdata, flags, reason_code, properties):
+        if reason_code == 0:
             logging.info("Connected to MQTT.")
         else:
             logging.error("Couldn't connect to MQTT.")
@@ -199,11 +197,8 @@ class mqtt_interface():
                                   })
                                   )
 
-    def _on_disconnect(self, client, userdata, rc):
+    def _on_disconnect(self, client, userdata, flags, reason_code, properties):
         logging.warning("Disconnected from MQTT. Attempting to reconnect.")
-
-    def _on_subscribe(self, client, userdata, mid, granted_qos):
-        pass
 
     def _on_message(self, client, userdata, msg):
         # print("got a message: {}: {}".format(msg.topic, msg.payload))
