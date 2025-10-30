@@ -1,0 +1,483 @@
+ip: 192.168.1.162
+port: 502
+update_rate: 5
+address_offset: 0
+#variant: sungrow
+variant: tcp
+scan_batching: 50
+word_order: lowhigh
+registers:
+  - pub_topic: "ems/EMS_MODE"
+    set_topic: "ems/EMS_MODE/set"
+    address: 13049
+    value_map:
+      self: 0
+      forced: 2
+      external: 3
+  - pub_topic: "ems/CHARGE_DISCHARGE_COMMAND"
+    set_topic: "ems/CHARGE_DISCHARGE_COMMAND/set"
+    address: 13050
+    value_map:
+      charge: 0xAA
+      discharge: 0xBB
+      stop: 0xCC
+  - pub_topic: "ems/CHARGE_DISCHARGE_POWER"
+    set_topic: "ems/CHARGE_DISCHARGE_POWER/set"
+    address: 13051
+  - pub_topic: "no_export/partial/limit"
+    set_topic: "no_export/partial/limit/set"
+    address: 13073
+  # - pub_topic: "forced_charge/mode"
+  #   set_topic: "forced_charge/mode/set"
+  #   retain: true
+  #   address: 13139
+  #   value_map:
+  #     enabled: 170
+  #     disabled: 85
+  # - pub_topic: "forced_charge/weekdays"
+  #   set_topic: "forced_charge/weekdays/set"
+  #   retain: true
+  #   address: 13140
+  #   value_map:
+  #     all_days: 1
+  #     weekdays: 0
+  # - pub_topic: "forced_charge/period_1/start_hours"
+  #   set_topic: "forced_charge/period_1/start_hours/set"
+  #   address: 13141
+  # - pub_topic: "forced_charge/period_1/start_minutes"
+  #   set_topic: "forced_charge/period_1/start_minutes/set"
+  #   address: 13142
+  # - pub_topic: "forced_charge/period_1/end_hours"
+  #   set_topic: "forced_charge/period_1/end_hours/set"
+  #   address: 13143
+  # - pub_topic: "forced_charge/period_1/end_minutes"
+  #   set_topic: "forced_charge/period_1/end_minutes/set"
+  #   address: 13144
+  # - pub_topic: "forced_charge/period_1/target_soc"
+  #   set_topic: "forced_charge/period_1/target_soc/set"
+  #   address: 13145
+  # - pub_topic: "forced_charge/period_2/start_hours"
+  #   set_topic: "forced_charge/period_2/start_hours/set"
+  #   address: 13146
+  # - pub_topic: "forced_charge/period_2/start_minutes"
+  #   set_topic: "forced_charge/period_2/start_minutes/set"
+  #   address: 13147
+  # - pub_topic: "forced_charge/period_2/end_hours"
+  #   set_topic: "forced_charge/period_2/end_hours/set"
+  #   address: 13148
+  # - pub_topic: "forced_charge/period_2/end_minutes"
+  #   set_topic: "forced_charge/period_2/end_minutes/set"
+  #   address: 13149
+  # - pub_topic: "forced_charge/period_2/target_soc"
+  #   set_topic: "forced_charge/period_2/target_soc/set"
+  #   address: 13150
+  # - #pub_topic: "date_time/minutes"
+  #   address: 5003
+  # - #pub_topic: "date_time/seconds"
+  #   address: 5004
+  # - pub_topic: "load_control/mode"
+  #   value_map:
+  #     timer: 0
+  #     manual: 1
+  #     optimized: 2
+  #   address: 13001
+  # - pub_topic: "load_control/timer/start_time_1_hours"
+  #   address: 13002
+  # - pub_topic: "load_control/timer/start_time_1_minutes"
+  #   address: 13003
+  # - pub_topic: "load_control/timer/end_time_1_hours"
+  #   address: 13004
+  # - pub_topic: "load_control/timer/end_time_1_minutes"
+  #   address: 13005
+  # - pub_topic: "load_control/timer/start_time_2_hours"
+  #   address: 13006
+  # - pub_topic: "load_control/timer/start_time_2_minutes"
+  #   address: 13007
+  # - pub_topic: "load_control/timer/end_time_2_hours"
+  #   address: 13008
+  # - pub_topic: "load_control/timer/end_time_2_minutes"
+  #   address: 13009
+  # - pub_topic: "load_control/on_off "
+  #   value_map:
+  #     on: 170
+  #     off: 85
+  #   address: 13010
+  # - pub_topic: "load_control/optimized/start_time_hours"
+  #   address: 13011
+  # - pub_topic: "load_control/optimized/start_time_minutes"
+  #   address: 13012
+  # - pub_topic: "load_control/optimized/end_time_hours"
+  #   address: 13013
+  # - pub_topic: "load_control/optimized/end_time_minutes"
+  #   address: 13014
+  # - pub_topic: "load_control/optimized/power"
+  #   address: 13015
+  # - pub_topic: "bat_usage_time/weekday_usage/start_time_1_hours"
+  #   address: 13122
+  # - pub_topic: "bat_usage_time/weekday_usage/start_time_1_minutes"
+  #   address: 13123
+  # - pub_topic: "bat_usage_time/weekday_usage/end_time_1_hours"
+  #   set_topic: "bat_usage_time/weekday_usage/end_time_1_hours/set"
+  #   address: 13124
+  # - pub_topic: "bat_usage_time/weekday_usage/end_time_1_minutes"
+  #   address: 13125
+  # - pub_topic: "bat_usage_time/weekday_usage/start_time_2_hours"
+  #   address: 13126
+  # - pub_topic: "bat_usage_time/weekday_usage/start_time_2_minutes"
+  #   address: 13127
+  # - pub_topic: "bat_usage_time/weekday_usage/end_time_2_hours"
+  #   set_topic: "bat_usage_time/weekday_usage/end_time_2_hours/set"
+  #   address: 13128
+  # - pub_topic: "bat_usage_time/weekday_usage/end_time_2_minutes"
+  #   address: 13129
+  # - pub_topic: "bat_usage_time/weekend_usage"
+  #   set_topic: "bat_usage_time/weekend_usage/set"
+  #   value_map:
+  #     disabled: 85
+  #     enabled: 170
+  #   address: 13130
+  # - pub_topic: "bat_usage_time/weekend_usage/start_time_1_hours"
+  #   address: 13131
+  # - pub_topic: "bat_usage_time/weekend_usage/start_time_1_minutes"
+  #   address: 13132
+  # - pub_topic: "bat_usage_time/weekend_usage/end_time_1_hours"
+  #   address: 13133
+  # - pub_topic: "bat_usage_time/weekend_usage/end_time_1_minutes"
+  #   address: 13134
+  # - pub_topic: "bat_usage_time/weekend_usage/start_time_2_hours"
+  #   address: 13135
+  # - pub_topic: "bat_usage_time/weekend_usage/start_time_2_minutes"
+  #   address: 13136
+  # - pub_topic: "bat_usage_time/weekend_usage/end_time_2_hours"
+  #   address: 13137
+  # - pub_topic: "bat_usage_time/weekend_usage/end_time_2_minutes"
+  #   address: 13138
+
+  #   # The following registers are published together in one JSON message to replicate the functionality
+  #   # of pvstats because I didn't want to change my MQTT -> influxdb pipeline when I migrated from pvstats
+  #   # to modbus4mqtt for these numbers.
+
+  - pub_topic: "solar"
+    json_key: daily_pv_power
+    type: uint16
+    address: 5002
+    table: input
+    pub_only_on_change: false
+    scale: 100
+  - pub_topic: "solar"
+    json_key: lifetime_pv_power
+    type: uint16
+    address: 5003
+    table: input
+    pub_only_on_change: false
+  - pub_topic: "solar"
+    json_key: total_run_time
+    type: uint16
+    address: 5005
+    table: input
+    pub_only_on_change: false
+  - pub_topic: "solar"
+    json_key: internal_temp
+    type: uint16
+    address: 5007
+    table: input
+    pub_only_on_change: false
+    scale: 0.1
+  - pub_topic: "solar"
+    json_key: pv1_voltage
+    type: uint16
+    address: 5010
+    table: input
+    pub_only_on_change: false
+    scale: 0.1
+  - pub_topic: "solar"
+    json_key: pv1_current
+    type: uint16
+    address: 5011
+    table: input
+    pub_only_on_change: false
+    scale: 0.1
+  - pub_topic: "solar"
+    json_key: pv2_voltage
+    type: uint16
+    address: 5012
+    table: input
+    pub_only_on_change: false
+    scale: 0.1
+  - pub_topic: "solar"
+    json_key: pv2_current
+    type: uint16
+    address: 5013
+    table: input
+    pub_only_on_change: false
+    scale: 0.1
+
+  # - pub_topic: "solar"
+  #   json_key: pv3_voltage
+  #   type: uint16
+  #   address: 13118
+  #   table: input
+  #   pub_only_on_change: false
+  #   scale: 0.1
+  # - pub_topic: "solar"
+  #   json_key: pv3_current
+  #   type: uint16
+  #   address: 13119
+  #   table: input
+  #   pub_only_on_change: false
+  #   scale: 0.1
+
+  # - pub_topic: "solar"
+  #   json_key: pv4_voltage
+  #   type: uint16
+  #   address: 13120
+  #   table: input
+  #   pub_only_on_change: false
+  #   scale: 0.1
+  # - pub_topic: "solar"
+  #   json_key: pv4_current
+  #   type: uint16
+  #   address: 13121
+  #   table: input
+  #   pub_only_on_change: false
+  #   scale: 0.1
+
+  - pub_topic: "solar"
+    json_key: total_pv_power
+    type: uint16
+    address: 5016
+    table: input
+    pub_only_on_change: false
+  - pub_topic: "solar"
+    json_key: grid_voltage
+    type: uint16
+    address: 5018
+    table: input
+    pub_only_on_change: false
+    scale: 0.1
+  - pub_topic: "solar"
+    json_key: inverter_current
+    type: uint16
+    address: 5021
+    table: input
+    pub_only_on_change: false
+    scale: 0.1
+  - pub_topic: "solar"
+    json_key: inverter_ac_output
+    type: uint16
+    address: 5030
+    table: input
+    pub_only_on_change: false
+  - pub_topic: "solar"
+    json_key: grid_frequency
+    type: uint16
+    address: 5035
+    table: input
+    pub_only_on_change: false
+    scale: 0.1
+
+  - pub_topic: "solar"
+    json_key: running_state
+    type: uint16
+    address: 13000
+    table: input
+    pub_only_on_change: false
+  - pub_topic: "solar"
+    json_key: daily_pv_energy_10
+    type: uint16
+    address: 13001
+    table: input
+    pub_only_on_change: false
+    scale: 0.1
+  - pub_topic: "solar"
+    json_key: total_pv_energy_10
+    type: uint32
+    address: 13002
+    table: input
+    pub_only_on_change: false
+    scale: 0.1
+  - pub_topic: "solar"
+    json_key: daily_export_energy_10
+    type: uint16
+    address: 13004
+    table: input
+    pub_only_on_change: false
+    scale: 0.1
+  - pub_topic: "solar"
+    json_key: total_export_energy_10
+    type: uint32
+    address: 13005
+    table: input
+    pub_only_on_change: false
+    scale: 0.1
+  - pub_topic: "solar"
+    json_key: load_power
+    type: uint16
+    address: 13007
+    table: input
+    pub_only_on_change: false
+  - pub_topic: "solar"
+    json_key: export_power
+    type: int16
+    address: 13009
+    table: input
+    pub_only_on_change: false
+  - pub_topic: "solar"
+    json_key: grid_import_or_export
+    type: int16
+    address: 13010
+    table: input
+    pub_only_on_change: false
+  - pub_topic: "solar"
+    json_key: daily_charge_energy_10
+    type: uint16
+    address: 13011
+    table: input
+    pub_only_on_change: false
+    scale: 0.1
+  - pub_topic: "solar"
+    json_key: total_charge_energy_10
+    type: uint16
+    address: 13012
+    table: input
+    pub_only_on_change: false
+    scale: 0.1
+  - pub_topic: "solar"
+    json_key: co2_emission_reduction
+    type: uint32
+    address: 13014
+    table: input
+    pub_only_on_change: false
+    scale: 0.1
+  - pub_topic: "solar"
+    json_key: daily_use_energy_10
+    type: uint16
+    address: 13016
+    table: input
+    pub_only_on_change: false
+    scale: 0.1
+  - pub_topic: "solar"
+    json_key: total_use_energy_10
+    type: uint32
+    address: 13017
+    table: input
+    pub_only_on_change: false
+    scale: 0.1
+  - pub_topic: "solar"
+    json_key: battery_voltage_10
+    type: uint16
+    address: 13019
+    table: input
+    pub_only_on_change: false
+    scale: 0.1
+  - pub_topic: "solar"
+    json_key: battery_current_10
+    type: uint16
+    address: 13020
+    table: input
+    pub_only_on_change: false
+    scale: 0.1
+  - pub_topic: "solar"
+    json_key: battery_power
+    type: uint16
+    address: 13021
+    table: input
+    pub_only_on_change: false
+  - pub_topic: "solar"
+    json_key: battery_level_10
+    type: uint16
+    address: 13022
+    table: input
+    pub_only_on_change: false
+    scale: 0.1
+  - pub_topic: "solar"
+    json_key: battery_health_10
+    type: uint16
+    address: 13023
+    table: input
+    pub_only_on_change: false
+    scale: 0.1
+  - pub_topic: "solar"
+    json_key: battery_temp_10
+    type: uint16
+    address: 13024
+    table: input
+    pub_only_on_change: false
+    scale: 0.1
+  - pub_topic: "solar"
+    json_key: daily_discharge_energy_10
+    type: uint16
+    address: 13025
+    table: input
+    pub_only_on_change: false
+    scale: 0.1
+  - pub_topic: "solar"
+    json_key: total_discharge_energy_10
+    type: uint16
+    address: 13026
+    table: input
+    pub_only_on_change: false
+    scale: 0.1
+  - pub_topic: "solar"
+    json_key: use_power
+    type: uint16
+    address: 13028
+    table: input
+    pub_only_on_change: false
+    scale: 0.1
+  - pub_topic: "solar"
+    json_key: inverter_current_10
+    type: uint16
+    address: 13030
+    table: input
+    pub_only_on_change: false
+    scale: 0.1
+  - pub_topic: "solar"
+    json_key: pv_power
+    type: uint16
+    address: 13033
+    table: input
+    pub_only_on_change: false
+    scale: 0.1
+  - pub_topic: "solar"
+    json_key: mystery_5001
+    type: uint16
+    address: 5001
+    table: input
+    pub_only_on_change: false
+  - pub_topic: "solar"
+    json_key: mystery_5033 # Possibly -100% to 100% ?
+    type: int16
+    address: 5033
+    table: input
+    pub_only_on_change: false
+  - pub_topic: "solar"
+    json_key: mystery_5034 # -1 to 0.
+    type: int16
+    address: 5034
+    table: input
+    pub_only_on_change: false
+  - pub_topic: "solar"
+    json_key: mystery_5035 # -1000 to 1000. Possibly needs a 0.1 scale?
+    type: int16
+    address: 5035
+    table: input
+    pub_only_on_change: false
+  - pub_topic: "solar"
+    json_key: mystery_13030 # Constant 85
+    type: uint16
+    address: 13030
+    table: input
+    pub_only_on_change: false
+  - pub_topic: "solar"
+    json_key: mystery_13036 # 0-15. Four-bit state? Possibly?
+    type: uint16
+    address: 13036
+    table: input
+    pub_only_on_change: false
+  - pub_topic: "solar"
+    json_key: mystery_13037 # Accumulates. Possibly total kWh consumed?
+    type: uint16
+    address: 13037
+    table: input
+    pub_only_on_change: false
