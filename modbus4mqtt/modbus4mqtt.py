@@ -105,7 +105,7 @@ class mqtt_interface():
             self._mqtt_client.tls_insecure_set(self.insecure)
         lwt_message = json.dumps({
             "status": "offline",
-            "version": f"v{version.version}",
+            "version": f"v{_version}",
             "timestamp": datetime.now().isoformat()
         })
         self._mqtt_client.will_set(self.prefix + 'modbus4mqtt', lwt_message)
