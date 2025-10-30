@@ -2,20 +2,12 @@ from time import time, sleep
 from enum import Enum
 import logging
 from queue import Queue
-try:
-    # Pymodbus >= 3.0
-    # TODO: Once SungrowModbusTcpClient 0.1.7 is released,
-    # we can remove the "<3.0.0" pymodbus restriction and this
-    # will make sense again.
-    from pymodbus.client import ModbusTcpClient, ModbusUdpClient, ModbusTlsClient
-    from pymodbus.transaction import ModbusAsciiFramer, ModbusBinaryFramer, ModbusRtuFramer, ModbusSocketFramer
-except ImportError:
-    # Pymodbus < 3.0
-    from pymodbus.client.sync import ModbusTcpClient, ModbusUdpClient, ModbusTlsClient, \
-        ModbusAsciiFramer, ModbusBinaryFramer, ModbusRtuFramer, ModbusSocketFramer
+from pymodbus.client import ModbusTcpClient, ModbusUdpClient, ModbusTlsClient
+from pymodbus.framer import FramerType
+from pymodbus import ModbusException
+
 from SungrowModbusTcpClient import SungrowModbusTcpClient
 
-DEFAULT_SCAN_RATE_S = 5
 DEFAULT_SCAN_BATCHING = 100
 MIN_SCAN_BATCHING = 1
 MAX_SCAN_BATCHING = 100
@@ -39,29 +31,28 @@ class modbus_interface():
     def __init__(self,
                  ip,
                  port=502,
-                 update_rate_s=DEFAULT_SCAN_RATE_S,
                  device_address=0x01,
                  write_mode=WriteMode.Single,
                  variant=None,
                  scan_batching=None,
                  word_order=WordOrder.HighLow
                  ):
-        self._ip = ip
-        self._port = port
+        self._ip: str = ip
+        self._port: int = port
         # This is a dict of sets. Each key represents one table of modbus registers.
         # At the moment it has 'input' and 'holding'
-        self._tables = {'input': set(), 'holding': set()}
+        self._tables: dict[str, set[int]] = {'input': set(), 'holding': set()}
 
         # This is a dicts of dicts. These hold the current values of the interesting registers
-        self._values = {'input': {}, 'holding': {}}
+        self._values: dict[str, dict[int, int]] = {'input': {}, 'holding': {}}
 
-        self._planned_writes = Queue()
-        self._writing = False
-        self._write_mode = write_mode
-        self._unit = device_address
-        self._variant = variant
-        self._scan_batching = DEFAULT_SCAN_BATCHING
-        self._word_order = word_order
+        self._planned_writes: Queue = Queue()
+        self._writing: bool = False
+        self._write_mode: WriteMode = write_mode
+        self._unit: int = device_address
+        self._variant: str | None = variant
+        self._scan_batching: int = DEFAULT_SCAN_BATCHING
+        self._word_order: WordOrder = word_order
         if scan_batching is not None:
             if scan_batching < MIN_SCAN_BATCHING:
                 logging.warning("Bad value for scan_batching: {}. Enforcing minimum value of {}".format(scan_batching, MIN_SCAN_BATCHING))
@@ -84,10 +75,10 @@ class modbus_interface():
             # "serial": (ModbusSerialClient, ModbusRtuFramer),
         }
         framers = {
-            "ascii": ModbusAsciiFramer,
-            "binary": ModbusBinaryFramer,
-            "rtu": ModbusRtuFramer,
-            "socket": ModbusSocketFramer,
+            "ascii": FramerType.ASCII,
+            "rtu": FramerType.RTU,
+            "socket": FramerType.SOCKET,
+            "tls": FramerType.TLS,
         }
 
         if self._variant is None:
@@ -103,12 +94,12 @@ class modbus_interface():
             raise ValueError("Unknown modbus framer: {}".format(desired_framer))
 
         client = clients[desired_client]
-        if desired_framer is None:
-            framer = ModbusSocketFramer
-        else:
-            framer = framers[desired_framer]
 
-        self._mb = client(self._ip, self._port, RetryOnEmpty=True, framer=framer, retries=1, timeout=1)
+        if desired_framer is None:
+            desired_framer = "socket"
+        framer = framers[desired_framer]
+
+        self._mb = client(host=self._ip, port=self._port, framer=framer, retries=1, timeout=1)
 
     def add_monitor_register(self, table, addr, type='uint16'):
         # Accepts a modbus register and table to monitor
@@ -122,21 +113,28 @@ class modbus_interface():
     def poll(self):
         # Polls for the values marked as interesting in self._tables.
         for table in self._tables:
+            if len(self._tables[table]) == 0:
+                continue
             # This batches up modbus reads in chunks of self._scan_batching
-            start = -1
+            last_address = max(self._tables[table])
+            end_of_previous_read_range = -1
             for k in sorted(self._tables[table]):
-                group = int(k) - int(k) % self._scan_batching
-                if (start < group):
-                    try:
-                        values = self._scan_value_range(table, group, self._scan_batching)
-                        for x in range(0, self._scan_batching):
-                            key = group + x
-                            self._values[table][key] = values[x]
-                        # Avoid back-to-back read operations that could overwhelm some modbus devices.
-                        sleep(DEFAULT_READ_SLEEP_S)
-                    except ValueError as e:
-                        logging.exception("{}".format(e))
-                    start = group + self._scan_batching-1
+                if int(k) <= end_of_previous_read_range:
+                    # We've already read this address in a previous batch read.
+                    continue
+                batch_start = int(k)
+                # Ensure we don't read past the last interesting address, in case it's on a boundary.
+                batch_size = min(self._scan_batching, last_address - batch_start + 1)
+                try:
+                    values = self._scan_value_range(table, batch_start, batch_size)
+                    for x in range(0, batch_size):
+                        key = batch_start + x
+                        self._values[table][key] = values[x]
+                    # Avoid back-to-back read operations that could overwhelm some modbus devices.
+                    sleep(DEFAULT_READ_SLEEP_S)
+                except ModbusException as e:
+                    logging.error(e)
+                end_of_previous_read_range = batch_start + batch_size-1
         self._process_writes()
 
     def get_value(self, table, addr, type='uint16'):
@@ -178,9 +176,9 @@ class modbus_interface():
 
     def _perform_write(self, addr, value):
         if self._write_mode == WriteMode.Single:
-            self._mb.write_register(addr, value, unit=self._unit)
+            self._mb.write_register(address=addr, value=value, device_id=self._unit)
         else:
-            self._mb.write_registers(addr, [value], unit=self._unit)
+            self._mb.write_registers(address=addr, values=[value], device_id=self._unit)
 
     def _process_writes(self, max_block_s=DEFAULT_WRITE_BLOCK_INTERVAL_S):
         # TODO I am not entirely happy with this system. It's supposed to prevent
@@ -190,47 +188,46 @@ class modbus_interface():
         if self._writing:
             return
         write_start_time = time()
+        self._writing = True
         try:
-            self._writing = True
             while not self._planned_writes.empty() and (time() - write_start_time) < max_block_s:
                 addr, value, mask = self._planned_writes.get()
-                if mask == 0xFFFF:
-                    self._perform_write(addr, value)
-                else:
-                    # https://pymodbus.readthedocs.io/en/latest/source/library/pymodbus.client.html?highlight=mask_write_register#pymodbus.client.common.ModbusClientMixin.mask_write_register
-                    # https://www.mathworks.com/help/instrument/modify-the-contents-of-a-holding-register-using-a-mask-write.html
-                    # Result = (register value AND andMask) OR (orMask AND (NOT andMask))
-                    # This bit-shift weirdness is to avoid a mask of 0x0001 resulting in a ~mask of -2, which pymodbus doesn't like.
-                    # This means the result will be 65534, AKA 0xFFFE.
-                    # This specific read-before-write operation doesn't work on my modbus solar inverter -
-                    # I get "Modbus Error: [Input/Output] Modbus Error: [Invalid Message] Incomplete message received, expected at least 8 bytes (0 received)"
-                    # I suspect it's a different modbus opcode that tries to do clever things that my device doesn't support.
-                    # result = self._mb.mask_write_register(address=addr, and_mask=(1<<16)-1-mask, or_mask=value, unit=0x01)
-                    # print("Result: {}".format(result))
-                    old_value = self._scan_value_range('holding', addr, 1)[0]
-                    and_mask = (1 << 16) - 1 - mask
-                    or_mask = value
-                    new_value = (old_value & and_mask) | (or_mask & (mask))
-                    self._perform_write(addr, new_value)
+                try:
+                    if mask == 0xFFFF:
+                        self._perform_write(addr, value)
+                    else:
+                        # https://pymodbus.readthedocs.io/en/latest/source/library/pymodbus.client.html?highlight=mask_write_register#pymodbus.client.common.ModbusClientMixin.mask_write_register
+                        # https://www.mathworks.com/help/instrument/modify-the-contents-of-a-holding-register-using-a-mask-write.html
+                        # Result = (register value AND andMask) OR (orMask AND (NOT andMask))
+                        # This bit-shift weirdness is to avoid a mask of 0x0001 resulting in a ~mask of -2, which pymodbus doesn't like.
+                        # This means the result will be 65534, AKA 0xFFFE.
+                        # This specific read-before-write operation doesn't work on my modbus solar inverter -
+                        # I get "Modbus Error: [Input/Output] Modbus Error: [Invalid Message] Incomplete message received, expected at least 8 bytes (0 received)"
+                        # I suspect it's a different modbus opcode that tries to do clever things that my device doesn't support.
+                        # result = self._mb.mask_write_register(address=addr, and_mask=(1<<16)-1-mask, or_mask=value, device_id=0x01)
+                        # print("Result: {}".format(result))
+                        old_value = self._scan_value_range('holding', addr, 1)[0]
+                        and_mask = (1 << 16) - 1 - mask
+                        or_mask = value
+                        new_value = (old_value & and_mask) | (or_mask & (mask))
+                        self._perform_write(addr, new_value)
+                except ModbusException as e:
+                    logging.error("Failed to write to modbus device: {}".format(e))
                 sleep(DEFAULT_WRITE_SLEEP_S)
-        except Exception as e:
-            # BUG catch only the specific exception that means pymodbus failed to write to a register
-            # the modbus device doesn't support, not an error at the TCP layer.
-            logging.exception("Failed to write to modbus device: {}".format(e))
         finally:
             self._writing = False
 
     def _scan_value_range(self, table, start, count):
         result = None
         if table == 'input':
-            result = self._mb.read_input_registers(start, count, unit=self._unit)
+            result = self._mb.read_input_registers(address=start, count=count, device_id=self._unit)
         elif table == 'holding':
-            result = self._mb.read_holding_registers(start, count, unit=self._unit)
-        try:
-            return result.registers
-        except:
-            # The result doesn't have a registers attribute, something has gone wrong!
-            raise ValueError("Failed to read {} {} table registers starting from {}: {}".format(count, table, start, result))
+            result = self._mb.read_holding_registers(address=start, count=count, device_id=self._unit)
+        if result is None:
+            raise ModbusException("No result from modbus read.")
+        if len(result.registers) != count:
+            raise ModbusException("Expected {} registers from modbus read, got {}.".format(count, len(result.registers)))
+        return result.registers
 
 
 def type_length(type):

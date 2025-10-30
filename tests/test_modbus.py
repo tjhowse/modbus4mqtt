@@ -5,6 +5,7 @@ from unittest.mock import patch, call, Mock
 from paho.mqtt.client import MQTTMessage
 
 from modbus4mqtt import modbus_interface
+from pymodbus import ModbusException
 
 def assert_no_call(self, *args, **kwargs):
     try:
@@ -22,23 +23,23 @@ class ModbusTests(unittest.TestCase):
 
     def setUp(self):
         modbus_interface.DEFAULT_SCAN_BATCHING = 10
-        self.input_registers = self.modbusRegister(registers=list(range(0,modbus_interface.DEFAULT_SCAN_BATCHING*2)))
-        self.holding_registers = self.modbusRegister(registers=list(range(0,modbus_interface.DEFAULT_SCAN_BATCHING*2)))
+        self.input_registers = self.modbusRegister(registers=list(range(0,modbus_interface.DEFAULT_SCAN_BATCHING*10)))
+        self.holding_registers = self.modbusRegister(registers=list(range(0,modbus_interface.DEFAULT_SCAN_BATCHING*10)))
 
     def tearDown(self):
         pass
 
-    def read_input_registers(self, start, count, unit):
-        return self.modbusRegister(registers=self.input_registers.registers[start:start+count])
+    def read_input_registers(self, address, count, device_id):
+        return self.modbusRegister(registers=self.input_registers.registers[address:address+count])
 
-    def read_holding_registers(self, start, count, unit):
-        return self.modbusRegister(registers=self.holding_registers.registers[start:start+count])
+    def read_holding_registers(self, address, count, device_id):
+        return self.modbusRegister(registers=self.holding_registers.registers[address:address+count])
 
-    def write_holding_register(self, address, value, unit):
+    def write_holding_register(self, address, value, device_id):
         self.holding_registers.registers[address] = value
 
-    def write_holding_registers(self, address, values, unit):
-        self.assertEquals(len(values), 1)
+    def write_holding_registers(self, address, values, device_id):
+        self.assertEqual(len(values), 1)
         self.holding_registers.registers[address] = values[0]
 
     def connect_success(self):
@@ -47,8 +48,8 @@ class ModbusTests(unittest.TestCase):
     def connect_failure(self):
         return True
 
-    def throw_exception(self, addr, value, unit):
-        raise ValueError('Oh noooo!')
+    def throw_exception(self, address, value, device_id):
+        raise ModbusException('Oh noooo!')
 
     def perform_variant_test(self, mock_modbus, variant, expected_framer):
         mock_modbus().connect.side_effect = self.connect_success
@@ -57,16 +58,16 @@ class ModbusTests(unittest.TestCase):
 
         m = modbus_interface.modbus_interface(ip='1.1.1.1', port=111, variant=variant)
         m.connect()
-        mock_modbus.assert_called_with('1.1.1.1', 111, RetryOnEmpty=True, framer=expected_framer, retries=1, timeout=1)
+        mock_modbus.assert_called_with(host='1.1.1.1', port=111, framer=expected_framer, retries=1, timeout=1)
 
     def test_connection_variants(self):
         with patch('modbus4mqtt.modbus_interface.ModbusTcpClient') as mock_modbus:
-            self.perform_variant_test(mock_modbus, None, modbus_interface.ModbusSocketFramer)
-            self.perform_variant_test(mock_modbus, 'tcp', modbus_interface.ModbusSocketFramer)
-            self.perform_variant_test(mock_modbus, 'rtu-over-tcp', modbus_interface.ModbusRtuFramer)
+            self.perform_variant_test(mock_modbus, None, modbus_interface.FramerType.SOCKET)
+            self.perform_variant_test(mock_modbus, 'tcp', modbus_interface.FramerType.SOCKET)
+            self.perform_variant_test(mock_modbus, 'rtu-over-tcp', modbus_interface.FramerType.RTU)
         with patch('modbus4mqtt.modbus_interface.ModbusUdpClient') as mock_modbus:
-            self.perform_variant_test(mock_modbus, 'udp', modbus_interface.ModbusSocketFramer)
-            self.perform_variant_test(mock_modbus, 'binary-over-udp', modbus_interface.ModbusBinaryFramer)
+            self.perform_variant_test(mock_modbus, 'udp', modbus_interface.FramerType.SOCKET)
+            self.perform_variant_test(mock_modbus, 'rtu-over-udp', modbus_interface.FramerType.RTU)
 
         m = modbus_interface.modbus_interface(ip='1.1.1.1', port=111, variant='notexisiting')
         self.assertRaises(ValueError, m.connect)
@@ -82,7 +83,7 @@ class ModbusTests(unittest.TestCase):
 
             m = modbus_interface.modbus_interface(ip='1.1.1.1', port=111)
             m.connect()
-            mock_modbus.assert_called_with('1.1.1.1', 111, RetryOnEmpty=True, framer=modbus_interface.ModbusSocketFramer, retries=1, timeout=1)
+            mock_modbus.assert_called_with(host='1.1.1.1', port=111, framer=modbus_interface.FramerType.SOCKET, retries=1, timeout=1)
 
             # Confirm registers are added to the correct tables.
             m.add_monitor_register('holding', 5)
@@ -94,41 +95,80 @@ class ModbusTests(unittest.TestCase):
 
             m.poll()
 
+            # Just scan a single register, make sure we get a single count=1 read each.
             self.assertEqual(m.get_value('holding', 5), 5)
             self.assertEqual(m.get_value('input', 6), 6)
 
-            # Ensure we read a batch of DEFAULT_SCAN_BATCHING registers even though we only
-            # added one register in each table as interesting
-            mock_modbus().read_holding_registers.assert_any_call(0, 10, unit=1)
-            mock_modbus().read_input_registers.assert_any_call(0, 10, unit=1)
+            mock_modbus().read_holding_registers.assert_any_call(address=5, count=1, device_id=1)
+            mock_modbus().read_input_registers.assert_any_call(address=6, count=1, device_id=1)
 
             m.set_value('holding', 5, 7)
             m.poll()
-            mock_modbus().write_register.assert_any_call(5, 7, unit=1)
+
+            mock_modbus().write_register.assert_any_call(address=5, value=7, device_id=1)
 
             self.assertRaises(ValueError, m.set_value, 'input', 5, 7)
 
             mock_modbus().read_holding_registers.reset_mock()
             mock_modbus().read_input_registers.reset_mock()
 
-            # Ensure this causes two batched reads per table, one from 0-9 and one from 10-19.
+            # Ensure these registers are polled as a part of a bigger batched read.
+            m.add_monitor_register('holding', 14)
+            m.add_monitor_register('input', 15)
+
+            self.assertIn(14, m._tables['holding'])
+            self.assertIn(15, m._tables['input'])
+
+            mock_modbus().read_holding_registers.reset_mock()
+            mock_modbus().read_input_registers.reset_mock()
+
+            m.poll()
+
+            mock_modbus().read_holding_registers.assert_any_call(address=5, count=10, device_id=1)
+            mock_modbus().read_input_registers.assert_any_call(address=6, count=10, device_id=1)
+
+            # Add a register beyond the end of the previous batched read to ensure we do another batched read.
             m.add_monitor_register('holding', 15)
             m.add_monitor_register('input', 16)
 
             self.assertIn(15, m._tables['holding'])
             self.assertIn(16, m._tables['input'])
 
+            mock_modbus().read_holding_registers.reset_mock()
+            mock_modbus().read_input_registers.reset_mock()
+
             m.poll()
 
-            mock_modbus().read_holding_registers.assert_any_call(0, 10, unit=1)
-            mock_modbus().read_holding_registers.assert_any_call(10, 10, unit=1)
-            mock_modbus().read_input_registers.assert_any_call(0, 10, unit=1)
-            mock_modbus().read_input_registers.assert_any_call(10, 10, unit=1)
+            mock_modbus().read_holding_registers.assert_any_call(address=5, count=10, device_id=1)
+            mock_modbus().read_holding_registers.assert_any_call(address=15, count=1, device_id=1)
+            mock_modbus().read_input_registers.assert_any_call(address=6, count=10, device_id=1)
+            mock_modbus().read_input_registers.assert_any_call(address=16, count=1, device_id=1)
+
+            # Add a 32b register straddling the boundary of the end of the batch.
+            m.add_monitor_register('holding', 24, type='uint32')
+            m.add_monitor_register('input', 25, type='uint32')
+
+            self.assertIn(24, m._tables['holding'])
+            self.assertIn(25, m._tables['holding'])
+            self.assertIn(25, m._tables['input'])
+            self.assertIn(26, m._tables['input'])
+
+            mock_modbus().read_holding_registers.reset_mock()
+            mock_modbus().read_input_registers.reset_mock()
+
+            m.poll()
+
+            mock_modbus().read_holding_registers.assert_any_call(address=5, count=10, device_id=1)
+            mock_modbus().read_holding_registers.assert_any_call(address=15, count=10, device_id=1)
+            mock_modbus().read_holding_registers.assert_any_call(address=25, count=1, device_id=1)
+            mock_modbus().read_input_registers.assert_any_call(address=6, count=10, device_id=1)
+            mock_modbus().read_input_registers.assert_any_call(address=16, count=10, device_id=1)
+            mock_modbus().read_input_registers.assert_any_call(address=26, count=1, device_id=1)
 
     def test_invalid_tables_and_addresses(self):
         with patch('modbus4mqtt.modbus_interface.ModbusTcpClient') as mock_modbus:
             mock_modbus().connect.side_effect = self.connect_success
-            m = modbus_interface.modbus_interface('1.1.1.1', 111, 2)
+            m = modbus_interface.modbus_interface('1.1.1.1', 111)
             m.connect()
 
             m.add_monitor_register('holding', 5)
@@ -140,7 +180,7 @@ class ModbusTests(unittest.TestCase):
     def test_write_queuing(self):
         with patch('modbus4mqtt.modbus_interface.ModbusTcpClient') as mock_modbus:
             mock_modbus().connect.side_effect = self.connect_success
-            m = modbus_interface.modbus_interface('1.1.1.1', 111, 2)
+            m = modbus_interface.modbus_interface('1.1.1.1', 111)
             m.connect()
 
             m.add_monitor_register('holding', 5)
@@ -154,21 +194,21 @@ class ModbusTests(unittest.TestCase):
             mock_modbus().write_register.assert_not_called()
             m._writing = False
             m.set_value('holding', 6, 8)
-            mock_modbus().write_register.assert_any_call(5, 7, unit=1)
-            mock_modbus().write_register.assert_any_call(6, 8, unit=1)
+            mock_modbus().write_register.assert_any_call(address=5, value=7, device_id=1)
+            mock_modbus().write_register.assert_any_call(address=6, value=8, device_id=1)
 
     def test_exception_on_write(self):
         with patch('modbus4mqtt.modbus_interface.ModbusTcpClient') as mock_modbus:
             mock_modbus().connect.side_effect = self.connect_success
             with self.assertLogs() as mock_logger:
-                m = modbus_interface.modbus_interface('1.1.1.1', 111, 2)
+                m = modbus_interface.modbus_interface('1.1.1.1', 111)
                 m.connect()
 
                 m.add_monitor_register('holding', 5)
                 # Have the write_register throw an exception
                 mock_modbus().write_register.side_effect = self.throw_exception
                 m.set_value('holding', 5, 7)
-                self.assertIn("ERROR:root:Failed to write to modbus device: Oh noooo!", mock_logger.output[-1])
+                self.assertIn("ERROR:root:Failed to write to modbus device: Modbus Error: Oh noooo!", mock_logger.output[-1])
 
     def test_masked_writes(self):
         with patch('modbus4mqtt.modbus_interface.ModbusTcpClient') as mock_modbus:
@@ -177,7 +217,7 @@ class ModbusTests(unittest.TestCase):
             mock_modbus().read_holding_registers.side_effect = self.read_holding_registers
             mock_modbus().write_register.side_effect = self.write_holding_register
 
-            m = modbus_interface.modbus_interface('1.1.1.1', 111, 2)
+            m = modbus_interface.modbus_interface('1.1.1.1', 111)
             m.connect()
 
             self.holding_registers.registers[1] = 0
@@ -201,9 +241,9 @@ class ModbusTests(unittest.TestCase):
             mock_modbus().read_input_registers.side_effect = self.read_input_registers
             mock_modbus().read_holding_registers.side_effect = self.read_holding_registers
 
-            m = modbus_interface.modbus_interface('1.1.1.1', 111, 2, scan_batching=1)
+            m = modbus_interface.modbus_interface('1.1.1.1', 111, scan_batching=1)
             m.connect()
-            mock_modbus.assert_called_with('1.1.1.1', 111, RetryOnEmpty=True, framer=modbus_interface.ModbusSocketFramer, retries=1, timeout=1)
+            mock_modbus.assert_called_with(host='1.1.1.1', port=111, framer=modbus_interface.FramerType.SOCKET, retries=1, timeout=1)
 
             # Confirm registers are added to the correct tables.
             m.add_monitor_register('holding', 5)
@@ -219,10 +259,10 @@ class ModbusTests(unittest.TestCase):
             self.assertEqual(m.get_value('input', 7), 7)
 
             # Ensure each register is scanned with a separate read call.
-            mock_modbus().read_holding_registers.assert_any_call(5, 1, unit=1)
-            mock_modbus().read_holding_registers.assert_any_call(6, 1, unit=1)
-            mock_modbus().read_input_registers.assert_any_call(6, 1, unit=1)
-            mock_modbus().read_input_registers.assert_any_call(7, 1, unit=1)
+            mock_modbus().read_holding_registers.assert_any_call(address=5, count=1, device_id=1)
+            mock_modbus().read_holding_registers.assert_any_call(address=6, count=1, device_id=1)
+            mock_modbus().read_input_registers.assert_any_call(address=6, count=1, device_id=1)
+            mock_modbus().read_input_registers.assert_any_call(address=7, count=1, device_id=1)
 
     def test_scan_batching_bad_value(self):
         with patch('modbus4mqtt.modbus_interface.ModbusTcpClient') as mock_modbus:
@@ -232,11 +272,11 @@ class ModbusTests(unittest.TestCase):
                 mock_modbus().read_holding_registers.side_effect = self.read_holding_registers
 
                 bad_scan_batching = modbus_interface.MAX_SCAN_BATCHING+1
-                modbus_interface.modbus_interface('1.1.1.1', 111, 2, scan_batching=bad_scan_batching)
+                modbus_interface.modbus_interface('1.1.1.1', 111, scan_batching=bad_scan_batching)
                 self.assertIn("Bad value for scan_batching: {}. Enforcing maximum value of {}".format(bad_scan_batching, modbus_interface.MAX_SCAN_BATCHING), mock_logger.output[-1])
 
                 bad_scan_batching = modbus_interface.MIN_SCAN_BATCHING-1
-                modbus_interface.modbus_interface('1.1.1.1', 111, 2, scan_batching=bad_scan_batching)
+                modbus_interface.modbus_interface('1.1.1.1', 111, scan_batching=bad_scan_batching)
                 self.assertIn("Bad value for scan_batching: {}. Enforcing minimum value of {}".format(bad_scan_batching, modbus_interface.MIN_SCAN_BATCHING), mock_logger.output[-1])
 
     def test_type_conversions(self):
@@ -287,10 +327,10 @@ class ModbusTests(unittest.TestCase):
         with patch('modbus4mqtt.modbus_interface.ModbusTcpClient') as mock_modbus:
             mock_modbus().connect.side_effect = self.connect_success
 
-            m = modbus_interface.modbus_interface('1.1.1.1', 111, 2, word_order=modbus_interface.WordOrder.HighLow)
-            # m = modbus_interface.modbus_interface('1.1.1.1', 111, 2, word_order=modbus_interface.WordOrder.LowHigh)
+            m = modbus_interface.modbus_interface('1.1.1.1', 111, word_order=modbus_interface.WordOrder.HighLow)
+            # m = modbus_interface.modbus_interface('1.1.1.1', 111, word_order=modbus_interface.WordOrder.LowHigh)
             m.connect()
-            mock_modbus.assert_called_with('1.1.1.1', 111, RetryOnEmpty=True, framer=modbus_interface.ModbusSocketFramer, retries=1, timeout=1)
+            mock_modbus.assert_called_with(host='1.1.1.1', port=111, framer=modbus_interface.FramerType.SOCKET, retries=1, timeout=1)
 
             for i in range(1,11):
                 m.add_monitor_register('holding', i)
@@ -300,49 +340,49 @@ class ModbusTests(unittest.TestCase):
             m.set_value('holding', 1, 65535, 0xFFFF, 'uint16')
             m.poll()
             # Confirm that it only wrote one register.
-            mock_modbus().write_register.assert_any_call(1, 65535, unit=1)
+            mock_modbus().write_register.assert_any_call(address=1, value=65535, device_id=1)
             mock_modbus().reset_mock()
 
             m.set_value('holding', 1, 689876135, 0xFFFF, 'uint32')
             m.poll()
 
-            mock_modbus().write_register.assert_any_call(1, int.from_bytes(b'\x29\x1E','big'), unit=1)
-            mock_modbus().write_register.assert_any_call(2, int.from_bytes(b'\xAC\xA7','big'), unit=1)
+            mock_modbus().write_register.assert_any_call(address=1, value=int.from_bytes(b'\x29\x1E','big'), device_id=1)
+            mock_modbus().write_register.assert_any_call(address=2, value=int.from_bytes(b'\xAC\xA7','big'), device_id=1)
             mock_modbus().reset_mock()
 
             m.set_value('holding', 1, 5464681683516384647, 0xFFFF, 'uint64')
             m.poll()
 
-            mock_modbus().write_register.assert_any_call(1, int.from_bytes(b'\x4B\xD6','big'), unit=1)
-            mock_modbus().write_register.assert_any_call(2, int.from_bytes(b'\x73\x09','big'), unit=1)
-            mock_modbus().write_register.assert_any_call(3, int.from_bytes(b'\xBC\x93','big'), unit=1)
-            mock_modbus().write_register.assert_any_call(4, int.from_bytes(b'\xE5\x87','big'), unit=1)
+            mock_modbus().write_register.assert_any_call(address=1, value=int.from_bytes(b'\x4B\xD6','big'), device_id=1)
+            mock_modbus().write_register.assert_any_call(address=2, value=int.from_bytes(b'\x73\x09','big'), device_id=1)
+            mock_modbus().write_register.assert_any_call(address=3, value=int.from_bytes(b'\xBC\x93','big'), device_id=1)
+            mock_modbus().write_register.assert_any_call(address=4, value=int.from_bytes(b'\xE5\x87','big'), device_id=1)
             mock_modbus().reset_mock()
 
     def test_multi_byte_write_counts_LowHigh_order(self):
         with patch('modbus4mqtt.modbus_interface.ModbusTcpClient') as mock_modbus:
             mock_modbus().connect.side_effect = self.connect_success
 
-            m = modbus_interface.modbus_interface('1.1.1.1', 111, 2, word_order=modbus_interface.WordOrder.LowHigh)
+            m = modbus_interface.modbus_interface('1.1.1.1', 111, word_order=modbus_interface.WordOrder.LowHigh)
             m.connect()
-            mock_modbus.assert_called_with('1.1.1.1', 111, RetryOnEmpty=True, framer=modbus_interface.ModbusSocketFramer, retries=1, timeout=1)
+            mock_modbus.assert_called_with(host='1.1.1.1', port=111, framer=modbus_interface.FramerType.SOCKET, retries=1, timeout=1)
 
             for i in range(1,11):
                 m.add_monitor_register('holding', i)
             m.set_value('holding', 1, 689876135, 0xFFFF, 'uint32')
             m.poll()
 
-            mock_modbus().write_register.assert_any_call(1, int.from_bytes(b'\xAC\xA7','big'), unit=1)
-            mock_modbus().write_register.assert_any_call(2, int.from_bytes(b'\x29\x1E','big'), unit=1)
+            mock_modbus().write_register.assert_any_call(address=1, value=int.from_bytes(b'\xAC\xA7','big'), device_id=1)
+            mock_modbus().write_register.assert_any_call(address=2, value=int.from_bytes(b'\x29\x1E','big'), device_id=1)
             mock_modbus().reset_mock()
 
             m.set_value('holding', 1, 5464681683516384647, 0xFFFF, 'uint64')
             m.poll()
 
-            mock_modbus().write_register.assert_any_call(1, int.from_bytes(b'\xE5\x87','big'), unit=1)
-            mock_modbus().write_register.assert_any_call(2, int.from_bytes(b'\xBC\x93','big'), unit=1)
-            mock_modbus().write_register.assert_any_call(3, int.from_bytes(b'\x73\x09','big'), unit=1)
-            mock_modbus().write_register.assert_any_call(4, int.from_bytes(b'\x4B\xD6','big'), unit=1)
+            mock_modbus().write_register.assert_any_call(address=1, value=int.from_bytes(b'\xE5\x87','big'), device_id=1)
+            mock_modbus().write_register.assert_any_call(address=2, value=int.from_bytes(b'\xBC\x93','big'), device_id=1)
+            mock_modbus().write_register.assert_any_call(address=3, value=int.from_bytes(b'\x73\x09','big'), device_id=1)
+            mock_modbus().write_register.assert_any_call(address=4, value=int.from_bytes(b'\x4B\xD6','big'), device_id=1)
             mock_modbus().reset_mock()
 
     def perform_multi_byte_read_write_values_test(self, write_mode):
@@ -352,9 +392,9 @@ class ModbusTests(unittest.TestCase):
             mock_modbus().write_register.side_effect = self.write_holding_register
             mock_modbus().write_registers.side_effect = self.write_holding_registers
 
-            m = modbus_interface.modbus_interface('1.1.1.1', 111, 2, scan_batching=1, write_mode=write_mode)
+            m = modbus_interface.modbus_interface('1.1.1.1', 111, scan_batching=1, write_mode=write_mode)
             m.connect()
-            mock_modbus.assert_called_with('1.1.1.1', 111, RetryOnEmpty=True, framer=modbus_interface.ModbusSocketFramer, retries=1, timeout=1)
+            mock_modbus.assert_called_with(host='1.1.1.1', port=111, framer=modbus_interface.FramerType.SOCKET, retries=1, timeout=1)
 
             for i in range(1,11):
                 m.add_monitor_register('holding', i)
@@ -393,9 +433,9 @@ class ModbusTests(unittest.TestCase):
             mock_modbus().read_holding_registers.side_effect = self.read_holding_registers
             mock_modbus().write_register.side_effect = self.write_holding_register
 
-            m = modbus_interface.modbus_interface('1.1.1.1', 111, 2, scan_batching=1, word_order=modbus_interface.WordOrder.LowHigh)
+            m = modbus_interface.modbus_interface('1.1.1.1', 111, scan_batching=1, word_order=modbus_interface.WordOrder.LowHigh)
             m.connect()
-            mock_modbus.assert_called_with('1.1.1.1', 111, RetryOnEmpty=True, framer=modbus_interface.ModbusSocketFramer, retries=1, timeout=1)
+            mock_modbus.assert_called_with(host='1.1.1.1', port=111, framer=modbus_interface.FramerType.SOCKET, retries=1, timeout=1)
 
             for i in range(1,11):
                 m.add_monitor_register('holding', i)

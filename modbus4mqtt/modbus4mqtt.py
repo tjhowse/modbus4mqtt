@@ -9,7 +9,8 @@ import click
 import paho.mqtt.client as mqtt
 
 from . import modbus_interface
-from . import version
+import importlib.metadata
+_version = importlib.metadata.version("modbus4mqtt")
 
 MAX_DECIMAL_POINTS = 8
 
@@ -55,7 +56,6 @@ class mqtt_interface():
 
         self._mb = modbus_interface.modbus_interface(ip=self.config['ip'],
                                                      port=self.config.get('port', 502),
-                                                     update_rate_s=self.config.get('update_rate', 5),
                                                      device_address=self.config.get('device_address', 0x01),
                                                      write_mode=write_mode,
                                                      variant=self.config.get('variant', None),
@@ -193,7 +193,7 @@ class mqtt_interface():
         self._mqtt_client.publish(self.prefix+'modbus4mqtt',
                                   json.dumps({
                                         "status": "online",
-                                        "version": f"{version.version}",
+                                        "version": f"{_version}",
                                         "timestamp": datetime.now().astimezone().strftime('%Y-%m-%dT%H:%M:%S%z')
                                   })
                                   )
@@ -326,7 +326,7 @@ def main(hostname, port, username, password, config, mqtt_topic_prefix, use_tls,
         format='%(asctime)s %(levelname)-8s %(message)s',
         level=logging.INFO,
         datefmt='%Y-%m-%d %H:%M:%S')
-    logging.info("Starting modbus4mqtt v{}".format(version.version))
+    logging.info("Starting modbus4mqtt v{}".format(_version))
     i = mqtt_interface(hostname, port, username, password, config, mqtt_topic_prefix,
                        use_tls, insecure, cafile, cert, key)
     i.connect()

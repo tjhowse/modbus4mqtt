@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "modbus4mqtt"
+version = "1.0.0"
+description = "A YAML-defined bidirectional Modbus to MQTT interface"
+authors = [
+    { name = "Travis Howse", email = "tjhowse@gmail.com" }
+]
+readme = "README.md"
+license-files = ["LICENSE"]
+requires-python = ">=3.8.0"
+dependencies = [
+    "ruamel.yaml>=0.16.12",
+    "paho-mqtt>2,<3",
+    "pymodbus>=3.0.0,<4.0.0",
+    "click>=6.7",
+    "SungrowModbusTcpClient@git+https://github.com/rpvelloso/Sungrow-Modbus#egg=38946080d9be2850c962f1e8cb793bb09c872d6d",
+]
+
+[project.urls]
+Homepage = "https://github.com/tjhowse/modbus4mqtt"
+
+[project.optional-dependencies]
+test = [
+    "nose2>=0.9.2",
+    "nose2[coverage_plugin]>=0.6.5",
+    "flake8",
+    "nose2",
+    "codecov",
+]
+
+[project.scripts]
+modbus4mqtt = "modbus4mqtt.modbus4mqtt:main"
+
+[tool.setuptools.packages.find]
+exclude = ["tests"]
