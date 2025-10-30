@@ -38,7 +38,7 @@ class ModbusTests(unittest.TestCase):
         self.holding_registers.registers[address] = value
 
     def write_holding_registers(self, address, values, unit):
-        self.assertEquals(len(values), 1)
+        self.assertEqual(len(values), 1)
         self.holding_registers.registers[address] = values[0]
 
     def connect_success(self):
