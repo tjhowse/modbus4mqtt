@@ -84,13 +84,13 @@ class MQTTTests(unittest.TestCase):
                 mock_mqtt().connect.assert_called_with('kroopit', 1885, 60)
 
                 m._on_connect(None, None, None, rc=0)
-                # TODO Fix this test. The new message is {"status": "online", "version": "1.0.0", "timestamp": "2025-10-30T21:32:02+1000"}
-                # This test fails because the timestamp format is wrong, and it could change between when the message is sent and when we check it.
-                # mock_mqtt().publish.assert_called_with(MQTT_TOPIC_PREFIX+'/modbus4mqtt', json.dumps({
-                #     "status": "online",
-                #     "version": f"{modbus4mqtt._version}",
-                #     "timestamp": datetime.now().isoformat()
-                # }))
+                # Check the published message for correct structure and values, ignoring timestamp
+                args, _ = mock_mqtt().publish.call_args
+                self.assertEqual(args[0], MQTT_TOPIC_PREFIX+'/modbus4mqtt')
+                payload = json.loads(args[1])
+                self.assertEqual(payload["status"], "online")
+                self.assertEqual(payload["version"], f"{modbus4mqtt._version}")
+                self.assertIn("timestamp", payload)
                 mock_mqtt().subscribe.assert_called_with(MQTT_TOPIC_PREFIX+'/subscribe')
                 mock_mqtt().subscribe.assert_no_call(MQTT_TOPIC_PREFIX+'/publish')
 
