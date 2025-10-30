@@ -494,7 +494,6 @@ class MQTTTests(unittest.TestCase):
         mock_modbus.assert_any_call(
                 ip='192.168.1.90',
                 port=502,
-                update_rate_s=5,
                 device_address=1,
                 write_mode=modbus4mqtt.modbus_interface.WriteMode.Single,
                 variant=None,

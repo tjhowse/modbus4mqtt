@@ -130,7 +130,7 @@ class ModbusTests(unittest.TestCase):
     def test_invalid_tables_and_addresses(self):
         with patch('modbus4mqtt.modbus_interface.ModbusTcpClient') as mock_modbus:
             mock_modbus().connect.side_effect = self.connect_success
-            m = modbus_interface.modbus_interface('1.1.1.1', 111, 2)
+            m = modbus_interface.modbus_interface('1.1.1.1', 111)
             m.connect()
 
             m.add_monitor_register('holding', 5)
@@ -142,7 +142,7 @@ class ModbusTests(unittest.TestCase):
     def test_write_queuing(self):
         with patch('modbus4mqtt.modbus_interface.ModbusTcpClient') as mock_modbus:
             mock_modbus().connect.side_effect = self.connect_success
-            m = modbus_interface.modbus_interface('1.1.1.1', 111, 2)
+            m = modbus_interface.modbus_interface('1.1.1.1', 111)
             m.connect()
 
             m.add_monitor_register('holding', 5)
@@ -163,7 +163,7 @@ class ModbusTests(unittest.TestCase):
         with patch('modbus4mqtt.modbus_interface.ModbusTcpClient') as mock_modbus:
             mock_modbus().connect.side_effect = self.connect_success
             with self.assertLogs() as mock_logger:
-                m = modbus_interface.modbus_interface('1.1.1.1', 111, 2)
+                m = modbus_interface.modbus_interface('1.1.1.1', 111)
                 m.connect()
 
                 m.add_monitor_register('holding', 5)
@@ -179,7 +179,7 @@ class ModbusTests(unittest.TestCase):
             mock_modbus().read_holding_registers.side_effect = self.read_holding_registers
             mock_modbus().write_register.side_effect = self.write_holding_register
 
-            m = modbus_interface.modbus_interface('1.1.1.1', 111, 2)
+            m = modbus_interface.modbus_interface('1.1.1.1', 111)
             m.connect()
 
             self.holding_registers.registers[1] = 0
@@ -203,7 +203,7 @@ class ModbusTests(unittest.TestCase):
             mock_modbus().read_input_registers.side_effect = self.read_input_registers
             mock_modbus().read_holding_registers.side_effect = self.read_holding_registers
 
-            m = modbus_interface.modbus_interface('1.1.1.1', 111, 2, scan_batching=1)
+            m = modbus_interface.modbus_interface('1.1.1.1', 111, scan_batching=1)
             m.connect()
             mock_modbus.assert_called_with(host='1.1.1.1', port=111, framer=modbus_interface.FramerType.SOCKET, retries=1, timeout=1)
 
@@ -234,11 +234,11 @@ class ModbusTests(unittest.TestCase):
                 mock_modbus().read_holding_registers.side_effect = self.read_holding_registers
 
                 bad_scan_batching = modbus_interface.MAX_SCAN_BATCHING+1
-                modbus_interface.modbus_interface('1.1.1.1', 111, 2, scan_batching=bad_scan_batching)
+                modbus_interface.modbus_interface('1.1.1.1', 111, scan_batching=bad_scan_batching)
                 self.assertIn("Bad value for scan_batching: {}. Enforcing maximum value of {}".format(bad_scan_batching, modbus_interface.MAX_SCAN_BATCHING), mock_logger.output[-1])
 
                 bad_scan_batching = modbus_interface.MIN_SCAN_BATCHING-1
-                modbus_interface.modbus_interface('1.1.1.1', 111, 2, scan_batching=bad_scan_batching)
+                modbus_interface.modbus_interface('1.1.1.1', 111, scan_batching=bad_scan_batching)
                 self.assertIn("Bad value for scan_batching: {}. Enforcing minimum value of {}".format(bad_scan_batching, modbus_interface.MIN_SCAN_BATCHING), mock_logger.output[-1])
 
     def test_type_conversions(self):
@@ -289,8 +289,8 @@ class ModbusTests(unittest.TestCase):
         with patch('modbus4mqtt.modbus_interface.ModbusTcpClient') as mock_modbus:
             mock_modbus().connect.side_effect = self.connect_success
 
-            m = modbus_interface.modbus_interface('1.1.1.1', 111, 2, word_order=modbus_interface.WordOrder.HighLow)
-            # m = modbus_interface.modbus_interface('1.1.1.1', 111, 2, word_order=modbus_interface.WordOrder.LowHigh)
+            m = modbus_interface.modbus_interface('1.1.1.1', 111, word_order=modbus_interface.WordOrder.HighLow)
+            # m = modbus_interface.modbus_interface('1.1.1.1', 111, word_order=modbus_interface.WordOrder.LowHigh)
             m.connect()
             mock_modbus.assert_called_with(host='1.1.1.1', port=111, framer=modbus_interface.FramerType.SOCKET, retries=1, timeout=1)
 
@@ -325,7 +325,7 @@ class ModbusTests(unittest.TestCase):
         with patch('modbus4mqtt.modbus_interface.ModbusTcpClient') as mock_modbus:
             mock_modbus().connect.side_effect = self.connect_success
 
-            m = modbus_interface.modbus_interface('1.1.1.1', 111, 2, word_order=modbus_interface.WordOrder.LowHigh)
+            m = modbus_interface.modbus_interface('1.1.1.1', 111, word_order=modbus_interface.WordOrder.LowHigh)
             m.connect()
             mock_modbus.assert_called_with(host='1.1.1.1', port=111, framer=modbus_interface.FramerType.SOCKET, retries=1, timeout=1)
 
@@ -354,7 +354,7 @@ class ModbusTests(unittest.TestCase):
             mock_modbus().write_register.side_effect = self.write_holding_register
             mock_modbus().write_registers.side_effect = self.write_holding_registers
 
-            m = modbus_interface.modbus_interface('1.1.1.1', 111, 2, scan_batching=1, write_mode=write_mode)
+            m = modbus_interface.modbus_interface('1.1.1.1', 111, scan_batching=1, write_mode=write_mode)
             m.connect()
             mock_modbus.assert_called_with(host='1.1.1.1', port=111, framer=modbus_interface.FramerType.SOCKET, retries=1, timeout=1)
 
@@ -395,7 +395,7 @@ class ModbusTests(unittest.TestCase):
             mock_modbus().read_holding_registers.side_effect = self.read_holding_registers
             mock_modbus().write_register.side_effect = self.write_holding_register
 
-            m = modbus_interface.modbus_interface('1.1.1.1', 111, 2, scan_batching=1, word_order=modbus_interface.WordOrder.LowHigh)
+            m = modbus_interface.modbus_interface('1.1.1.1', 111, scan_batching=1, word_order=modbus_interface.WordOrder.LowHigh)
             m.connect()
             mock_modbus.assert_called_with(host='1.1.1.1', port=111, framer=modbus_interface.FramerType.SOCKET, retries=1, timeout=1)
 

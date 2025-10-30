@@ -7,7 +7,6 @@ from pymodbus.framer import FramerType
 
 from SungrowModbusTcpClient import SungrowModbusTcpClient
 
-DEFAULT_SCAN_RATE_S = 5
 DEFAULT_SCAN_BATCHING = 100
 MIN_SCAN_BATCHING = 1
 MAX_SCAN_BATCHING = 100
@@ -31,7 +30,6 @@ class modbus_interface():
     def __init__(self,
                  ip,
                  port=502,
-                 update_rate_s=DEFAULT_SCAN_RATE_S,
                  device_address=0x01,
                  write_mode=WriteMode.Single,
                  variant=None,

@@ -55,7 +55,6 @@ class mqtt_interface():
 
         self._mb = modbus_interface.modbus_interface(ip=self.config['ip'],
                                                      port=self.config.get('port', 502),
-                                                     update_rate_s=self.config.get('update_rate', 5),
                                                      device_address=self.config.get('device_address', 0x01),
                                                      write_mode=write_mode,
                                                      variant=self.config.get('variant', None),
