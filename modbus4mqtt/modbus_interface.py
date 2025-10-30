@@ -108,7 +108,7 @@ class modbus_interface():
         else:
             framer = framers[desired_framer]
 
-        self._mb = client(self._ip, self._port, RetryOnEmpty=True, framer=framer, retries=1, timeout=1)
+        self._mb = client(host=self._ip, port=self._port, RetryOnEmpty=True, framer=framer, retries=1, timeout=1)
 
     def add_monitor_register(self, table, addr, type='uint16'):
         # Accepts a modbus register and table to monitor
