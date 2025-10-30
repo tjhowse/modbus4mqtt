@@ -4,20 +4,20 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "modbus4mqtt"
-version = "0.7.1"
+version = "0.8.0"
 description = "A YAML-defined bidirectional Modbus to MQTT interface"
 authors = [
     { name = "Travis Howse", email = "tjhowse@gmail.com" }
 ]
 readme = "README.md"
 license-files = ["LICENSE"]
-requires-python = ">=3.5.0"
+requires-python = ">=3.8.0"
 dependencies = [
     "ruamel.yaml>=0.16.12",
-    "paho-mqtt>=1.5.0,<2",
-    "pymodbus>=2.3.0,<3.0.0",
+    "paho-mqtt>2,<3",
+    "pymodbus>=3.0.0,<4.0.0",
     "click>=6.7",
-    "SungrowModbusTcpClient>=0.1.6"
+    "SungrowModbusTcpClient@git+https://github.com/rpvelloso/Sungrow-Modbus#egg=38946080d9be2850c962f1e8cb793bb09c872d6d",
 ]
 
 [project.urls]

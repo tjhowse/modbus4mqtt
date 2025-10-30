@@ -2,17 +2,9 @@ from time import time, sleep
 from enum import Enum
 import logging
 from queue import Queue
-try:
-    # Pymodbus >= 3.0
-    # TODO: Once SungrowModbusTcpClient 0.1.7 is released,
-    # we can remove the "<3.0.0" pymodbus restriction and this
-    # will make sense again.
-    from pymodbus.client import ModbusTcpClient, ModbusUdpClient, ModbusTlsClient
-    from pymodbus.transaction import ModbusAsciiFramer, ModbusBinaryFramer, ModbusRtuFramer, ModbusSocketFramer
-except ImportError:
-    # Pymodbus < 3.0
-    from pymodbus.client.sync import ModbusTcpClient, ModbusUdpClient, ModbusTlsClient, \
-        ModbusAsciiFramer, ModbusBinaryFramer, ModbusRtuFramer, ModbusSocketFramer
+from pymodbus.client import ModbusTcpClient, ModbusUdpClient, ModbusTlsClient
+from pymodbus.framer import FramerAscii, FramerRTU, FramerSocket, FramerTLS
+
 from SungrowModbusTcpClient import SungrowModbusTcpClient
 
 DEFAULT_SCAN_RATE_S = 5
@@ -84,10 +76,10 @@ class modbus_interface():
             # "serial": (ModbusSerialClient, ModbusRtuFramer),
         }
         framers = {
-            "ascii": ModbusAsciiFramer,
-            "binary": ModbusBinaryFramer,
-            "rtu": ModbusRtuFramer,
-            "socket": ModbusSocketFramer,
+            "ascii": FramerAscii,
+            "rtu": FramerRTU,
+            "socket": FramerSocket,
+            "tls": FramerTLS,
         }
 
         if self._variant is None:
@@ -104,7 +96,7 @@ class modbus_interface():
 
         client = clients[desired_client]
         if desired_framer is None:
-            framer = ModbusSocketFramer
+            framer = FramerSocket
         else:
             framer = framers[desired_framer]
 
