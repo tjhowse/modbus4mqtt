@@ -11,10 +11,10 @@ authors = [
 ]
 readme = "README.md"
 license-files = ["LICENSE"]
-requires-python = ">=3.8.0"
+requires-python = ">=3.10.0"
 dependencies = [
     "ruamel.yaml>=0.16.12",
-    "paho-mqtt>2,<3",
+    "paho-mqtt>2.0.0,<3.0.0",
     "pymodbus>=3.11.3,<4.0.0",
     "click>=6.7",
     "SungrowModbusTcpClient@git+https://github.com/rpvelloso/Sungrow-Modbus#egg=38946080d9be2850c962f1e8cb793bb09c872d6d",
