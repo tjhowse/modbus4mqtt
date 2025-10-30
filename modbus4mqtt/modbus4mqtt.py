@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 from time import sleep
+from datetime import datetime
 import json
 import logging
 from ruamel.yaml import YAML
@@ -63,6 +64,13 @@ class mqtt_interface():
         failed_attempts = 1
         while self._mb.connect():
             logging.warning("Modbus connection attempt {} failed. Retrying...".format(failed_attempts))
+            if failed_attempts == 1 and self._mqtt_client.is_connected():
+                self._mqtt_client.publish(self.prefix + 'modbus4mqtt/modbus_status',
+                                          json.dumps({
+                                              "status": "offline",
+                                              "timestamp": datetime.now().astimezone().strftime('%Y-%m-%dT%H:%M:%S%z')
+                                          })
+                                          )
             failed_attempts += 1
             if self.modbus_connect_retries != -1 and failed_attempts > self.modbus_connect_retries:
                 logging.error("Failed to connect to modbus. Giving up.")
@@ -70,6 +78,13 @@ class mqtt_interface():
                 # This weird break is here because we mock out modbus_connection_failed in the tests
                 break
             sleep(self.modbus_reconnect_sleep_interval)
+        if self._mqtt_client.is_connected():
+            self._mqtt_client.publish(self.prefix + 'modbus4mqtt/modbus_status',
+                                      json.dumps({
+                                          "status": "online",
+                                          "timestamp": datetime.now().astimezone().strftime('%Y-%m-%dT%H:%M:%S%z')
+                                      })
+                                      )
         # Tells the modbus interface about the registers we consider interesting.
         for register in self.registers:
             self._mb.add_monitor_register(register.get('table', 'holding'), register['address'], register.get('type', 'uint16'))
@@ -88,6 +103,12 @@ class mqtt_interface():
         if self.use_tls:
             self._mqtt_client.tls_set(ca_certs=self.cafile, certfile=self.cert, keyfile=self.key)
             self._mqtt_client.tls_insecure_set(self.insecure)
+        lwt_message = json.dumps({
+            "status": "offline",
+            "version": f"v{_version}",
+            "timestamp": datetime.now().isoformat()
+        })
+        self._mqtt_client.will_set(self.prefix + 'modbus4mqtt', lwt_message)
         self._mqtt_client.connect(self.hostname, self._port, 60)
         self._mqtt_client.loop_start()
 
@@ -100,6 +121,12 @@ class mqtt_interface():
             self._mb.poll()
         except Exception as e:
             logging.exception("Failed to poll modbus device, attempting to reconnect: {}".format(e))
+            self._mqtt_client.publish(self.prefix + 'modbus4mqtt/modbus_status',
+                                      json.dumps({
+                                          "status": "reconnecting",
+                                          "timestamp": datetime.now().astimezone().strftime('%Y-%m-%dT%H:%M:%S%z')
+                                      })
+                                      )
             self.connect_modbus()
             return
 
@@ -163,7 +190,13 @@ class mqtt_interface():
         for register in self._get_registers_with('set_topic'):
             self._mqtt_client.subscribe(self.prefix+register['set_topic'])
             print("Subscribed to {}".format(self.prefix+register['set_topic']))
-        self._mqtt_client.publish(self.prefix+'modbus4mqtt', 'modbus4mqtt v{} connected.'.format(_version))
+        self._mqtt_client.publish(self.prefix+'modbus4mqtt',
+                                  json.dumps({
+                                        "status": "online",
+                                        "version": f"{_version}",
+                                        "timestamp": datetime.now().astimezone().strftime('%Y-%m-%dT%H:%M:%S%z')
+                                  })
+                                  )
 
     def _on_disconnect(self, client, userdata, rc):
         logging.warning("Disconnected from MQTT. Attempting to reconnect.")
