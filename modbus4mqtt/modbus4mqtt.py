@@ -8,7 +8,8 @@ import click
 import paho.mqtt.client as mqtt
 
 from . import modbus_interface
-from . import version
+import importlib.metadata
+_version = importlib.metadata.version("modbus4mqtt")
 
 MAX_DECIMAL_POINTS = 8
 
@@ -163,7 +164,7 @@ class mqtt_interface():
         for register in self._get_registers_with('set_topic'):
             self._mqtt_client.subscribe(self.prefix+register['set_topic'])
             print("Subscribed to {}".format(self.prefix+register['set_topic']))
-        self._mqtt_client.publish(self.prefix+'modbus4mqtt', 'modbus4mqtt v{} connected.'.format(version.version))
+        self._mqtt_client.publish(self.prefix+'modbus4mqtt', 'modbus4mqtt v{} connected.'.format(_version))
 
     def _on_disconnect(self, client, userdata, rc):
         logging.warning("Disconnected from MQTT. Attempting to reconnect.")
@@ -293,7 +294,7 @@ def main(hostname, port, username, password, config, mqtt_topic_prefix, use_tls,
         format='%(asctime)s %(levelname)-8s %(message)s',
         level=logging.INFO,
         datefmt='%Y-%m-%d %H:%M:%S')
-    logging.info("Starting modbus4mqtt v{}".format(version.version))
+    logging.info("Starting modbus4mqtt v{}".format(_version))
     i = mqtt_interface(hostname, port, username, password, config, mqtt_topic_prefix,
                        use_tls, insecure, cafile, cert, key)
     i.connect()
