@@ -3,7 +3,7 @@ from enum import Enum
 import logging
 from queue import Queue
 from pymodbus.client import ModbusTcpClient, ModbusUdpClient, ModbusTlsClient
-from pymodbus.framer import FramerAscii, FramerRTU, FramerSocket, FramerTLS
+from pymodbus.framer import FramerType
 
 from SungrowModbusTcpClient import SungrowModbusTcpClient
 
@@ -76,10 +76,10 @@ class modbus_interface():
             # "serial": (ModbusSerialClient, ModbusRtuFramer),
         }
         framers = {
-            "ascii": FramerAscii,
-            "rtu": FramerRTU,
-            "socket": FramerSocket,
-            "tls": FramerTLS,
+            "ascii": FramerType.ASCII,
+            "rtu": FramerType.RTU,
+            "socket": FramerType.SOCKET,
+            "tls": FramerType.TLS,
         }
 
         if self._variant is None:
@@ -95,12 +95,12 @@ class modbus_interface():
             raise ValueError("Unknown modbus framer: {}".format(desired_framer))
 
         client = clients[desired_client]
-        if desired_framer is None:
-            framer = FramerSocket
-        else:
-            framer = framers[desired_framer]
 
-        self._mb = client(host=self._ip, port=self._port, RetryOnEmpty=True, framer=framer, retries=1, timeout=1)
+        if desired_framer is None:
+            desired_framer = "socket"
+        framer = framers[desired_framer]
+
+        self._mb = client(host=self._ip, port=self._port, framer=framer, retries=1, timeout=1)
 
     def add_monitor_register(self, table, addr, type='uint16'):
         # Accepts a modbus register and table to monitor
@@ -170,9 +170,9 @@ class modbus_interface():
 
     def _perform_write(self, addr, value):
         if self._write_mode == WriteMode.Single:
-            self._mb.write_register(addr, value, unit=self._unit)
+            self._mb.write_register(address=addr, value=value, device_id=self._unit)
         else:
-            self._mb.write_registers(addr, [value], unit=self._unit)
+            self._mb.write_registers(address=addr, values=[value], device_id=self._unit)
 
     def _process_writes(self, max_block_s=DEFAULT_WRITE_BLOCK_INTERVAL_S):
         # TODO I am not entirely happy with this system. It's supposed to prevent
@@ -197,7 +197,7 @@ class modbus_interface():
                     # This specific read-before-write operation doesn't work on my modbus solar inverter -
                     # I get "Modbus Error: [Input/Output] Modbus Error: [Invalid Message] Incomplete message received, expected at least 8 bytes (0 received)"
                     # I suspect it's a different modbus opcode that tries to do clever things that my device doesn't support.
-                    # result = self._mb.mask_write_register(address=addr, and_mask=(1<<16)-1-mask, or_mask=value, unit=0x01)
+                    # result = self._mb.mask_write_register(address=addr, and_mask=(1<<16)-1-mask, or_mask=value, device_id=0x01)
                     # print("Result: {}".format(result))
                     old_value = self._scan_value_range('holding', addr, 1)[0]
                     and_mask = (1 << 16) - 1 - mask
@@ -215,9 +215,9 @@ class modbus_interface():
     def _scan_value_range(self, table, start, count):
         result = None
         if table == 'input':
-            result = self._mb.read_input_registers(start, count, unit=self._unit)
+            result = self._mb.read_input_registers(address=start, count=count, device_id=self._unit)
         elif table == 'holding':
-            result = self._mb.read_holding_registers(start, count, unit=self._unit)
+            result = self._mb.read_holding_registers(address=start, count=count, device_id=self._unit)
         try:
             return result.registers
         except:
