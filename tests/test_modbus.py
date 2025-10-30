@@ -5,6 +5,7 @@ from unittest.mock import patch, call, Mock
 from paho.mqtt.client import MQTTMessage
 
 from modbus4mqtt import modbus_interface
+from pymodbus import ModbusException
 
 def assert_no_call(self, *args, **kwargs):
     try:
@@ -48,7 +49,7 @@ class ModbusTests(unittest.TestCase):
         return True
 
     def throw_exception(self, address, value, device_id):
-        raise ValueError('Oh noooo!')
+        raise ModbusException('Oh noooo!')
 
     def perform_variant_test(self, mock_modbus, variant, expected_framer):
         mock_modbus().connect.side_effect = self.connect_success
@@ -207,7 +208,7 @@ class ModbusTests(unittest.TestCase):
                 # Have the write_register throw an exception
                 mock_modbus().write_register.side_effect = self.throw_exception
                 m.set_value('holding', 5, 7)
-                self.assertIn("ERROR:root:Failed to write to modbus device: Oh noooo!", mock_logger.output[-1])
+                self.assertIn("ERROR:root:Failed to write to modbus device: Modbus Error: Oh noooo!", mock_logger.output[-1])
 
     def test_masked_writes(self):
         with patch('modbus4mqtt.modbus_interface.ModbusTcpClient') as mock_modbus:
