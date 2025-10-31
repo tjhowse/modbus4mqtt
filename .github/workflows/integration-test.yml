@@ -15,9 +15,9 @@ jobs:
         ports:
           - 1883:1883
     env:
-      MQTT_HOST: localhost
+      MQTT_HOST: 127.0.0.1
       MQTT_PORT: 1883
-      MODBUS_HOST: localhost
+      MODBUS_HOST: 127.0.0.1
       MODBUS_PORT: 5020
     steps:
       - name: Checkout code
