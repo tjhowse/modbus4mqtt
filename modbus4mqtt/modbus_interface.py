@@ -63,8 +63,8 @@ class modbus_interface():
             else:
                 self._scan_batching = scan_batching
 
-    def connect(self):
-        # Connects to the modbus device
+    def connect(self) -> bool:
+        # Connects to the modbus device. Returns True on success, False on failure.
         clients = {
             "tcp": ModbusTcpClient,
             "tls": ModbusTlsClient,
@@ -99,7 +99,9 @@ class modbus_interface():
             desired_framer = "socket"
         framer = framers[desired_framer]
 
-        self._mb = client(host=self._ip, port=self._port, framer=framer, retries=1, timeout=1)
+        self._mb = client(host=self._ip, port=self._port, framer=framer, retries=3, timeout=1)
+        self._mb.connect()
+        return self._mb.connected
 
     def add_monitor_register(self, table, addr, type='uint16'):
         # Accepts a modbus register and table to monitor
@@ -133,6 +135,8 @@ class modbus_interface():
                     # Avoid back-to-back read operations that could overwhelm some modbus devices.
                     sleep(DEFAULT_READ_SLEEP_S)
                 except ModbusException as e:
+                    if "Failed to connect" in str(e):
+                        raise e
                     logging.error(e)
                 end_of_previous_read_range = batch_start + batch_size-1
         self._process_writes()

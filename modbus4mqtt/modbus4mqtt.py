@@ -14,6 +14,12 @@ _version = importlib.metadata.version("modbus4mqtt")
 
 MAX_DECIMAL_POINTS = 8
 
+# Modbus connection status enum
+class ModbusConnectionStatus:
+    Offline = "offline"
+    Online = "online"
+    Connecting = "connecting"
+
 
 class mqtt_interface():
     def __init__(self, hostname, port, username, password, config_file, mqtt_topic_prefix,
@@ -37,13 +43,14 @@ class mqtt_interface():
             register['address'] += self.address_offset
         self.modbus_connect_retries = -1  # Retry forever by default
         self.modbus_reconnect_sleep_interval = 5  # Wait this many seconds between modbus connection attempts
+        self.modbus_connection_status: ModbusConnectionStatus = ModbusConnectionStatus.Offline
 
     def connect(self):
         # Connects to modbus and MQTT.
         self.connect_mqtt()
         self.connect_modbus()
 
-    def connect_modbus(self):
+    def setup_modbus(self):
         if self.config.get('word_order', 'highlow').lower() == 'lowhigh':
             word_order = modbus_interface.WordOrder.LowHigh
         else:
@@ -61,36 +68,35 @@ class mqtt_interface():
                                                      variant=self.config.get('variant', None),
                                                      scan_batching=self.config.get('scan_batching', None),
                                                      word_order=word_order)
-        failed_attempts = 1
-        while self._mb.connect():
-            logging.warning("Modbus connection attempt {} failed. Retrying...".format(failed_attempts))
-            if failed_attempts == 1 and self._mqtt_client.is_connected():
-                self._mqtt_client.publish(self.prefix + 'modbus4mqtt/modbus_status',
-                                          json.dumps({
-                                              "status": "offline",
-                                              "timestamp": datetime.now().astimezone().strftime('%Y-%m-%dT%H:%M:%S%z')
-                                          }),
-                                          retain=True,
-                                          )
-            failed_attempts += 1
-            if self.modbus_connect_retries != -1 and failed_attempts > self.modbus_connect_retries:
-                logging.error("Failed to connect to modbus. Giving up.")
-                self.modbus_connection_failed()
-                # This weird break is here because we mock out modbus_connection_failed in the tests
-                break
-            sleep(self.modbus_reconnect_sleep_interval)
-        if self._mqtt_client.is_connected():
-            self._mqtt_client.publish(self.prefix + 'modbus4mqtt/modbus_status',
-                                      json.dumps({
-                                          "status": "online",
-                                          "timestamp": datetime.now().astimezone().strftime('%Y-%m-%dT%H:%M:%S%z')
-                                      }),
-                                      retain=True,
-                                      )
         # Tells the modbus interface about the registers we consider interesting.
         for register in self.registers:
             self._mb.add_monitor_register(register.get('table', 'holding'), register['address'], register.get('type', 'uint16'))
             register['value'] = None
+
+    def connect_modbus(self):
+        self.set_modbus_connection_status(ModbusConnectionStatus.Connecting)
+        logging.info("Connecting to Modbus...")
+        if self._mb.connect():
+            logging.info("Connected to Modbus.")
+            self.set_modbus_connection_status(ModbusConnectionStatus.Online)
+        else:
+            logging.error("Couldn't connect to Modbus.")
+            self.set_modbus_connection_status(ModbusConnectionStatus.Offline)
+
+
+    def set_modbus_connection_status(self, status: ModbusConnectionStatus):
+        if status == self.modbus_connection_status:
+            return
+        self.modbus_connection_status = status
+        if not self._mqtt_client.is_connected():
+            return
+        self._mqtt_client.publish(self.prefix + 'modbus4mqtt/modbus_status',
+                                    json.dumps({
+                                        "status": self.modbus_connection_status,
+                                        "timestamp": datetime.now().astimezone().strftime('%Y-%m-%dT%H:%M:%S%z')
+                                    }),
+                                    retain=True,
+                                    )
 
     def modbus_connection_failed(self):
         exit(1)
@@ -120,15 +126,10 @@ class mqtt_interface():
     def poll(self):
         try:
             self._mb.poll()
+            self.set_modbus_connection_status(ModbusConnectionStatus.Online)
         except Exception as e:
-            logging.exception("Failed to poll modbus device, attempting to reconnect: {}".format(e))
-            self._mqtt_client.publish(self.prefix + 'modbus4mqtt/modbus_status',
-                                      json.dumps({
-                                          "status": "reconnecting",
-                                          "timestamp": datetime.now().astimezone().strftime('%Y-%m-%dT%H:%M:%S%z')
-                                      }),
-                                      retain=True,
-                                      )
+            logging.error("Failed to poll modbus device, attempting to reconnect: {}".format(e))
+            self.set_modbus_connection_status(ModbusConnectionStatus.Offline)
             self.connect_modbus()
             return
 
@@ -330,6 +331,7 @@ def main(hostname, port, username, password, config, mqtt_topic_prefix, use_tls,
     logging.info("Starting modbus4mqtt v{}".format(_version))
     i = mqtt_interface(hostname, port, username, password, config, mqtt_topic_prefix,
                        use_tls, insecure, cafile, cert, key)
+    i.setup_modbus()
     i.connect()
     i.loop_forever()
 
