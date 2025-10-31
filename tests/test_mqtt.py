@@ -83,7 +83,7 @@ class MQTTTests(unittest.TestCase):
                 mock_mqtt().username_pw_set.assert_called_with('brengis', 'pranto')
                 mock_mqtt().connect.assert_called_with('kroopit', 1885, 60)
 
-                m._on_connect(None, None, None, rc=0)
+                m._on_connect(None, None, None, reason_code=0, properties=None)
                 # Check the published message for correct structure and values, ignoring timestamp
                 args, _ = mock_mqtt().publish.call_args
                 self.assertEqual(args[0], MQTT_TOPIC_PREFIX+'/modbus4mqtt')
@@ -111,7 +111,7 @@ class MQTTTests(unittest.TestCase):
 
                 mock_mqtt().username_pw_set.assert_called_with('brengis', 'pranto')
                 mock_mqtt().connect.assert_called_with('kroopit', 1885, 60)
-                m._on_connect(None, None, None, rc=1)
+                m._on_connect(None, None, None, reason_code=1, properties=None)
                 # TODO implement some more thorough checks?
                 mock_mqtt().publish.assert_no_call(MQTT_TOPIC_PREFIX+'/modbus4mqtt', 'modbus4mqtt v{} connected.'.format(modbus4mqtt._version))
 
@@ -248,7 +248,7 @@ class MQTTTests(unittest.TestCase):
                     mock_mqtt().username_pw_set.assert_called_with('brengis', 'pranto')
                     mock_mqtt().connect.assert_called_with('kroopit', 1885, 60)
 
-                    m._on_connect(None, None, None, rc=0)
+                    m._on_connect(None, None, None, reason_code=0, properties=None)
                     mock_mqtt().subscribe.assert_any_call(MQTT_TOPIC_PREFIX+'/no_value_map')
                     mock_mqtt().subscribe.assert_any_call(MQTT_TOPIC_PREFIX+'/value_map')
                     mock_mqtt().publish.reset_mock()
