@@ -69,7 +69,8 @@ class mqtt_interface():
                                           json.dumps({
                                               "status": "offline",
                                               "timestamp": datetime.now().astimezone().strftime('%Y-%m-%dT%H:%M:%S%z')
-                                          })
+                                          }),
+                                          retain=True,
                                           )
             failed_attempts += 1
             if self.modbus_connect_retries != -1 and failed_attempts > self.modbus_connect_retries:
@@ -83,7 +84,8 @@ class mqtt_interface():
                                       json.dumps({
                                           "status": "online",
                                           "timestamp": datetime.now().astimezone().strftime('%Y-%m-%dT%H:%M:%S%z')
-                                      })
+                                      }),
+                                      retain=True,
                                       )
         # Tells the modbus interface about the registers we consider interesting.
         for register in self.registers:
@@ -105,9 +107,9 @@ class mqtt_interface():
         lwt_message = json.dumps({
             "status": "offline",
             "version": f"v{_version}",
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().astimezone().strftime('%Y-%m-%dT%H:%M:%S%z')
         })
-        self._mqtt_client.will_set(self.prefix + 'modbus4mqtt', lwt_message)
+        self._mqtt_client.will_set(self.prefix + 'modbus4mqtt', lwt_message, retain=True)
         self._mqtt_client.connect(self.hostname, self._port, 60)
         self._mqtt_client.loop_start()
 
@@ -124,7 +126,8 @@ class mqtt_interface():
                                       json.dumps({
                                           "status": "reconnecting",
                                           "timestamp": datetime.now().astimezone().strftime('%Y-%m-%dT%H:%M:%S%z')
-                                      })
+                                      }),
+                                      retain=True,
                                       )
             self.connect_modbus()
             return
@@ -194,7 +197,8 @@ class mqtt_interface():
                                         "status": "online",
                                         "version": f"{_version}",
                                         "timestamp": datetime.now().astimezone().strftime('%Y-%m-%dT%H:%M:%S%z')
-                                  })
+                                  }),
+                                  retain=True
                                   )
 
     def _on_disconnect(self, client, userdata, flags, reason_code, properties):
