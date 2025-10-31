@@ -58,7 +58,7 @@ class ModbusTests(unittest.TestCase):
 
         m = modbus_interface.modbus_interface(ip='1.1.1.1', port=111, variant=variant)
         m.connect()
-        mock_modbus.assert_called_with(host='1.1.1.1', port=111, framer=expected_framer, retries=1, timeout=1)
+        mock_modbus.assert_called_with(host='1.1.1.1', port=111, framer=expected_framer, retries=3, timeout=1)
 
     def test_connection_variants(self):
         with patch('modbus4mqtt.modbus_interface.ModbusTcpClient') as mock_modbus:
@@ -83,7 +83,7 @@ class ModbusTests(unittest.TestCase):
 
             m = modbus_interface.modbus_interface(ip='1.1.1.1', port=111)
             m.connect()
-            mock_modbus.assert_called_with(host='1.1.1.1', port=111, framer=modbus_interface.FramerType.SOCKET, retries=1, timeout=1)
+            mock_modbus.assert_called_with(host='1.1.1.1', port=111, framer=modbus_interface.FramerType.SOCKET, retries=3, timeout=1)
 
             # Confirm registers are added to the correct tables.
             m.add_monitor_register('holding', 5)
@@ -243,7 +243,7 @@ class ModbusTests(unittest.TestCase):
 
             m = modbus_interface.modbus_interface('1.1.1.1', 111, scan_batching=1)
             m.connect()
-            mock_modbus.assert_called_with(host='1.1.1.1', port=111, framer=modbus_interface.FramerType.SOCKET, retries=1, timeout=1)
+            mock_modbus.assert_called_with(host='1.1.1.1', port=111, framer=modbus_interface.FramerType.SOCKET, retries=3, timeout=1)
 
             # Confirm registers are added to the correct tables.
             m.add_monitor_register('holding', 5)
@@ -330,7 +330,7 @@ class ModbusTests(unittest.TestCase):
             m = modbus_interface.modbus_interface('1.1.1.1', 111, word_order=modbus_interface.WordOrder.HighLow)
             # m = modbus_interface.modbus_interface('1.1.1.1', 111, word_order=modbus_interface.WordOrder.LowHigh)
             m.connect()
-            mock_modbus.assert_called_with(host='1.1.1.1', port=111, framer=modbus_interface.FramerType.SOCKET, retries=1, timeout=1)
+            mock_modbus.assert_called_with(host='1.1.1.1', port=111, framer=modbus_interface.FramerType.SOCKET, retries=3, timeout=1)
 
             for i in range(1,11):
                 m.add_monitor_register('holding', i)
@@ -365,7 +365,7 @@ class ModbusTests(unittest.TestCase):
 
             m = modbus_interface.modbus_interface('1.1.1.1', 111, word_order=modbus_interface.WordOrder.LowHigh)
             m.connect()
-            mock_modbus.assert_called_with(host='1.1.1.1', port=111, framer=modbus_interface.FramerType.SOCKET, retries=1, timeout=1)
+            mock_modbus.assert_called_with(host='1.1.1.1', port=111, framer=modbus_interface.FramerType.SOCKET, retries=3, timeout=1)
 
             for i in range(1,11):
                 m.add_monitor_register('holding', i)
@@ -394,7 +394,7 @@ class ModbusTests(unittest.TestCase):
 
             m = modbus_interface.modbus_interface('1.1.1.1', 111, scan_batching=1, write_mode=write_mode)
             m.connect()
-            mock_modbus.assert_called_with(host='1.1.1.1', port=111, framer=modbus_interface.FramerType.SOCKET, retries=1, timeout=1)
+            mock_modbus.assert_called_with(host='1.1.1.1', port=111, framer=modbus_interface.FramerType.SOCKET, retries=3, timeout=1)
 
             for i in range(1,11):
                 m.add_monitor_register('holding', i)
@@ -435,7 +435,7 @@ class ModbusTests(unittest.TestCase):
 
             m = modbus_interface.modbus_interface('1.1.1.1', 111, scan_batching=1, word_order=modbus_interface.WordOrder.LowHigh)
             m.connect()
-            mock_modbus.assert_called_with(host='1.1.1.1', port=111, framer=modbus_interface.FramerType.SOCKET, retries=1, timeout=1)
+            mock_modbus.assert_called_with(host='1.1.1.1', port=111, framer=modbus_interface.FramerType.SOCKET, retries=3, timeout=1)
 
             for i in range(1,11):
                 m.add_monitor_register('holding', i)

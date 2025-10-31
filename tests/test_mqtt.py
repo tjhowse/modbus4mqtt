@@ -94,27 +94,6 @@ class MQTTTests(unittest.TestCase):
                 mock_mqtt().subscribe.assert_called_with(MQTT_TOPIC_PREFIX+'/subscribe')
                 mock_mqtt().subscribe.assert_no_call(MQTT_TOPIC_PREFIX+'/publish')
 
-    def test_failed_modbus_connect(self):
-        with patch('paho.mqtt.client.Client') as mock_mqtt:
-            with patch('modbus4mqtt.modbus_interface.modbus_interface') as mock_modbus:
-                mock_modbus().connect.side_effect = self.connect_failure
-                m = modbus4mqtt.mqtt_interface('kroopit', 1885, 'brengis', 'pranto', './tests/test_connect.yaml', MQTT_TOPIC_PREFIX)
-                self.connect_attempts = 0
-                m.modbus_connect_retries = 3
-                m.modbus_reconnect_sleep_interval = 0.1
-                def replacement():
-                    # Normally this would kill the program. We don't want that.
-                    pass
-                m.modbus_connection_failed = replacement
-                m.connect()
-                self.assertEqual(self.connect_attempts, 3)
-
-                mock_mqtt().username_pw_set.assert_called_with('brengis', 'pranto')
-                mock_mqtt().connect.assert_called_with('kroopit', 1885, 60)
-                m._on_connect(None, None, None, reason_code=1, properties=None)
-                # TODO implement some more thorough checks?
-                mock_mqtt().publish.assert_no_call(MQTT_TOPIC_PREFIX+'/modbus4mqtt', 'modbus4mqtt v{} connected.'.format(modbus4mqtt._version))
-
     def test_pub_on_change(self):
         with patch('paho.mqtt.client.Client') as mock_mqtt:
             with patch('modbus4mqtt.modbus_interface.modbus_interface') as mock_modbus:

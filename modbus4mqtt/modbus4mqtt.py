@@ -44,6 +44,7 @@ class mqtt_interface():
         self.modbus_connect_retries = -1  # Retry forever by default
         self.modbus_reconnect_sleep_interval = 5  # Wait this many seconds between modbus connection attempts
         self.modbus_connection_status: ModbusConnectionStatus = ModbusConnectionStatus.Offline
+        self.setup_modbus()
 
     def connect(self):
         # Connects to modbus and MQTT.
@@ -331,7 +332,6 @@ def main(hostname, port, username, password, config, mqtt_topic_prefix, use_tls,
     logging.info("Starting modbus4mqtt v{}".format(_version))
     i = mqtt_interface(hostname, port, username, password, config, mqtt_topic_prefix,
                        use_tls, insecure, cafile, cert, key)
-    i.setup_modbus()
     i.connect()
     i.loop_forever()
 
