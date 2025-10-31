@@ -28,10 +28,6 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Build Modbus server image
-        run: |
-          docker build -t modbus-server-pymodbus3 -f tests/Dockerfile.modbus-server-pymodbus3 tests
-
       - name: Start Modbus server
         run: |
           nohup python tests/test_modbus_server.py &
