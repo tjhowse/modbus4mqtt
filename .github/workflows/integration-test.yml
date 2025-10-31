@@ -15,7 +15,7 @@ jobs:
         ports:
           - 1883:1883
         volumes:
-          - ./tests/mosquitto:/mosquitto/config
+          - /tmp/mosquitto:/mosquitto/config
     env:
       MQTT_HOST: 127.0.0.1
       MQTT_PORT: 1883
@@ -24,6 +24,12 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+
+      - name: Copy Mosquitto config
+        run: |
+          mkdir -p /tmp/mosquitto
+          cp tests/mosquitto.conf /tmp/mosquitto/mosquitto.conf
+          docker ps
 
       - name: Set up Python
         uses: actions/setup-python@v4
