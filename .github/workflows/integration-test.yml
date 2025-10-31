@@ -9,13 +9,6 @@ on:
 jobs:
   integration:
     runs-on: ubuntu-latest
-    services:
-      mosquitto:
-        image: eclipse-mosquitto:2
-        ports:
-          - 1883:1883
-        volumes:
-          - /tmp/mosquitto:/mosquitto/config
     env:
       MQTT_HOST: 127.0.0.1
       MQTT_PORT: 1883
@@ -25,11 +18,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Copy Mosquitto config
+      - name: Run Mosquitto container
         run: |
-          docker ps
-          mkdir -p /tmp/mosquitto
-          cp ./tests/mosquitto.conf /tmp/mosquitto/mosquitto.conf
+          docker run -d --name mosquitto -p 1883:1883 -v ./tests/mosquitto:/mosquitto/config eclipse-mosquitto:2
 
       - name: Set up Python
         uses: actions/setup-python@v4
