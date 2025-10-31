@@ -1,0 +1,11 @@
+ip: 127.0.0.1
+port: 5020
+update_rate: 1
+registers:
+  - pub_topic: "holding"
+    address: 1
+  - pub_topic: "input"
+    table: "input"
+    address: 1
+  - pub_topic: "default"
+    address: 2

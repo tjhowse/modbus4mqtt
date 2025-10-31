@@ -1,0 +1,58 @@
+name: Integration Test
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  integration:
+    runs-on: ubuntu-latest
+    services:
+      mosquitto:
+        image: eclipse-mosquitto:2
+        ports:
+          - 1883:1883
+    env:
+      MQTT_HOST: localhost
+      MQTT_PORT: 1883
+      MODBUS_HOST: localhost
+      MODBUS_PORT: 5020
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Build Modbus server image
+        run: |
+          docker build -t modbus-server-pymodbus3 -f tests/Dockerfile.modbus-server-pymodbus3 tests
+
+      - name: Start Modbus server
+        run: |
+          nohup python tests/test_modbus_server.py &
+          sleep 5
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install .
+          pip install pytest paho-mqtt pymodbus==3.11.3
+
+      - name: Start modbus4mqtt
+        run: |
+          nohup python -m modbus4mqtt.modbus4mqtt --hostname $MQTT_HOST --port $MQTT_PORT --config tests/test_integration.yaml &
+          sleep 5
+
+      # - name: Run integration tests
+      #   run: |
+      #     pytest tests/test_mqtt.py
+
+      # - name: Future: Test all data types/directions
+      #   run: |
+      #     echo "To test all types/directions, add a new YAML and test script."
+      #   if: always()

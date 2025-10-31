@@ -81,7 +81,6 @@ class mqtt_interface():
             logging.info("Connected to Modbus.")
             self.set_modbus_connection_status(ModbusConnectionStatus.Online)
         else:
-            logging.error("Couldn't connect to Modbus.")
             self.set_modbus_connection_status(ModbusConnectionStatus.Offline)
 
 
