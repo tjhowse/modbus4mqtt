@@ -27,9 +27,9 @@ jobs:
 
       - name: Copy Mosquitto config
         run: |
-          mkdir -p /tmp/mosquitto
-          cp tests/mosquitto.conf /tmp/mosquitto/mosquitto.conf
           docker ps
+          mkdir -p /tmp/mosquitto
+          cp ./tests/mosquitto.conf /tmp/mosquitto/mosquitto.conf
 
       - name: Set up Python
         uses: actions/setup-python@v4
