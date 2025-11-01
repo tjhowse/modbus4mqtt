@@ -48,11 +48,11 @@ def test_generate_batched_addresses_simple():
 	for addr in [1, 2, 3, 10, 11]:
 		table.add_register(addr)
 	batches = table.get_batched_addresses()
-	# Should batch: [1,2,3] (start=1, len=3), [10,11] (start=10, len=2)
-	assert batches == [[1, 3], [10, 2]]
+	# Should batch: [1,2] (start=1, len=2), [3] (start=3, len=1), [10,11] (start=10, len=2)
+	assert batches == [[1, 2], [3, 1], [10, 2]]
 
 def test_generate_batched_addresses_max_batch():
-	table = ModbusTable(3)
+	table = ModbusTable(4)
 	for addr in range(1, 6):
 		table.add_register(addr)
 	batches = table.get_batched_addresses()
