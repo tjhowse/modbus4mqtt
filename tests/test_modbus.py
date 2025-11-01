@@ -312,7 +312,7 @@ class ModbusTests(unittest.TestCase):
             m = modbus_interface.modbus_interface(  '1.1.1.1', 111,
                                                     word_order=modbus_interface.WordOrder.HighLow,
                                                     write_mode=modbus_interface.WriteMode.Single)
-            # m = modbus_interface.modbus_interface('1.1.1.1', 111, word_order=modbus_interface.WordOrder.LowHigh)
+
             m.connect()
             mock_modbus.assert_called_with(host='1.1.1.1', port=111, framer=modbus_interface.FramerType.SOCKET, retries=3, timeout=1)
 

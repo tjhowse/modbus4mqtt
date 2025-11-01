@@ -26,9 +26,15 @@ class ModbusTable():
 
     def get_batched_addresses(self, write_mode: bool = False) -> list[tuple[int, int]]:
         if self._stale:
+            # If the number of registers has changed, we need to
+            # sort them again.
             self.sort()
-            self._batches = self._generate_batched_addresses(write_mode=write_mode)
             self._stale = False
+            self._batches = self._generate_batched_addresses(write_mode=write_mode)
+
+        if write_mode and self._changed_registers:
+            # The cached batches will not reflect what needs to be written.
+            return self._generate_batched_addresses(write_mode=write_mode)
         return self._batches
 
     def _generate_batched_addresses(self, write_mode: bool = False) -> list[tuple[int, int]]:
@@ -72,7 +78,6 @@ class ModbusTable():
         new_value = self._registers[addr] & (~mask) | (value & mask)
         if new_value != self._registers[addr]:
             self._changed_registers.add(addr)
-        self._stale = True
         self._registers[addr] = new_value
 
     def get_value(self, addr: int) -> int:
