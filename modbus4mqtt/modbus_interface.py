@@ -1,4 +1,5 @@
-from time import time, sleep
+from time import time, sleep, monotonic
+
 from enum import Enum
 import logging
 from queue import Queue
@@ -191,10 +192,10 @@ class modbus_interface():
         # .poll()...
         if self._writing:
             return
-        write_start_time = time()
+        write_start_time = monotonic()
         self._writing = True
         try:
-            while not self._planned_writes.empty() and (time() - write_start_time) < max_block_s:
+            while not self._planned_writes.empty() and (monotonic() - write_start_time) < max_block_s:
                 addr, value, mask = self._planned_writes.get()
                 try:
                     if mask == 0xFFFF:
