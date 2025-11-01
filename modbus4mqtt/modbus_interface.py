@@ -8,6 +8,7 @@ from pymodbus.framer import FramerType
 from pymodbus import ModbusException
 
 from SungrowModbusTcpClient import SungrowModbusTcpClient
+from modbus_table import ModbusTable
 
 DEFAULT_SCAN_BATCHING = 100
 MIN_SCAN_BATCHING = 1
@@ -25,8 +26,6 @@ class WordOrder(Enum):
 class WriteMode(Enum):
     Single = 1
     Multi = 2
-
-
 class modbus_interface():
 
     def __init__(self,
@@ -43,6 +42,7 @@ class modbus_interface():
         # This is a dict of sets. Each key represents one table of modbus registers.
         # At the moment it has 'input' and 'holding'
         self._tables: dict[str, set[int]] = {'input': set(), 'holding': set()}
+        self._tables_new: dict[str, ModbusTable] = {'input': ModbusTable(scan_batching), 'holding': ModbusTable(scan_batching)}
 
         # This is a dicts of dicts. These hold the current values of the interesting registers
         self._values: dict[str, dict[int, int]] = {'input': {}, 'holding': {}}
@@ -112,6 +112,22 @@ class modbus_interface():
         # Note: Each address provides 2 bytes of data.
         for i in range(type_length(type)):
             self._tables[table].add(addr+i)
+            self._tables_new[table].add_register(addr+i)
+
+    def poll_new(self):
+        for table in self._tables:
+            for batch in self._tables_new[table].get_batched_addresses():
+                for start, length in batch:
+                    try:
+                        values = self._scan_value_range(table, start, length)
+                        for value in values:
+                            self._tables_new[table].set_value(start, value)
+                            start += 1
+                    except ModbusException as e:
+                        if "Failed to connect" in str(e):
+                            raise e
+                        logging.error(e)
+        self.process_writes_new()
 
     def poll(self):
         # Polls for the values marked as interesting in self._tables.
@@ -221,6 +237,13 @@ class modbus_interface():
                 sleep(DEFAULT_WRITE_SLEEP_S)
         finally:
             self._writing = False
+
+    def process_writes_new(self):
+        for addr, value, mask in self._planned_writes:
+            self._tables_new['holding'].set_value(addr, value, mask)
+        for start, length in self._tables_new['holding'].get_batched_addresses(write=True):
+            values = blahblah
+            self._perform_write(start, values)
 
     def _scan_value_range(self, table, start, count):
         result = None
