@@ -8,7 +8,7 @@ from pymodbus.framer import FramerType
 from pymodbus import ModbusException
 
 from SungrowModbusTcpClient import SungrowModbusTcpClient
-from .modbus_table import ModbusTable
+from modbus4mqtt.modbus_table import ModbusTable
 
 DEFAULT_READ_BATCHING = 100
 DEFAULT_WRITE_BATCHING = 100
