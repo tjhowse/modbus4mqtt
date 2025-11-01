@@ -2,7 +2,6 @@ import os
 from collections import namedtuple
 import unittest
 from unittest.mock import patch, call, Mock
-from paho.mqtt.client import MQTTMessage
 
 from modbus4mqtt import modbus_interface
 from pymodbus import ModbusException
@@ -272,11 +271,11 @@ class ModbusTests(unittest.TestCase):
                 mock_modbus().read_holding_registers.side_effect = self.read_holding_registers
 
                 bad_scan_batching = modbus_interface.MAX_BATCHING+1
-                modbus_interface.modbus_interface('1.1.1.1', 111, scan_batching=bad_scan_batching)
+                modbus_interface.modbus_interface('1.1.1.1', 111, scan_batching=bad_scan_batching, write_mode=modbus_interface.WriteMode.Multi)
                 self.assertIn("Bad value for scan_batching: {}. Enforcing maximum value of {}".format(bad_scan_batching, modbus_interface.MAX_BATCHING), mock_logger.output[-1])
 
                 bad_scan_batching = modbus_interface.MIN_BATCHING-1
-                modbus_interface.modbus_interface('1.1.1.1', 111, scan_batching=bad_scan_batching)
+                modbus_interface.modbus_interface('1.1.1.1', 111, scan_batching=bad_scan_batching, write_mode=modbus_interface.WriteMode.Multi)
                 self.assertIn("Bad value for scan_batching: {}. Enforcing minimum value of {}".format(bad_scan_batching, modbus_interface.MIN_BATCHING), mock_logger.output[-1])
 
     def test_type_conversions(self):

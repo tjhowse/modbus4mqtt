@@ -27,6 +27,8 @@ class WordOrder(Enum):
 class WriteMode(Enum):
     Single = 1
     Multi = 2
+
+
 class modbus_interface():
 
     def __init__(self,
@@ -74,7 +76,9 @@ class modbus_interface():
                 self._write_batching = MAX_BATCHING
             else:
                 self._write_batching = write_batching
-
+        if self._write_mode == WriteMode.Single:
+            logging.warning("Overriding write batching to 1 due to single write mode.")
+            self._write_batching = 1
         self._tables_new: dict[str, ModbusTable] = {'input': ModbusTable(self._read_batching), 'holding': ModbusTable(self._read_batching)}
 
     def connect(self) -> bool:
@@ -143,6 +147,9 @@ class modbus_interface():
         self.process_writes_new()
 
     def poll(self):
+        self.poll_old()
+
+    def poll_old(self):
         # Polls for the values marked as interesting in self._tables.
         for table in self._tables:
             if len(self._tables[table]) == 0:
@@ -208,11 +215,12 @@ class modbus_interface():
 
         self._process_writes()
 
-    def _perform_write(self, addr, value):
+    def _perform_write(self, addr, values):
         if self._write_mode == WriteMode.Single:
-            self._mb.write_register(address=addr, value=value, device_id=self._unit)
+            for value in values:
+                self._mb.write_register(address=addr, value=value, device_id=self._unit)
         else:
-            self._mb.write_registers(address=addr, values=[value], device_id=self._unit)
+            self._mb.write_registers(address=addr, values=values, device_id=self._unit)
 
     def _process_writes(self, max_block_s=DEFAULT_WRITE_BLOCK_INTERVAL_S):
         # TODO I am not entirely happy with this system. It's supposed to prevent
@@ -228,7 +236,7 @@ class modbus_interface():
                 addr, value, mask = self._planned_writes.get()
                 try:
                     if mask == 0xFFFF:
-                        self._perform_write(addr, value)
+                        self._perform_write(addr, [value])
                     else:
                         # https://pymodbus.readthedocs.io/en/latest/source/library/pymodbus.client.html?highlight=mask_write_register#pymodbus.client.common.ModbusClientMixin.mask_write_register
                         # https://www.mathworks.com/help/instrument/modify-the-contents-of-a-holding-register-using-a-mask-write.html
@@ -244,7 +252,7 @@ class modbus_interface():
                         and_mask = (1 << 16) - 1 - mask
                         or_mask = value
                         new_value = (old_value & and_mask) | (or_mask & (mask))
-                        self._perform_write(addr, new_value)
+                        self._perform_write(addr, [new_value])
                 except ModbusException as e:
                     logging.error("Failed to write to modbus device: {}".format(e))
                 sleep(DEFAULT_WRITE_SLEEP_S)
