@@ -132,7 +132,7 @@ class modbus_interface():
                 try:
                     values = self._scan_value_range(table, start, length)
                     for value in values:
-                        self._tables[table].set_value(start, value)
+                        self._tables[table].set_value(start, value, write=False)
                         start += 1
                 except ModbusException as e:
                     if "Failed to connect" in str(e):
@@ -174,7 +174,7 @@ class modbus_interface():
             else:
                 value = _convert_from_bytes_to_type(bytes_to_write[(type_len-i-1)*2:(type_len-i-1)*2+2], 'uint16')
             self._planned_writes.put((addr+i, value, mask))
-            self._tables['holding'].set_value(addr+i, value, mask)
+            self._tables['holding'].set_value(addr+i, value, mask, write=True)
 
         # TODO Determine if we want to do immediate writes here, or leave it to be handled in poll().
         self._process_writes()

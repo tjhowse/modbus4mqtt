@@ -32,9 +32,12 @@ class ModbusTable():
             self._stale = False
             self._batches = self._generate_batched_addresses(write_mode=write_mode)
 
-        if write_mode and self._changed_registers:
-            # The cached batches will not reflect what needs to be written.
-            return self._generate_batched_addresses(write_mode=write_mode)
+        if write_mode:
+            if self._changed_registers:
+                # The cached batches will not reflect what needs to be written.
+                return self._generate_batched_addresses(write_mode=write_mode)
+            else:
+                return []
         return self._batches
 
     def _generate_batched_addresses(self, write_mode: bool = False) -> list[tuple[int, int]]:
@@ -70,14 +73,15 @@ class ModbusTable():
     def clear_changed_registers(self):
         self._changed_registers = set()
 
-    def set_value(self, addr: int, value: int, mask: int = 0xFFFF):
+    def set_value(self, addr: int, value: int, mask: int = 0xFFFF, write: bool = False):
         if addr not in self._registers:
             raise ValueError("Address {} not in monitored registers.".format(addr))
         if value < 0 or value > 0xFFFF:
             raise ValueError("Value {} out of range for modbus register.".format(value))
         new_value = self._registers[addr] & (~mask) | (value & mask)
-        if new_value != self._registers[addr]:
-            self._changed_registers.add(addr)
+        if write:
+            if new_value != self._registers[addr]:
+                self._changed_registers.add(addr)
         self._registers[addr] = new_value
 
     def get_value(self, addr: int) -> int:
@@ -95,4 +99,4 @@ class ModbusTable():
         return self.get_value(addr)
 
     def __setitem__(self, addr: int, value: int):
-        self.set_value(addr, value)
+        self.set_value(addr, value, write=False)
