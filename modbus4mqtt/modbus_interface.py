@@ -191,7 +191,10 @@ class modbus_interface():
             values = []
             for i in range(length):
                 values.append(self._tables['holding'].get_value(start + i))
-            self._perform_write(start, values)
+            try:
+                self._perform_write(start, values)
+            except ModbusException as e:
+                logging.error("Failed to write to modbus device: {}".format(e))
         self._tables['holding'].clear_changed_registers()
 
     def _scan_value_range(self, table, start, count):
