@@ -57,7 +57,7 @@ class mqtt_interface():
         else:
             word_order = modbus_interface.WordOrder.HighLow
 
-        if self.config.get('write_mode', 'single').lower() == 'multi':
+        if self.config.get('write_mode', 'multi').lower() == 'multi':
             write_mode = modbus_interface.WriteMode.Multi
         else:
             write_mode = modbus_interface.WriteMode.Single
@@ -67,7 +67,8 @@ class mqtt_interface():
                                                      device_address=self.config.get('device_address', 0x01),
                                                      write_mode=write_mode,
                                                      variant=self.config.get('variant', None),
-                                                     scan_batching=self.config.get('scan_batching', None),
+                                                     # Allow the use of the deprecated "scan_batching" config option for backwards compatibility
+                                                     read_batching=self.config.get('read_batching', self.config.get('scan_batching', None)),
                                                      word_order=word_order)
         # Tells the modbus interface about the registers we consider interesting.
         for register in self.registers:

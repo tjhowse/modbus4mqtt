@@ -24,14 +24,14 @@ class ModbusTable():
         # This sorts the registers by address.
         self._registers = dict(sorted(self._registers.items()))
 
-    def get_batched_addresses(self) -> list[tuple[int, int]]:
+    def get_batched_addresses(self, write_mode: bool = False) -> list[tuple[int, int]]:
         if self._stale:
             self.sort()
-            self._batches = self.generate_batched_addresses()
+            self._batches = self._generate_batched_addresses(write_mode=write_mode)
             self._stale = False
         return self._batches
 
-    def generate_batched_addresses(self, write_mode: bool = False) -> list[tuple[int, int]]:
+    def _generate_batched_addresses(self, write_mode: bool = False) -> list[tuple[int, int]]:
         # This returns a list of pair tuples. Each tuple is the start and length
         # of a range of addresses that can be read/written together.
         # If "write_mode" is true, the returned lists will only include
@@ -47,7 +47,7 @@ class ModbusTable():
         for addr in self._registers:
             if write_mode and addr not in self._changed_registers:
                 continue
-            if current_batch_size > max_batch_size or (previous_addr is not None and addr != previous_addr + 1):
+            if current_batch_size >= max_batch_size or (previous_addr is not None and addr != previous_addr + 1):
                 result.append([current_batch_start, current_batch_size])
                 current_batch_start = addr
                 current_batch_size = 1
@@ -69,9 +69,24 @@ class ModbusTable():
             raise ValueError("Address {} not in monitored registers.".format(addr))
         if value < 0 or value > 0xFFFF:
             raise ValueError("Value {} out of range for modbus register.".format(value))
-        self._registers[addr] = value & mask
+        new_value = self._registers[addr] & (~mask) | (value & mask)
+        if new_value != self._registers[addr]:
+            self._changed_registers.add(addr)
+        self._registers[addr] = new_value
 
     def get_value(self, addr: int) -> int:
         if addr not in self._registers:
             raise ValueError("Address {} not in monitored registers.".format(addr))
         return self._registers[addr]
+
+    def __contains__(self, addr: int) -> bool:
+        return addr in self._registers
+
+    def __len__(self) -> int:
+        return len(self._registers)
+
+    def __getitem__(self, addr: int) -> int:
+        return self.get_value(addr)
+
+    def __setitem__(self, addr: int, value: int):
+        self.set_value(addr, value)

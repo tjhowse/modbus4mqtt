@@ -54,7 +54,8 @@ port: 502
 update_rate: 5
 address_offset: 0
 variant: sungrow
-scan_batching: 100
+read_batching: 100
+write_batching: 100
 word_order: highlow
 ```
 | Field name | Required | Default | Description |
@@ -65,8 +66,9 @@ word_order: highlow
 | update_rate | Optional | 5 | The number of seconds between polls of the modbus device. |
 | address_offset | Optional | 0 | This offset is applied to every register address to accommodate different Modbus addressing systems. In many Modbus devices the first register is enumerated as 1, other times 0. See section 4.4 of the Modbus spec. |
 | variant | Optional | 'tcp' | Allows modbus variants to be specified. See below list for supported variants. |
-| write_mode | Optional | 'single' | Which modbus write function code to use `single` for `06` or `multi` for `16` |
-| scan_batching | Optional | 100 | Must be between 1 and 100 inclusive. Modbus read operations are more efficient in bigger batches of contiguous registers, but different devices have different limits on the size of the batched reads. This setting can also be helpful when building a modbus register map for an uncharted device. In some modbus devices a single invalid register in a read range will fail the entire read operation. By setting `scan_batching` to `1` each register will be scanned individually. This will be very inefficient and should not be used in production as it will saturate the link with many read operations. |
+| write_mode | Optional | 'multi' | Which modbus write function code to use `single` for `06` or `multi` for `16` |
+| read_batching | Optional | 100 | Must be between 1 and 100 inclusive. Modbus read operations are more efficient in bigger batches of contiguous registers, but different devices have different limits on the size of the batched reads. This setting can also be helpful when building a modbus register map for an uncharted device. In some modbus devices a single invalid register in a read range will fail the entire read operation. By setting `read_batching` to `1` each register will be scanned individually. This will be very inefficient and should not be used in production as it will saturate the link with many read operations. |
+| write_batching | Optional | 100 | Must be between 1 and 100 inclusive. Same as read_batching, but for write operations. If `write_mode` is set to `single` this will be forced to `1`. |
 | word_order | Optional | 'highlow' | Must be either `highlow` or `lowhigh`. This determines how multi-word values are interpreted. `highlow` means a 32-bit number at address 1 will have its high two bytes stored in register 1, and its low two bytes stored in register 2. The default is typically correct, as modbus has a big-endian memory structure, but this is not universal. |
 
 ### Modbus variants
