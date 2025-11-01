@@ -8,11 +8,12 @@ from pymodbus.framer import FramerType
 from pymodbus import ModbusException
 
 from SungrowModbusTcpClient import SungrowModbusTcpClient
-from modbus_table import ModbusTable
+from modbus4mqtt.modbus_table import ModbusTable
 
-DEFAULT_SCAN_BATCHING = 100
-MIN_SCAN_BATCHING = 1
-MAX_SCAN_BATCHING = 100
+DEFAULT_READ_BATCHING = 100
+DEFAULT_WRITE_BATCHING = 100
+MIN_BATCHING = 1
+MAX_BATCHING = 100
 DEFAULT_WRITE_BLOCK_INTERVAL_S = 0.2
 DEFAULT_WRITE_SLEEP_S = 0.05
 DEFAULT_READ_SLEEP_S = 0.05
@@ -35,6 +36,7 @@ class modbus_interface():
                  write_mode=WriteMode.Single,
                  variant=None,
                  scan_batching=None,
+                 write_batching=None,
                  word_order=WordOrder.HighLow
                  ):
         self._ip: str = ip
@@ -42,7 +44,6 @@ class modbus_interface():
         # This is a dict of sets. Each key represents one table of modbus registers.
         # At the moment it has 'input' and 'holding'
         self._tables: dict[str, set[int]] = {'input': set(), 'holding': set()}
-        self._tables_new: dict[str, ModbusTable] = {'input': ModbusTable(scan_batching), 'holding': ModbusTable(scan_batching)}
 
         # This is a dicts of dicts. These hold the current values of the interesting registers
         self._values: dict[str, dict[int, int]] = {'input': {}, 'holding': {}}
@@ -52,17 +53,29 @@ class modbus_interface():
         self._write_mode: WriteMode = write_mode
         self._unit: int = device_address
         self._variant: str | None = variant
-        self._scan_batching: int = DEFAULT_SCAN_BATCHING
+        self._read_batching: int = DEFAULT_READ_BATCHING
+        self._write_batching: int = DEFAULT_WRITE_BATCHING
         self._word_order: WordOrder = word_order
         if scan_batching is not None:
-            if scan_batching < MIN_SCAN_BATCHING:
-                logging.warning("Bad value for scan_batching: {}. Enforcing minimum value of {}".format(scan_batching, MIN_SCAN_BATCHING))
-                self._scan_batching = MIN_SCAN_BATCHING
-            elif scan_batching > MAX_SCAN_BATCHING:
-                logging.warning("Bad value for scan_batching: {}. Enforcing maximum value of {}".format(scan_batching, MAX_SCAN_BATCHING))
-                self._scan_batching = MAX_SCAN_BATCHING
+            if scan_batching < MIN_BATCHING:
+                logging.warning("Bad value for scan_batching: {}. Enforcing minimum value of {}".format(scan_batching, MIN_BATCHING))
+                self._read_batching = MIN_BATCHING
+            elif scan_batching > MAX_BATCHING:
+                logging.warning("Bad value for scan_batching: {}. Enforcing maximum value of {}".format(scan_batching, MAX_BATCHING))
+                self._read_batching = MAX_BATCHING
             else:
-                self._scan_batching = scan_batching
+                self._read_batching = scan_batching
+        if write_batching is not None:
+            if write_batching < MIN_BATCHING:
+                logging.warning("Bad value for write_batching: {}. Enforcing minimum value of {}".format(write_batching, MIN_BATCHING))
+                self._write_batching = MIN_BATCHING
+            elif write_batching > MAX_BATCHING:
+                logging.warning("Bad value for write_batching: {}. Enforcing maximum value of {}".format(write_batching, MAX_BATCHING))
+                self._write_batching = MAX_BATCHING
+            else:
+                self._write_batching = write_batching
+
+        self._tables_new: dict[str, ModbusTable] = {'input': ModbusTable(self._read_batching), 'holding': ModbusTable(self._read_batching)}
 
     def connect(self) -> bool:
         # Connects to the modbus device. Returns True on success, False on failure.
@@ -143,7 +156,7 @@ class modbus_interface():
                     continue
                 batch_start = int(k)
                 # Ensure we don't read past the last interesting address, in case it's on a boundary.
-                batch_size = min(self._scan_batching, last_address - batch_start + 1)
+                batch_size = min(self._read_batching, last_address - batch_start + 1)
                 try:
                     values = self._scan_value_range(table, batch_start, batch_size)
                     for x in range(0, batch_size):
@@ -241,8 +254,10 @@ class modbus_interface():
     def process_writes_new(self):
         for addr, value, mask in self._planned_writes:
             self._tables_new['holding'].set_value(addr, value, mask)
-        for start, length in self._tables_new['holding'].get_batched_addresses(write=True):
-            values = blahblah
+        for start, length in self._tables_new['holding'].get_batched_addresses(write_mode=True):
+            values = []
+            for i in range(length):
+                values.append(self._tables_new['holding'].get_value(start + i))
             self._perform_write(start, values)
 
     def _scan_value_range(self, table, start, count):

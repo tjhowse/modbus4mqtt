@@ -22,9 +22,9 @@ class ModbusTests(unittest.TestCase):
     modbusRegister = namedtuple('modbusRegister', 'registers')
 
     def setUp(self):
-        modbus_interface.DEFAULT_SCAN_BATCHING = 10
-        self.input_registers = self.modbusRegister(registers=list(range(0,modbus_interface.DEFAULT_SCAN_BATCHING*10)))
-        self.holding_registers = self.modbusRegister(registers=list(range(0,modbus_interface.DEFAULT_SCAN_BATCHING*10)))
+        modbus_interface.DEFAULT_READ_BATCHING = 10
+        self.input_registers = self.modbusRegister(registers=list(range(0,modbus_interface.DEFAULT_READ_BATCHING*10)))
+        self.holding_registers = self.modbusRegister(registers=list(range(0,modbus_interface.DEFAULT_READ_BATCHING*10)))
 
     def tearDown(self):
         pass
@@ -271,13 +271,13 @@ class ModbusTests(unittest.TestCase):
                 mock_modbus().read_input_registers.side_effect = self.read_input_registers
                 mock_modbus().read_holding_registers.side_effect = self.read_holding_registers
 
-                bad_scan_batching = modbus_interface.MAX_SCAN_BATCHING+1
+                bad_scan_batching = modbus_interface.MAX_BATCHING+1
                 modbus_interface.modbus_interface('1.1.1.1', 111, scan_batching=bad_scan_batching)
-                self.assertIn("Bad value for scan_batching: {}. Enforcing maximum value of {}".format(bad_scan_batching, modbus_interface.MAX_SCAN_BATCHING), mock_logger.output[-1])
+                self.assertIn("Bad value for scan_batching: {}. Enforcing maximum value of {}".format(bad_scan_batching, modbus_interface.MAX_BATCHING), mock_logger.output[-1])
 
-                bad_scan_batching = modbus_interface.MIN_SCAN_BATCHING-1
+                bad_scan_batching = modbus_interface.MIN_BATCHING-1
                 modbus_interface.modbus_interface('1.1.1.1', 111, scan_batching=bad_scan_batching)
-                self.assertIn("Bad value for scan_batching: {}. Enforcing minimum value of {}".format(bad_scan_batching, modbus_interface.MIN_SCAN_BATCHING), mock_logger.output[-1])
+                self.assertIn("Bad value for scan_batching: {}. Enforcing minimum value of {}".format(bad_scan_batching, modbus_interface.MIN_BATCHING), mock_logger.output[-1])
 
     def test_type_conversions(self):
         a = modbus_interface._convert_from_type_to_bytes(-1, 'int16')

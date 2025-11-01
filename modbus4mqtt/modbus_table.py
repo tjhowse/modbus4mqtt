@@ -1,13 +1,17 @@
 
 class ModbusTable():
 
-    def __init__(self, batch_size: int = 100):
+    def __init__(self, read_batch_size: int = 100, write_batch_size: int = 0):
         self._registers: dict[int, int] = {}
         # This flag is cleared when the register list is sorted
         # and the batching is calculated.
         self._batches: list[tuple[int, int]] = []
         self._stale: bool = True
-        self._batch_size = batch_size
+        self._read_batch_size = read_batch_size
+        if write_batch_size > 0:
+            self._write_batch_size = write_batch_size
+        else:
+            self._write_batch_size = read_batch_size
         # These values hae changed since the last write operation
         # and should be included in the next one.
         self._changed_registers: set[int] = set()
@@ -36,10 +40,14 @@ class ModbusTable():
         current_batch_start = None
         current_batch_size = 0
         previous_addr = None
+        if write_mode:
+            max_batch_size = self._write_batch_size
+        else:
+            max_batch_size = self._read_batch_size
         for addr in self._registers:
             if write_mode and addr not in self._changed_registers:
                 continue
-            if current_batch_size > self._batch_size or (previous_addr is not None and addr != previous_addr + 1):
+            if current_batch_size > max_batch_size or (previous_addr is not None and addr != previous_addr + 1):
                 result.append([current_batch_start, current_batch_size])
                 current_batch_start = addr
                 current_batch_size = 1
