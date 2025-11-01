@@ -72,6 +72,7 @@ class ModbusTable():
         new_value = self._registers[addr] & (~mask) | (value & mask)
         if new_value != self._registers[addr]:
             self._changed_registers.add(addr)
+        self._stale = True
         self._registers[addr] = new_value
 
     def get_value(self, addr: int) -> int:

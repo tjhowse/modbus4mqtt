@@ -481,9 +481,9 @@ class MQTTTests(unittest.TestCase):
                 ip='192.168.1.90',
                 port=502,
                 device_address=1,
-                write_mode=modbus4mqtt.modbus_interface.WriteMode.Single,
+                write_mode=modbus4mqtt.modbus_interface.WriteMode.Multi,
                 variant=None,
-                scan_batching=None,
+                read_batching=None,
                 word_order=word_order
             )
 

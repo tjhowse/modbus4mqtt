@@ -305,7 +305,7 @@ class ModbusTests(unittest.TestCase):
         with patch('modbus4mqtt.modbus_interface.ModbusTcpClient') as mock_modbus:
             mock_modbus().connect.side_effect = self.connect_success
 
-            m = modbus_interface.modbus_interface('1.1.1.1', 111, word_order=modbus_interface.WordOrder.HighLow)
+            m = modbus_interface.modbus_interface('1.1.1.1', 111, word_order=modbus_interface.WordOrder.HighLow, write_mode=modbus_interface.WriteMode.Single)
             # m = modbus_interface.modbus_interface('1.1.1.1', 111, word_order=modbus_interface.WordOrder.LowHigh)
             m.connect()
             mock_modbus.assert_called_with(host='1.1.1.1', port=111, framer=modbus_interface.FramerType.SOCKET, retries=3, timeout=1)
@@ -341,7 +341,7 @@ class ModbusTests(unittest.TestCase):
         with patch('modbus4mqtt.modbus_interface.ModbusTcpClient') as mock_modbus:
             mock_modbus().connect.side_effect = self.connect_success
 
-            m = modbus_interface.modbus_interface('1.1.1.1', 111, word_order=modbus_interface.WordOrder.LowHigh)
+            m = modbus_interface.modbus_interface('1.1.1.1', 111, word_order=modbus_interface.WordOrder.LowHigh, write_mode=modbus_interface.WriteMode.Single)
             m.connect()
             mock_modbus.assert_called_with(host='1.1.1.1', port=111, framer=modbus_interface.FramerType.SOCKET, retries=3, timeout=1)
 
