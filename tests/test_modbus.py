@@ -310,8 +310,8 @@ class ModbusTests(unittest.TestCase):
             mock_modbus().connect.side_effect = self.connect_success
 
             m = modbus_interface.modbus_interface(  '1.1.1.1', 111,
-                                                  word_order=modbus_interface.WordOrder.HighLow,
-                                                  write_mode=modbus_interface.WriteMode.Single)
+                                                    word_order=modbus_interface.WordOrder.HighLow,
+                                                    write_mode=modbus_interface.WriteMode.Single)
             # m = modbus_interface.modbus_interface('1.1.1.1', 111, word_order=modbus_interface.WordOrder.LowHigh)
             m.connect()
             mock_modbus.assert_called_with(host='1.1.1.1', port=111, framer=modbus_interface.FramerType.SOCKET, retries=3, timeout=1)
@@ -348,8 +348,8 @@ class ModbusTests(unittest.TestCase):
             mock_modbus().connect.side_effect = self.connect_success
 
             m = modbus_interface.modbus_interface(  '1.1.1.1', 111,
-                                                  word_order=modbus_interface.WordOrder.LowHigh,
-                                                  write_mode=modbus_interface.WriteMode.Single)
+                                                    word_order=modbus_interface.WordOrder.LowHigh,
+                                                    write_mode=modbus_interface.WriteMode.Single)
             m.connect()
             mock_modbus.assert_called_with(host='1.1.1.1', port=111, framer=modbus_interface.FramerType.SOCKET, retries=3, timeout=1)
 
@@ -379,8 +379,8 @@ class ModbusTests(unittest.TestCase):
             mock_modbus().write_registers.side_effect = self.write_holding_registers
 
             m = modbus_interface.modbus_interface(  '1.1.1.1', 111,
-                                                  read_batching=1,
-                                                  write_mode=write_mode)
+                                                    read_batching=1,
+                                                    write_mode=write_mode)
             m.connect()
             mock_modbus.assert_called_with(host='1.1.1.1', port=111, framer=modbus_interface.FramerType.SOCKET, retries=3, timeout=1)
 
