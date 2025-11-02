@@ -163,3 +163,12 @@ def main(modbus_host: str, modbus_port: int, mqtt_host: str, mqtt_port: int, mqt
 
 if __name__ == "__main__":
     main()
+
+# TODO bundle the above into a test harness that can be loaded by pytest and have a bunch of tests run with it.
+# Tests like:
+# - Set register value, check MQTT message/s received
+#       ([1, 2], ['base_topic/holding', 2]), and whatnot.
+# - Publish MQTT message, check register value updated
+#       (['base_topic/holding', 2], [1, 2]), and whatnot.
+# - Registers of overlapping ranges with different types (uint16, uint32, etc)
+#       ([1, 2, 2, 3], ['base_topic/uint32', 65538]), and whatnot.
