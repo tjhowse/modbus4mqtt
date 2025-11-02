@@ -1,4 +1,6 @@
 from queue import Queue
+import random
+from time import monotonic
 from pymodbus.server import ModbusTcpServer
 from pymodbus.datastore import ModbusServerContext, ModbusSequentialDataBlock, ModbusSparseDataBlock
 import threading
@@ -89,6 +91,7 @@ class MQTTClient:
         self.client.on_message = self.on_message
         self.client.on_connect = self._on_connect
         self.received_messages: Queue = Queue()
+        self.connected: asyncio.Event = asyncio.Event()
 
     def subscribe(self, topic, qos=0):
         self.client.subscribe(topic, qos)
@@ -106,13 +109,21 @@ class MQTTClient:
     def _on_connect(self, client, userdata, flags, reason_code, properties):
         if reason_code == 0:
             print(f"Connected to MQTT server on {self.host}:{self.port}.")
+            self.connected.set()
         else:
             print("Couldn't connect to MQTT.")
             return
 
-    def connect(self):
+    def connect(self) -> bool:
         self.client.connect(self.host, self.port)
         self.client.loop_start()
+        deadline = monotonic() + 5
+        while monotonic() < deadline:
+            if self.connected.is_set():
+                self.connected.clear()
+                return True
+        print(f"Failed to connect to MQTT server at {self.host}:{self.port}.")
+        return False
 
 class TestRunner:
     """ This sends commands to modbus and mqtt and ensures values are reported back and forth correctly. """
@@ -125,7 +136,7 @@ class TestRunner:
     async def run_tests(self):
         # Implement test logic here
         self.mqtt_client.subscribe("ignoreme/holding")
-        i = 1
+        i = random.randint(1, 1000)
         while True:
             await asyncio.sleep(1)
             print("Running tests...")
@@ -156,7 +167,8 @@ async def async_main(modbus_server: ModbusServer, test_runner: TestRunner):
 def main(modbus_host: str, modbus_port: int, mqtt_host: str, mqtt_port: int, mqtt_username: str, mqtt_password: str):
     modbus_server = ModbusServer(host=modbus_host, port=modbus_port)
     mqtt_client = MQTTClient(host=mqtt_host, port=mqtt_port, username=mqtt_username, password=mqtt_password)
-    mqtt_client.connect()
+    if not mqtt_client.connect():
+        return
     test_runner = TestRunner(modbus_server=modbus_server, mqtt_client=mqtt_client)
     asyncio.run(async_main(modbus_server, test_runner))
 
