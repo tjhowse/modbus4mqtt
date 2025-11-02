@@ -1,3 +1,4 @@
+from queue import Queue
 from pymodbus.server import ModbusTcpServer
 from pymodbus.datastore import ModbusServerContext, ModbusSequentialDataBlock, ModbusSparseDataBlock
 import threading
@@ -44,7 +45,7 @@ class ModbusServer:
 
     def setup_server(self) -> None:
         """Run server setup."""
-        self.holding_registers = ModbusSequentialDataBlock(0x00, [0] * 100)
+        self.holding_registers = CyclingDataBlock(0x00, [0] * 100)
         self.input_registers = CyclingDataBlock(0x00, [0] * 100)
         self.storage = ModbusDeviceContext(hr=self.holding_registers, ir=self.input_registers)
         self.context = ModbusServerContext(devices=self.storage)
@@ -55,9 +56,13 @@ class ModbusServer:
         once every second.
         """
         while True:
-            self.holding_registers.cycle_values()
+            # self.holding_registers.cycle_values()
             self.input_registers.cycle_values()
             await asyncio.sleep(1)
+
+    async def set_holding_register(self, address: int, value: int) -> None:
+        """Set holding register value."""
+        self.holding_registers.setValues(address, [value])
 
     async def run_async_server(self) -> None:
         """Run server."""
@@ -83,6 +88,7 @@ class MQTTClient:
             self.client.username_pw_set(username, password)
         self.client.on_message = self.on_message
         self.client.on_connect = self._on_connect
+        self.received_messages: Queue = Queue()
 
     def subscribe(self, topic, qos=0):
         self.client.subscribe(topic, qos)
@@ -92,10 +98,14 @@ class MQTTClient:
 
     def on_message(self, client, userdata, message):
         print(f"Received message on topic {message.topic}: {message.payload.decode()}")
+        self.received_messages.put((message.topic, message.payload.decode()))
+
+    def clear_messages(self):
+        self.received_messages = Queue()
 
     def _on_connect(self, client, userdata, flags, reason_code, properties):
         if reason_code == 0:
-            print("Connected to MQTT.")
+            print(f"Connected to MQTT server on {self.host}:{self.port}.")
         else:
             print("Couldn't connect to MQTT.")
             return
@@ -114,9 +124,27 @@ class TestRunner:
 
     async def run_tests(self):
         # Implement test logic here
+        self.mqtt_client.subscribe("ignoreme/holding")
+        i = 1
         while True:
             await asyncio.sleep(1)
             print("Running tests...")
+            print(f"Setting holding register 1 to {i}")
+            await self.modbus_server.set_holding_register(1, i)
+            print("Waiting for MQTT messages...")
+            while self.mqtt_client.received_messages.empty():
+                await asyncio.sleep(0.1)
+            message = self.mqtt_client.received_messages.get()
+            print("Test completed, received messages:", message)
+            i += 1
+
+async def async_main(modbus_server: ModbusServer, test_runner: TestRunner):
+    tasks = [
+        asyncio.create_task(modbus_server.run_async_server()),
+        asyncio.create_task(test_runner.run_tests())
+    ]
+    await asyncio.gather(*tasks)
+
 
 @click.command()
 @click.option('--modbus-host', default='0.0.0.0')
@@ -130,8 +158,8 @@ def main(modbus_host: str, modbus_port: int, mqtt_host: str, mqtt_port: int, mqt
     mqtt_client = MQTTClient(host=mqtt_host, port=mqtt_port, username=mqtt_username, password=mqtt_password)
     mqtt_client.connect()
     test_runner = TestRunner(modbus_server=modbus_server, mqtt_client=mqtt_client)
-    asyncio.run(modbus_server.run_async_server())
-    asyncio.run(test_runner.run_tests())
+    asyncio.run(async_main(modbus_server, test_runner))
+
 
 if __name__ == "__main__":
     main()

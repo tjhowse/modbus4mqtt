@@ -3,7 +3,7 @@ port: 5020
 update_rate: 1
 registers:
   - pub_topic: "holding"
-    address: 1
+    address: 0
   - pub_topic: "input"
     table: "input"
     address: 1
