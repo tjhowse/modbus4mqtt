@@ -22,8 +22,18 @@ class ModbusConnectionStatus:
 
 
 class mqtt_interface():
-    def __init__(self, hostname, port, username, password, config_file, mqtt_topic_prefix,
-                 use_tls=True, insecure=False, cafile=None, cert=None, key=None):
+    def __init__(   self,
+                    hostname: str,
+                    port: int,
+                    username: str,
+                    password: str,
+                    config_file: str,
+                    mqtt_topic_prefix: str,
+                    use_tls=True,
+                    insecure=False,
+                    cafile=None,
+                    cert=None,
+                    key=None):
         self.hostname = hostname
         self._port = port
         self.username = username

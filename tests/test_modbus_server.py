@@ -1,5 +1,6 @@
 from queue import Queue
 import pytest
+from modbus4mqtt.modbus4mqtt import mqtt_interface
 import pytest_asyncio
 import random
 from time import monotonic
@@ -197,7 +198,21 @@ def mqtt_fixture():
     mqtt_client.connect()
     yield mqtt_client
 
-async def wait_for_mqtt_message(mqtt_client: MQTTClient, timeout: float = 5.0) -> tuple[str, str]:
+@pytest.fixture
+def m4qtt_fixture():
+
+    app = mqtt_interface(   hostname='127.0.0.1',
+                            port=1883,
+                            username='',
+                            password='',
+                            use_tls=False,
+                            config_file='tests/test_integration.yaml',
+                            mqtt_topic_prefix='tests')
+    app.connect()
+    threading.Thread(target=app.loop_forever, daemon=True).start()
+    yield app
+
+async def wait_for_mqtt_message(mqtt_client: MQTTClient, timeout: float = 1.0) -> tuple[str, str]:
     deadline = monotonic() + timeout
     while mqtt_client.received_messages.empty() and monotonic() < deadline:
         await asyncio.sleep(0.1)
@@ -206,7 +221,7 @@ async def wait_for_mqtt_message(mqtt_client: MQTTClient, timeout: float = 5.0) -
     return mqtt_client.received_messages.get()
 
 @pytest.mark.asyncio
-async def test_basic_functionality(modbus_fixture: ModbusServer, mqtt_fixture: MQTTClient):
+async def test_basic_functionality(modbus_fixture: ModbusServer, mqtt_fixture: MQTTClient, m4qtt_fixture: mqtt_interface):
     mqtt_fixture.subscribe("tests/holding")
     test_number = random.randint(1, 1000)
     await modbus_fixture.set_holding_register(1, test_number)

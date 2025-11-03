@@ -1,6 +1,6 @@
 ip: 127.0.0.1
 port: 5020
-update_rate: 1
+update_rate: 0.1
 registers:
   - pub_topic: "holding"
     address: 0
