@@ -4,7 +4,7 @@ import pytest
 from modbus4mqtt.modbus4mqtt import mqtt_interface
 import pytest_asyncio
 import random
-from time import monotonic
+from time import monotonic, sleep
 from pymodbus.server import ModbusTcpServer
 from pymodbus.datastore import ModbusServerContext, ModbusSequentialDataBlock, ModbusSparseDataBlock
 import threading
@@ -76,11 +76,20 @@ class MQTTClient:
         self.client = mqtt_client.Client(mqtt_client.CallbackAPIVersion.VERSION2)
         self.client.on_message = self.on_message
         self.client.on_connect = self._on_connect
+        self.client.on_subscribe = self.on_subscribe
         self.received_messages: list[tuple[str, str]] = []
         self.connected: asyncio.Event = asyncio.Event()
+        self.subscribe_acknowledged = False
 
-    def subscribe(self, topic, qos=0):
+    def subscribe(self, topic, qos=0, timeout_s=1.0):
+        self.subscribe_acknowledged = False
         self.client.subscribe(topic, qos)
+        deadline = monotonic() + timeout_s
+        while monotonic() < deadline:
+            if self.subscribe_acknowledged:
+                return
+            sleep(0.1)
+        raise TimeoutError(f"Subscription to topic {topic} not acknowledged within timeout period.")
 
     def unsubscribe_to_all(self):
         self.client.unsubscribe("#")
@@ -91,6 +100,10 @@ class MQTTClient:
     def on_message(self, client, userdata, message):
         print(f"Received message on topic {message.topic}: {message.payload.decode()}")
         self.received_messages.append((message.topic, message.payload.decode()))
+
+    def on_subscribe(self, client, userdata, mid, reason_code_list, properties):
+        print("Subscribed to topic successfully.")
+        self.subscribe_acknowledged = True
 
     def clear_messages(self):
         self.received_messages = []
@@ -153,9 +166,11 @@ def modbus4mqtt_fixture():
                             config_file='tests/test_integration.yaml',
                             mqtt_topic_prefix='tests')
     app.connect()
-    threading.Thread(target=app.loop_forever, daemon=True).start()
+    th = threading.Thread(target=app.loop_forever, daemon=True)
+    th.start()
     yield app
     app.stop()
+    th.join()
 
 async def block_until_modbus_online(mqtt_client: MQTTClient, timeout: float = 5.0) -> None:
     deadline = monotonic() + timeout
@@ -196,13 +211,15 @@ async def test_multibyte_registers(modbus_fixture: ModbusServer, mqtt_fixture: M
     await block_until_modbus_online(mqtt_fixture)
     mqtt_fixture.subscribe("tests/uint64")
     mqtt_fixture.subscribe("tests/overlapping_uint16")
+    await asyncio.sleep(1) # Give time for subscriptions to take effect
+    mqtt_fixture.clear_messages()
     test_number = 0x1234567890ABCDEF
     # Set the uint64 value across 4 registers (assuming big-endian)
     await modbus_fixture.set_holding_register(10, (test_number >> 48) & 0xFFFF)
     await modbus_fixture.set_holding_register(11, (test_number >> 32) & 0xFFFF)
     await modbus_fixture.set_holding_register(12, (test_number >> 16) & 0xFFFF)
     await modbus_fixture.set_holding_register(13, test_number & 0xFFFF)
-    messages = await wait_for_mqtt_messages(mqtt_fixture, count=2)
+    messages = await wait_for_mqtt_messages(mqtt_fixture, count=2, timeout=5)
     for message in messages:
         topic, payload = message
         if topic == "tests/uint64":
