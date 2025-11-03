@@ -1,6 +1,0 @@
-setuptools
-ruamel.yaml>=0.16.12
-click
-paho-mqtt
-pymodbus>=2.3.0,<3.0.0
-SungrowModbusTcpClient>=0.1.6
