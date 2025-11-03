@@ -241,8 +241,13 @@ async def test_mqtt_write(modbus_fixture: ModbusServer, mqtt_fixture: MQTTClient
     test_number = random.randint(1, 0xFFFF)
     mqtt_fixture.publish("tests/holding/set", str(test_number))
     await asyncio.sleep(1)  # Give time for the message to be processed
-    holding_value = await modbus_fixture.get_holding_register(1)
-    assert holding_value == test_number
+    deadline = monotonic() + 5
+    while monotonic() < deadline:
+        holding_value = await modbus_fixture.get_holding_register(1)
+        if holding_value == test_number:
+            break
+    else:
+        assert False, "Timeout waiting for Modbus register to update"
 
 
 # TODO bundle the above into a test harness that can be loaded by pytest and have a bunch of tests run with it.
