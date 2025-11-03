@@ -5,7 +5,6 @@ from pymodbus.server import ModbusTcpServer
 from pymodbus.datastore import ModbusServerContext, ModbusSequentialDataBlock, ModbusSparseDataBlock
 import threading
 import asyncio
-import click
 from paho.mqtt import client as mqtt_client
 
 from pymodbus import ModbusDeviceIdentification
@@ -136,6 +135,9 @@ class TestRunner:
     async def run_tests(self):
         # Implement test logic here
         self.mqtt_client.subscribe("tests/holding")
+        while self.mqtt_client.received_messages.empty():
+            await asyncio.sleep(0.1)
+        self.mqtt_client.clear_messages()
 
         i = random.randint(1, 1000)
         while True:
@@ -157,17 +159,12 @@ async def async_main(modbus_server: ModbusServer, test_runner: TestRunner):
     ]
     await asyncio.gather(*tasks)
 
-
-@click.command()
-@click.option('--modbus-host', default='0.0.0.0')
-@click.option('--modbus-port', default=5020)
-@click.option('--mqtt-host', default='127.0.0.1')
-@click.option('--mqtt-port', default=1883)
-@click.option('--mqtt-username', default=None)
-@click.option('--mqtt-password', default=None)
-def main(modbus_host: str, modbus_port: int, mqtt_host: str, mqtt_port: int, mqtt_username: str, mqtt_password: str):
+def main(modbus_host: str = '0.0.0.0',
+         modbus_port: int = 5020,
+         mqtt_host: str = '127.0.0.1',
+         mqtt_port: int = 1883):
     modbus_server = ModbusServer(host=modbus_host, port=modbus_port)
-    mqtt_client = MQTTClient(host=mqtt_host, port=mqtt_port, username=mqtt_username, password=mqtt_password)
+    mqtt_client = MQTTClient(host=mqtt_host, port=mqtt_port)
     if not mqtt_client.connect():
         return
     test_runner = TestRunner(modbus_server=modbus_server, mqtt_client=mqtt_client)
