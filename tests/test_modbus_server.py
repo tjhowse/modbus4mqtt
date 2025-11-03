@@ -236,8 +236,6 @@ async def test_multibyte_registers(modbus_fixture: ModbusServer, mqtt_fixture: M
 
 @pytest.mark.asyncio
 async def test_mqtt_write(modbus_fixture: ModbusServer, mqtt_fixture: MQTTClient, modbus4mqtt_fixture: mqtt_interface):
-    mqtt_fixture.subscribe("tests/holding")
-    await asyncio.sleep(1)
     test_number = random.randint(1, 0xFFFF)
     mqtt_fixture.publish("tests/holding/set", str(test_number))
     deadline = monotonic() + 3

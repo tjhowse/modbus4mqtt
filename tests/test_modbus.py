@@ -213,7 +213,7 @@ class ModbusTests(unittest.TestCase):
             m.set_value('holding', 1, 0x0000, 0x0F00)
             self.assertEqual(self.holding_registers.registers[1], 0xF0FF)
 
-    def test_scan_batching_of_one(self):
+    def test_read_batching_of_one(self):
         with patch('modbus4mqtt.modbus_interface.ModbusTcpClient') as mock_modbus:
             mock_modbus().connect.side_effect = self.connect_success
             mock_modbus().read_input_registers.side_effect = self.read_input_registers
@@ -242,24 +242,43 @@ class ModbusTests(unittest.TestCase):
             mock_modbus().read_input_registers.assert_any_call(address=6, count=1, device_id=1)
             mock_modbus().read_input_registers.assert_any_call(address=7, count=1, device_id=1)
 
-    def test_scan_batching_bad_value(self):
+    def test_read_batching_bad_value(self):
         with patch('modbus4mqtt.modbus_interface.ModbusTcpClient') as mock_modbus:
             with self.assertLogs() as mock_logger:
                 mock_modbus().connect.side_effect = self.connect_success
                 mock_modbus().read_input_registers.side_effect = self.read_input_registers
                 mock_modbus().read_holding_registers.side_effect = self.read_holding_registers
 
-                bad_scan_batching = modbus_interface.MAX_BATCHING+1
+                bad_read_batching = modbus_interface.MAX_BATCHING+1
                 modbus_interface.modbus_interface(  '1.1.1.1', 111,
-                                                  read_batching=bad_scan_batching,
+                                                  read_batching=bad_read_batching,
                                                   write_mode=modbus_interface.WriteMode.Multi)
-                self.assertIn("Bad value for scan_batching: {}. Enforcing maximum value of {}".format(bad_scan_batching, modbus_interface.MAX_BATCHING), mock_logger.output[-1])
+                self.assertIn("Bad value for read_batching: {}. Enforcing maximum value of {}".format(bad_read_batching, modbus_interface.MAX_BATCHING), mock_logger.output[-1])
 
-                bad_scan_batching = modbus_interface.MIN_BATCHING-1
+                bad_read_batching = modbus_interface.MIN_BATCHING-1
                 modbus_interface.modbus_interface(  '1.1.1.1', 111,
-                                                  read_batching=bad_scan_batching,
+                                                  read_batching=bad_read_batching,
                                                   write_mode=modbus_interface.WriteMode.Multi)
-                self.assertIn("Bad value for scan_batching: {}. Enforcing minimum value of {}".format(bad_scan_batching, modbus_interface.MIN_BATCHING), mock_logger.output[-1])
+                self.assertIn("Bad value for read_batching: {}. Enforcing minimum value of {}".format(bad_read_batching, modbus_interface.MIN_BATCHING), mock_logger.output[-1])
+
+    def test_write_batching_bad_value(self):
+        with patch('modbus4mqtt.modbus_interface.ModbusTcpClient') as mock_modbus:
+            with self.assertLogs() as mock_logger:
+                mock_modbus().connect.side_effect = self.connect_success
+                mock_modbus().read_input_registers.side_effect = self.read_input_registers
+                mock_modbus().read_holding_registers.side_effect = self.read_holding_registers
+
+                bad_write_batching = modbus_interface.MAX_BATCHING+1
+                modbus_interface.modbus_interface(  '1.1.1.1', 111,
+                                                  write_batching=bad_write_batching,
+                                                  write_mode=modbus_interface.WriteMode.Multi)
+                self.assertIn("Bad value for write_batching: {}. Enforcing maximum value of {}".format(bad_write_batching, modbus_interface.MAX_BATCHING), mock_logger.output[-1])
+
+                bad_write_batching = modbus_interface.MIN_BATCHING-1
+                modbus_interface.modbus_interface(  '1.1.1.1', 111,
+                                                  write_batching=bad_write_batching,
+                                                  write_mode=modbus_interface.WriteMode.Multi)
+                self.assertIn("Bad value for write_batching: {}. Enforcing minimum value of {}".format(bad_write_batching, modbus_interface.MIN_BATCHING), mock_logger.output[-1])
 
     def test_type_conversions(self):
         a = modbus_interface._convert_from_type_to_bytes(-1, 'int16')

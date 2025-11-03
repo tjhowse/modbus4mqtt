@@ -4,7 +4,7 @@ update_rate: 5
 address_offset: 0
 #variant: sungrow
 variant: tcp
-scan_batching: 50
+read_batching: 50
 word_order: lowhigh
 registers:
   - pub_topic: "ems/EMS_MODE"

@@ -53,10 +53,10 @@ class modbus_interface():
         self._word_order: WordOrder = word_order
         if read_batching is not None:
             if read_batching < MIN_BATCHING:
-                logging.warning("Bad value for scan_batching: {}. Enforcing minimum value of {}".format(read_batching, MIN_BATCHING))
+                logging.warning("Bad value for read_batching: {}. Enforcing minimum value of {}".format(read_batching, MIN_BATCHING))
                 self._read_batching = MIN_BATCHING
             elif read_batching > MAX_BATCHING:
-                logging.warning("Bad value for scan_batching: {}. Enforcing maximum value of {}".format(read_batching, MAX_BATCHING))
+                logging.warning("Bad value for read_batching: {}. Enforcing maximum value of {}".format(read_batching, MAX_BATCHING))
                 self._read_batching = MAX_BATCHING
             else:
                 self._read_batching = read_batching
