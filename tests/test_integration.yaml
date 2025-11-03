@@ -9,3 +9,9 @@ registers:
     address: 1
   - pub_topic: "default"
     address: 2
+  - pub_topic: "uint64"
+    address: 10
+    data_type: "uint64"
+  - pub_topic: "overlapping_uint16"
+    address: 10
+    data_type: "uint16"

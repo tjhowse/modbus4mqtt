@@ -34,6 +34,7 @@ class mqtt_interface():
                     cafile=None,
                     cert=None,
                     key=None):
+        self._running = True
         self.hostname = hostname
         self._port = port
         self.username = username
@@ -304,10 +305,16 @@ class mqtt_interface():
         return result
 
     def loop_forever(self):
-        while True:
+        while self._running:
             next_update_time_s = monotonic() + self.config['update_rate']
             self.poll()
             sleep(max(0, next_update_time_s - monotonic()))
+
+    def stop(self):
+        self._running = False
+        self._mqtt_client.loop_stop()
+        self._mqtt_client.disconnect()
+        self._mb.close()
 
 
 

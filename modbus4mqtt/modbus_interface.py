@@ -117,6 +117,9 @@ class modbus_interface():
         self._mb.connect()
         return self._mb.connected
 
+    def close(self):
+        self._mb.close()
+
     def add_monitor_register(self, table, addr, type='uint16'):
         # Accepts a modbus register and table to monitor
         if table not in self._tables:

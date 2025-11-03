@@ -82,7 +82,7 @@ class ModbusServer:
     async def stop(self) -> None:
         """Stop server."""
         if self._mb_server:
-            self._mb_server.shutdown()
+            await self._mb_server.shutdown()
             self._mb_server = None
 
 class MQTTClient:
@@ -94,7 +94,7 @@ class MQTTClient:
         self.client = mqtt_client.Client(mqtt_client.CallbackAPIVersion.VERSION2)
         self.client.on_message = self.on_message
         self.client.on_connect = self._on_connect
-        self.received_messages: Queue = Queue()
+        self.received_messages: list[tuple[str, str]] = []
         self.connected: asyncio.Event = asyncio.Event()
 
     def subscribe(self, topic, qos=0):
@@ -108,10 +108,10 @@ class MQTTClient:
 
     def on_message(self, client, userdata, message):
         print(f"Received message on topic {message.topic}: {message.payload.decode()}")
-        self.received_messages.put((message.topic, message.payload.decode()))
+        self.received_messages.append((message.topic, message.payload.decode()))
 
     def clear_messages(self):
-        self.received_messages = Queue()
+        self.received_messages = []
 
     def _on_connect(self, client, userdata, flags, reason_code, properties):
         if reason_code == 0:
@@ -184,6 +184,7 @@ async def modbus_fixture():
     await asyncio.sleep(1)  # Give server time to start
     try:
         yield modbus_server
+        await modbus_server.stop()
     finally:
         server_task.cancel()
         try:
@@ -211,23 +212,49 @@ def m4qtt_fixture():
     app.connect()
     threading.Thread(target=app.loop_forever, daemon=True).start()
     yield app
+    app.stop()
 
-async def wait_for_mqtt_message(mqtt_client: MQTTClient, timeout: float = 1.0) -> tuple[str, str]:
+async def wait_for_mqtt_messages(mqtt_client: MQTTClient, timeout: float = 1.0, count: int = 1) -> list[tuple[str, str]]:
     deadline = monotonic() + timeout
-    while mqtt_client.received_messages.empty() and monotonic() < deadline:
+    while len(mqtt_client.received_messages) < count and monotonic() < deadline:
         await asyncio.sleep(0.1)
-    if mqtt_client.received_messages.empty():
-        raise TimeoutError("Did not receive MQTT message within timeout period.")
-    return mqtt_client.received_messages.get()
+    if len(mqtt_client.received_messages) < count:
+        raise TimeoutError(f"Did not receive {count} MQTT messages within timeout period.")
+    return mqtt_client.received_messages
 
 @pytest.mark.asyncio
 async def test_basic_functionality(modbus_fixture: ModbusServer, mqtt_fixture: MQTTClient, m4qtt_fixture: mqtt_interface):
     mqtt_fixture.subscribe("tests/holding")
     test_number = random.randint(1, 1000)
     await modbus_fixture.set_holding_register(1, test_number)
-    topic, payload = await wait_for_mqtt_message(mqtt_fixture)
+    message = await wait_for_mqtt_messages(mqtt_fixture)
+    topic, payload = message[0]
     assert topic == "tests/holding"
     assert int(payload) == test_number
+
+@pytest.mark.asyncio
+async def test_multibyte_registers(modbus_fixture: ModbusServer, mqtt_fixture: MQTTClient, m4qtt_fixture: mqtt_interface):
+    mqtt_fixture.subscribe("tests/holding")
+    test_number = random.randint(1, 1000)
+    await modbus_fixture.set_holding_register(1, test_number)
+    message = await wait_for_mqtt_messages(mqtt_fixture)
+    topic, payload = message[0]
+    assert topic == "tests/holding"
+    assert int(payload) == test_number
+
+
+@pytest.mark.asyncio
+async def test_multibyte_registers(modbus_fixture: ModbusServer, mqtt_fixture: MQTTClient, m4qtt_fixture: mqtt_interface):
+    mqtt_fixture.subscribe("tests/uint64")
+    mqtt_fixture.subscribe("tests/overlapping_uint16")
+    test_number = 0x1234567890ABCDEF
+    # Set the uint64 value across 4 registers (assuming big-endian)
+    await modbus_fixture.set_holding_register(10, (test_number >> 48) & 0xFFFF)
+    await modbus_fixture.set_holding_register(11, (test_number >> 32) & 0xFFFF)
+    await modbus_fixture.set_holding_register(12, (test_number >> 16) & 0xFFFF)
+    await modbus_fixture.set_holding_register(13, test_number & 0xFFFF)
+    messages = await wait_for_mqtt_messages(mqtt_fixture, count=2)
+    print(messages)
 
 
 
