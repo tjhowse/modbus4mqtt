@@ -135,7 +135,8 @@ class TestRunner:
 
     async def run_tests(self):
         # Implement test logic here
-        self.mqtt_client.subscribe("ignoreme/holding")
+        self.mqtt_client.subscribe("tests/holding")
+
         i = random.randint(1, 1000)
         while True:
             await asyncio.sleep(1)
@@ -160,7 +161,7 @@ async def async_main(modbus_server: ModbusServer, test_runner: TestRunner):
 @click.command()
 @click.option('--modbus-host', default='0.0.0.0')
 @click.option('--modbus-port', default=5020)
-@click.option('--mqtt-host', default='192.168.1.50')
+@click.option('--mqtt-host', default='127.0.0.1')
 @click.option('--mqtt-port', default=1883)
 @click.option('--mqtt-username', default=None)
 @click.option('--mqtt-password', default=None)
