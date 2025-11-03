@@ -4,6 +4,7 @@ update_rate: 0.1
 registers:
   - pub_topic: "holding"
     address: 1
+    set_topic: "holding/set"
   - pub_topic: "uint64"
     address: 10
     type: "uint64"

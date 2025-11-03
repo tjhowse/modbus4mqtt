@@ -46,6 +46,10 @@ class ModbusServer:
         """Set holding register value."""
         self.holding_registers.setValues(address+1, [value])
 
+    async def get_holding_register(self, address: int) -> int:
+        """Get holding register value."""
+        return self.holding_registers.getValues(address+1, count=1)[0]
+
     async def run_async_server(self) -> None:
         """Run server."""
         print(f"Starting MODBUS TCP server on {self.host}:{self.port}")
@@ -202,7 +206,7 @@ async def wait_for_mqtt_messages(mqtt_client: MQTTClient, timeout: float = 1.0, 
 @pytest.mark.asyncio
 async def test_basic_functionality(modbus_fixture: ModbusServer, mqtt_fixture: MQTTClient, m4qtt_fixture: mqtt_interface):
     mqtt_fixture.subscribe("tests/holding")
-    test_number = random.randint(1, 1000)
+    test_number = random.randint(1, 0xFFFF)
     await modbus_fixture.set_holding_register(1, test_number)
     message = await wait_for_mqtt_messages(mqtt_fixture)
     topic, payload = message[0]
@@ -229,6 +233,16 @@ async def test_multibyte_registers(modbus_fixture: ModbusServer, mqtt_fixture: M
             expected_value = (test_number >> 48) & 0xFFFF
             assert int(payload) == expected_value
 
+
+@pytest.mark.asyncio
+async def test_mqtt_write(modbus_fixture: ModbusServer, mqtt_fixture: MQTTClient, m4qtt_fixture: mqtt_interface):
+    mqtt_fixture.subscribe("tests/holding")
+    await asyncio.sleep(1)
+    test_number = random.randint(1, 0xFFFF)
+    mqtt_fixture.publish("tests/holding/set", str(test_number))
+    await asyncio.sleep(1)  # Give time for the message to be processed
+    holding_value = await modbus_fixture.get_holding_register(1)
+    assert holding_value == test_number
 
 
 # TODO bundle the above into a test harness that can be loaded by pytest and have a bunch of tests run with it.
