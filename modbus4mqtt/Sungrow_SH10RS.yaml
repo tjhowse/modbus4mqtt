@@ -255,19 +255,19 @@ registers:
     table: input
     pub_only_on_change: false
     scale: 0.1
-  - pub_topic: "solar"
-    json_key: inverter_current
-    type: uint16
-    address: 5021
-    table: input
-    pub_only_on_change: false
-    scale: 0.1
-  - pub_topic: "solar"
-    json_key: inverter_ac_output
-    type: uint16
-    address: 5030
-    table: input
-    pub_only_on_change: false
+  # - pub_topic: "solar"
+  #   json_key: inverter_current
+  #   type: uint16
+  #   address: 5021
+  #   table: input
+  #   pub_only_on_change: false
+  #   scale: 0.1
+  # - pub_topic: "solar"
+  #   json_key: inverter_ac_output
+  #   type: uint16
+  #   address: 5030
+  #   table: input
+  #   pub_only_on_change: false
   - pub_topic: "solar"
     json_key: grid_frequency
     type: uint16
