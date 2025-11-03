@@ -41,7 +41,7 @@ Alternatively you can run Modbus4MQTT in a Docker container. A [Dockerfile](./Do
 $ docker pull tjhowse/modbus4mqtt:latest
 $ docker run modbus4mqtt --help
 ```
-When launching inside the docker container you will either need to use one of the built-in YAMLs like `/modbus4mqtt/modbus4mqtt/Sungrow_SH5k_20.yaml`, or map your custom YAML into the container in a volume.
+When launching inside the docker container you will either need to use one of the built-in YAMLs like `/modbus4mqtt/modbus4mqtt/config/Sungrow_SH5k_20.yaml`, or map your custom YAML into the container in a volume.
 
 ## YAML definition
 
