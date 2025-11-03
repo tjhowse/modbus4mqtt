@@ -20,6 +20,12 @@ class ModbusConnectionStatus:
     Online = "online"
     Connecting = "connecting"
 
+class MqttConnectionStatus:
+    Offline = "offline"
+    Online = "online"
+    Connecting = "connecting"
+    Subscribing = "subscribing"
+
 
 class mqtt_interface():
     def __init__(   self,
@@ -55,6 +61,8 @@ class mqtt_interface():
         self.modbus_connect_retries = -1  # Retry forever by default
         self.modbus_reconnect_sleep_interval = 5  # Wait this many seconds between modbus connection attempts
         self.modbus_connection_status: ModbusConnectionStatus = ModbusConnectionStatus.Offline
+        self._subscription_mids: map[int, str] = {}
+        self.mqtt_connection_status: MqttConnectionStatus = MqttConnectionStatus.Offline
         self.setup_modbus()
 
     def connect(self):
@@ -119,6 +127,7 @@ class mqtt_interface():
         self._mqtt_client._on_connect = self._on_connect
         self._mqtt_client._on_disconnect = self._on_disconnect
         self._mqtt_client._on_message = self._on_message
+        self._mqtt_client._on_subscribe = self._on_subscribe
         if self.use_tls:
             self._mqtt_client.tls_set(ca_certs=self.cafile, certfile=self.cert, keyfile=self.key)
             self._mqtt_client.tls_insecure_set(self.insecure)
@@ -203,19 +212,44 @@ class mqtt_interface():
             return
         # Subscribe to all the set topics.
         for register in self._get_registers_with('set_topic'):
-            self._mqtt_client.subscribe(self.prefix+register['set_topic'])
-            print("Subscribed to {}".format(self.prefix+register['set_topic']))
+            result  = self._mqtt_client.subscribe(self.prefix+register['set_topic'])
+
+            try:
+                success, mid = result
+            except ValueError:
+                logging.error("Failed to subscribe to {}. Not enough return values.".format(self.prefix+register['set_topic']))
+                continue
+            if success != mqtt.MQTT_ERR_SUCCESS:
+                logging.error("Failed to subscribe to {}: {}".format(self.prefix+register['set_topic'], success))
+                continue
+            self._subscription_mids[mid] = self.prefix+register['set_topic']
+            logging.info("Subscribing to {}".format(self.prefix+register['set_topic']))
+        self._set_mqtt_connection_status(MqttConnectionStatus.Subscribing)
+
+    def _on_disconnect(self, client, userdata, flags, reason_code, properties):
+        logging.warning("Disconnected from MQTT. Attempting to reconnect.")
+
+    def _on_subscribe(self, client, userdata, mid, reason_code_list, properties):
+        logging.info(f"Subscribed to {self._subscription_mids.get(mid, 'unknown topic')}.")
+        self._subscription_mids.pop(mid, None)
+        if not self._subscription_mids:
+            logging.info("Subscribed to all set topics.")
+            self._set_mqtt_connection_status(MqttConnectionStatus.Online)
+
+    def _set_mqtt_connection_status(self, status: MqttConnectionStatus):
+        if self.mqtt_connection_status == status:
+            return
+        self.mqtt_connection_status = status
+        if not self._mqtt_client.is_connected():
+            return
         self._mqtt_client.publish(self.prefix+'modbus4mqtt',
                                   json.dumps({
-                                        "status": "online",
+                                        "status": status,
                                         "version": f"{_version}",
                                         "timestamp": datetime.now().astimezone().strftime('%Y-%m-%dT%H:%M:%S%z')
                                   }),
                                   retain=True
                                   )
-
-    def _on_disconnect(self, client, userdata, flags, reason_code, properties):
-        logging.warning("Disconnected from MQTT. Attempting to reconnect.")
 
     def _on_message(self, client, userdata, msg):
         # print("got a message: {}: {}".format(msg.topic, msg.payload))

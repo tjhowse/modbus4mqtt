@@ -88,7 +88,7 @@ class MQTTTests(unittest.TestCase):
                 args, _ = mock_mqtt().publish.call_args
                 self.assertEqual(args[0], MQTT_TOPIC_PREFIX+'/modbus4mqtt')
                 payload = json.loads(args[1])
-                self.assertEqual(payload["status"], "online")
+                self.assertEqual(payload["status"], "subscribing")
                 self.assertEqual(payload["version"], f"{modbus4mqtt._version}")
                 self.assertIn("timestamp", payload)
                 mock_mqtt().subscribe.assert_called_with(MQTT_TOPIC_PREFIX+'/subscribe')
