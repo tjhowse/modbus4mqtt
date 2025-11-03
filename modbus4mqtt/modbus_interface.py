@@ -134,9 +134,8 @@ class modbus_interface():
             for start, length in self._tables[table].get_batched_addresses():
                 try:
                     values = self._scan_value_range(table, start, length)
-                    for value in values:
-                        self._tables[table].set_value(start, value, write=False)
-                        start += 1
+                    for offset, value in enumerate(values):
+                        self._tables[table].set_value(start + offset, value, write=False)
                 except ModbusException as e:
                     if "Failed to connect" in str(e):
                         raise e

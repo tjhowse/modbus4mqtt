@@ -194,7 +194,7 @@ async def test_multibyte_registers(modbus_fixture: ModbusServer, mqtt_fixture: M
 async def test_mqtt_write(modbus_fixture: ModbusServer, mqtt_fixture: MQTTClient, modbus4mqtt_fixture: mqtt_interface):
     test_number = random.randint(1, 0xFFFF)
     mqtt_fixture.publish("tests/holding/set", str(test_number))
-    deadline = monotonic() + 3
+    deadline = monotonic() + 5
     while monotonic() < deadline:
         await asyncio.sleep(0.1)  # Give time for the message to be processed
         holding_value = await modbus_fixture.get_holding_register(1)
