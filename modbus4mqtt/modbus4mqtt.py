@@ -329,7 +329,7 @@ class mqtt_interface():
               help='The password to authenticate to the MQTT server.', show_default=True)
 @click.option('--mqtt_topic_prefix', default='modbus4mqtt',
               help='A prefix for published MQTT topics.', show_default=True)
-@click.option('--config', default='./Sungrow_SH5k_20.yaml',
+@click.option('--config', default='./config/Sungrow_SH5k_20.yaml',
               help='The YAML config file for your modbus device.', show_default=True)
 @click.option('--use_tls', default=False,
               help='Configure network encryption and authentication options. Enables SSL/TLS.', show_default=True)

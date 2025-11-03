@@ -114,6 +114,10 @@ class MQTTClient:
         print(f"Failed to connect to MQTT server at {self.host}:{self.port}.")
         exit(1)
 
+    def disconnect(self):
+        self.client.loop_stop()
+        self.client.disconnect()
+
 @pytest_asyncio.fixture
 async def modbus_fixture():
     modbus_server = ModbusServer()
@@ -135,6 +139,7 @@ def mqtt_fixture():
     mqtt_client = MQTTClient()
     mqtt_client.connect()
     yield mqtt_client
+    mqtt_client.disconnect()
 
 @pytest.fixture
 def modbus4mqtt_fixture():
