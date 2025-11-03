@@ -1,4 +1,5 @@
 from queue import Queue
+import pytest
 import random
 from time import monotonic
 from pymodbus.server import ModbusTcpServer
@@ -32,7 +33,7 @@ class CyclingDataBlock(ModbusSequentialDataBlock):
 class ModbusServer:
     """MODBUS server class."""
 
-    def __init__(self, host: str, port: int) -> None:
+    def __init__(self, host: str = '0.0.0.0', port: int = 5020) -> None:
         """Initialize server context and identity."""
         self.storage: ModbusDeviceContext
         self.context: ModbusServerContext
@@ -76,17 +77,19 @@ class ModbusServer:
         )
         await self._mb_server.serve_forever()
 
+    async def stop(self) -> None:
+        """Stop server."""
+        if self._mb_server:
+            self._mb_server.server_close()
+            self._mb_server = None
+
 class MQTTClient:
     """ Basic MQTT client """
 
-    def __init__(self, host, port, username=None, password=None):
+    def __init__(self, host: str = '127.0.0.1', port: int = 1883):
         self.host = host
         self.port = port
-        self.username = username
-        self.password = password
         self.client = mqtt_client.Client(mqtt_client.CallbackAPIVersion.VERSION2)
-        if username and password:
-            self.client.username_pw_set(username, password)
         self.client.on_message = self.on_message
         self.client.on_connect = self._on_connect
         self.received_messages: Queue = Queue()
@@ -94,6 +97,9 @@ class MQTTClient:
 
     def subscribe(self, topic, qos=0):
         self.client.subscribe(topic, qos)
+
+    def unsubscribe_to_all(self):
+        self.client.unsubscribe("#")
 
     def publish(self, topic, payload, qos=0):
         self.client.publish(topic, payload, qos)
@@ -114,6 +120,7 @@ class MQTTClient:
             return
 
     def connect(self) -> bool:
+        print("Connecting to MQTT server...")
         self.client.connect(self.host, self.port)
         self.client.loop_start()
         deadline = monotonic() + 5
@@ -122,7 +129,7 @@ class MQTTClient:
                 self.connected.clear()
                 return True
         print(f"Failed to connect to MQTT server at {self.host}:{self.port}.")
-        return False
+        exit(1)
 
 class TestRunner:
     """ This sends commands to modbus and mqtt and ensures values are reported back and forth correctly. """
@@ -135,7 +142,8 @@ class TestRunner:
     async def run_tests(self):
         # Implement test logic here
         self.mqtt_client.subscribe("tests/holding")
-        while self.mqtt_client.received_messages.empty():
+        deadline = monotonic() + 1
+        while self.mqtt_client.received_messages.empty() and monotonic() < deadline:
             await asyncio.sleep(0.1)
         self.mqtt_client.clear_messages()
 
@@ -159,20 +167,40 @@ async def async_main(modbus_server: ModbusServer, test_runner: TestRunner):
     ]
     await asyncio.gather(*tasks)
 
-def main(modbus_host: str = '0.0.0.0',
-         modbus_port: int = 5020,
-         mqtt_host: str = '127.0.0.1',
-         mqtt_port: int = 1883):
-    modbus_server = ModbusServer(host=modbus_host, port=modbus_port)
-    mqtt_client = MQTTClient(host=mqtt_host, port=mqtt_port)
-    if not mqtt_client.connect():
-        return
+def main():
+    modbus_server = ModbusServer()
+    mqtt_client = MQTTClient()
+    mqtt_client.connect()
     test_runner = TestRunner(modbus_server=modbus_server, mqtt_client=mqtt_client)
     asyncio.run(async_main(modbus_server, test_runner))
 
 
-if __name__ == "__main__":
-    main()
+@pytest.fixture
+async def modbus_fixture():
+    modbus_server = ModbusServer()
+    task = asyncio.create_task(modbus_server.run_async_server())
+    yield modbus_server
+    await modbus_server.stop()
+
+
+@pytest.fixture
+def mqtt_fixture():
+    mqtt_client = MQTTClient()
+    mqtt_client.connect()
+    yield mqtt_client
+
+def test_basic_functionality(modbus_fixture, mqtt_fixture):
+    modbus_fixture.set_holding_register(1, 42)
+    mqtt_fixture.subscribe("tests/holding")
+    deadline = monotonic() + 5
+    while mqtt_fixture.received_messages.empty() and monotonic() < deadline:
+        asyncio.sleep(0.1)
+    assert not mqtt_fixture.received_messages.empty()
+    topic, payload = mqtt_fixture.received_messages.get()
+    assert topic == "tests/holding"
+    assert int(payload) == 42
+
+
 
 # TODO bundle the above into a test harness that can be loaded by pytest and have a bunch of tests run with it.
 # Tests like:
@@ -182,3 +210,8 @@ if __name__ == "__main__":
 #       (['base_topic/holding', 2], [1, 2]), and whatnot.
 # - Registers of overlapping ranges with different types (uint16, uint32, etc)
 #       ([1, 2, 2, 3], ['base_topic/uint32', 65538]), and whatnot.
+
+
+
+if __name__ == "__main__":
+    main()
