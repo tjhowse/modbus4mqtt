@@ -132,7 +132,7 @@ class MQTTClient:
         print(f"Failed to connect to MQTT server at {self.host}:{self.port}.")
         exit(1)
 
-class TestRunner:
+class ManualTestRunner:
     """ This sends commands to modbus and mqtt and ensures values are reported back and forth correctly. """
 
     def __init__(self, modbus_server: ModbusServer, mqtt_client: MQTTClient):
@@ -161,7 +161,7 @@ class TestRunner:
             print("Test completed, received messages:", message)
             i += 1
 
-async def async_main(modbus_server: ModbusServer, test_runner: TestRunner):
+async def async_main(modbus_server: ModbusServer, test_runner: ManualTestRunner):
     tasks = [
         asyncio.create_task(modbus_server.run_async_server()),
         asyncio.create_task(test_runner.run_tests())
@@ -172,7 +172,7 @@ def main():
     modbus_server = ModbusServer()
     mqtt_client = MQTTClient()
     mqtt_client.connect()
-    test_runner = TestRunner(modbus_server=modbus_server, mqtt_client=mqtt_client)
+    test_runner = ManualTestRunner(modbus_server=modbus_server, mqtt_client=mqtt_client)
     asyncio.run(async_main(modbus_server, test_runner))
 
 
@@ -197,16 +197,20 @@ def mqtt_fixture():
     mqtt_client.connect()
     yield mqtt_client
 
+async def wait_for_mqtt_message(mqtt_client: MQTTClient, timeout: float = 5.0) -> tuple[str, str]:
+    deadline = monotonic() + timeout
+    while mqtt_client.received_messages.empty() and monotonic() < deadline:
+        await asyncio.sleep(0.1)
+    if mqtt_client.received_messages.empty():
+        raise TimeoutError("Did not receive MQTT message within timeout period.")
+    return mqtt_client.received_messages.get()
+
 @pytest.mark.asyncio
 async def test_basic_functionality(modbus_fixture: ModbusServer, mqtt_fixture: MQTTClient):
     mqtt_fixture.subscribe("tests/holding")
     test_number = random.randint(1, 1000)
     await modbus_fixture.set_holding_register(1, test_number)
-    deadline = monotonic() + 5
-    while mqtt_fixture.received_messages.empty() and monotonic() < deadline:
-        await asyncio.sleep(0.1)
-    assert not mqtt_fixture.received_messages.empty()
-    topic, payload = mqtt_fixture.received_messages.get()
+    topic, payload = await wait_for_mqtt_message(mqtt_fixture)
     assert topic == "tests/holding"
     assert int(payload) == test_number
 
