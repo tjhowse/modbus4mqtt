@@ -184,8 +184,8 @@ class modbus_interface():
 
     def _perform_write(self, addr, values):
         if self._write_mode == WriteMode.Single or len(values) == 1:
-            for value in values:
-                self._mb.write_register(address=addr, value=value, device_id=self._unit)
+            for i, value in enumerate(values):
+                self._mb.write_register(address=addr+i, value=value, device_id=self._unit)
         else:
             self._mb.write_registers(address=addr, values=values, device_id=self._unit)
 

@@ -12,7 +12,7 @@ class ModbusTable():
             self._write_batch_size = write_batch_size
         else:
             self._write_batch_size = read_batch_size
-        # These values hae changed since the last write operation
+        # These values have changed since the last write operation
         # and should be included in the next one.
         self._changed_registers: set[int] = set()
 
