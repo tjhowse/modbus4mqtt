@@ -114,50 +114,6 @@ class MQTTClient:
         print(f"Failed to connect to MQTT server at {self.host}:{self.port}.")
         exit(1)
 
-class ManualTestRunner:
-    """ This sends commands to modbus and mqtt and ensures values are reported back and forth correctly. """
-
-    def __init__(self, modbus_server: ModbusServer, mqtt_client: MQTTClient):
-        self.modbus_server = modbus_server
-        self.mqtt_client = mqtt_client
-        # Further initialization as needed
-
-    async def run_tests(self):
-        # Implement test logic here
-        self.mqtt_client.subscribe("tests/holding")
-        deadline = monotonic() + 1
-        while len(self.mqtt_client.received_messages) == 0 and monotonic() < deadline:
-            await asyncio.sleep(0.1)
-        self.mqtt_client.clear_messages()
-
-        i = random.randint(1, 1000)
-        while True:
-            await asyncio.sleep(1)
-            print("Running tests...")
-            print(f"Setting holding register 1 to {i}")
-            await self.modbus_server.set_holding_register(1, i)
-            print("Waiting for MQTT messages...")
-            while len(self.mqtt_client.received_messages) == 0:
-                await asyncio.sleep(0.1)
-            message = self.mqtt_client.received_messages.pop(0)
-            print("Test completed, received messages:", message)
-            i += 1
-
-async def async_main(modbus_server: ModbusServer, test_runner: ManualTestRunner):
-    tasks = [
-        asyncio.create_task(modbus_server.run_async_server()),
-        asyncio.create_task(test_runner.run_tests())
-    ]
-    await asyncio.gather(*tasks)
-
-def main():
-    modbus_server = ModbusServer()
-    mqtt_client = MQTTClient()
-    mqtt_client.connect()
-    test_runner = ManualTestRunner(modbus_server=modbus_server, mqtt_client=mqtt_client)
-    asyncio.run(async_main(modbus_server, test_runner))
-
-
 @pytest_asyncio.fixture
 async def modbus_fixture():
     modbus_server = ModbusServer()
@@ -246,6 +202,3 @@ async def test_mqtt_write(modbus_fixture: ModbusServer, mqtt_fixture: MQTTClient
             break
     else:
         assert False, "Timeout waiting for Modbus register to update"
-
-if __name__ == "__main__":
-    main()
