@@ -19,18 +19,6 @@ from pymodbus.datastore import (
 from pymodbus.server import ModbusTcpServer
 import asyncio
 
-class CyclingDataBlock(ModbusSequentialDataBlock):
-    def __init__(self, address, values):
-        super().__init__(address, values)
-        self._lock = threading.Lock()
-        self._thread = threading.Thread(target=self.cycle_values)
-        self._thread.daemon = True
-        self._thread.start()
-
-    def cycle_values(self):
-        for i in range(len(self.values)):
-            self.values[i] = (self.values[i] + 1) % 65536
-
 
 class ModbusServer:
     """MODBUS server class."""
@@ -40,8 +28,8 @@ class ModbusServer:
         self.storage: ModbusDeviceContext
         self.context: ModbusServerContext
         self.identity: ModbusDeviceIdentification
-        self.holding_registers: CyclingDataBlock
-        self.input_registers: CyclingDataBlock
+        self.holding_registers: ModbusSequentialDataBlock
+        self.input_registers: ModbusSequentialDataBlock
         self._mb_server: ModbusTcpServer | None = None
         self.host: str = host
         self.port: int = port
@@ -49,30 +37,19 @@ class ModbusServer:
 
     def setup_server(self) -> None:
         """Run server setup."""
-        self.holding_registers = CyclingDataBlock(0x00, [0] * 100)
-        self.input_registers = CyclingDataBlock(0x00, [0] * 100)
+        self.holding_registers = ModbusSequentialDataBlock(0x00, [0] * 100)
+        self.input_registers = ModbusSequentialDataBlock(0x00, [0] * 100)
         self.storage = ModbusDeviceContext(hr=self.holding_registers, ir=self.input_registers)
         self.context = ModbusServerContext(devices=self.storage)
 
-    async def task_cycle_registers(self) -> None:
-        """
-        Runs continuously to update the first two input registers with the current unix time
-        once every second.
-        """
-        while True:
-            # self.holding_registers.cycle_values()
-            self.input_registers.cycle_values()
-            await asyncio.sleep(1)
-
     async def set_holding_register(self, address: int, value: int) -> None:
         """Set holding register value."""
-        self.holding_registers.setValues(address, [value])
+        self.holding_registers.setValues(address+1, [value])
 
     async def run_async_server(self) -> None:
         """Run server."""
         print(f"Starting MODBUS TCP server on {self.host}:{self.port}")
         address = (self.host, self.port)
-        self._update_timestamp_task = asyncio.create_task(self.task_cycle_registers())
         self._mb_server = ModbusTcpServer(
             context=self.context,  # Data storage
             address=address,  # listen address
@@ -234,17 +211,6 @@ async def test_basic_functionality(modbus_fixture: ModbusServer, mqtt_fixture: M
 
 @pytest.mark.asyncio
 async def test_multibyte_registers(modbus_fixture: ModbusServer, mqtt_fixture: MQTTClient, m4qtt_fixture: mqtt_interface):
-    mqtt_fixture.subscribe("tests/holding")
-    test_number = random.randint(1, 1000)
-    await modbus_fixture.set_holding_register(1, test_number)
-    message = await wait_for_mqtt_messages(mqtt_fixture)
-    topic, payload = message[0]
-    assert topic == "tests/holding"
-    assert int(payload) == test_number
-
-
-@pytest.mark.asyncio
-async def test_multibyte_registers(modbus_fixture: ModbusServer, mqtt_fixture: MQTTClient, m4qtt_fixture: mqtt_interface):
     mqtt_fixture.subscribe("tests/uint64")
     mqtt_fixture.subscribe("tests/overlapping_uint16")
     test_number = 0x1234567890ABCDEF
@@ -254,7 +220,14 @@ async def test_multibyte_registers(modbus_fixture: ModbusServer, mqtt_fixture: M
     await modbus_fixture.set_holding_register(12, (test_number >> 16) & 0xFFFF)
     await modbus_fixture.set_holding_register(13, test_number & 0xFFFF)
     messages = await wait_for_mqtt_messages(mqtt_fixture, count=2)
-    print(messages)
+    for message in messages:
+        topic, payload = message
+        if topic == "tests/uint64":
+            assert int(payload) == test_number
+        elif topic == "tests/overlapping_uint16":
+            # Overlapping uint16 register at address 10 should contain the high word of the uint64
+            expected_value = (test_number >> 48) & 0xFFFF
+            assert int(payload) == expected_value
 
 
 

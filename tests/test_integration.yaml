@@ -3,15 +3,10 @@ port: 5020
 update_rate: 0.1
 registers:
   - pub_topic: "holding"
-    address: 0
-  - pub_topic: "input"
-    table: "input"
     address: 1
-  - pub_topic: "default"
-    address: 2
   - pub_topic: "uint64"
     address: 10
-    data_type: "uint64"
+    type: "uint64"
   - pub_topic: "overlapping_uint16"
     address: 10
-    data_type: "uint16"
+    type: "uint16"
