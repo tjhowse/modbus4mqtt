@@ -18,6 +18,7 @@ dependencies = [
     "pymodbus>=3.11.3,<4.0.0",
     "click>=6.7",
     "SungrowModbusTcpClient@git+https://github.com/rpvelloso/Sungrow-Modbus#egg=38946080d9be2850c962f1e8cb793bb09c872d6d",
+    "pytest-asyncio>=1.2.0",
 ]
 
 [project.urls]

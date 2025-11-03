@@ -1,5 +1,6 @@
 from queue import Queue
 import pytest
+import pytest_asyncio
 import random
 from time import monotonic
 from pymodbus.server import ModbusTcpServer
@@ -80,7 +81,7 @@ class ModbusServer:
     async def stop(self) -> None:
         """Stop server."""
         if self._mb_server:
-            self._mb_server.server_close()
+            self._mb_server.shutdown()
             self._mb_server = None
 
 class MQTTClient:
@@ -175,10 +176,10 @@ def main():
     asyncio.run(async_main(modbus_server, test_runner))
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def modbus_fixture():
     modbus_server = ModbusServer()
-    task = asyncio.create_task(modbus_server.run_async_server())
+    asyncio.create_task(modbus_server.run_async_server())
     yield modbus_server
     await modbus_server.stop()
 
@@ -189,9 +190,10 @@ def mqtt_fixture():
     mqtt_client.connect()
     yield mqtt_client
 
-def test_basic_functionality(modbus_fixture, mqtt_fixture):
-    modbus_fixture.set_holding_register(1, 42)
+@pytest.mark.asyncio
+async def test_basic_functionality(modbus_fixture, mqtt_fixture):
     mqtt_fixture.subscribe("tests/holding")
+    modbus_fixture.set_holding_register(1, 42)
     deadline = monotonic() + 5
     while mqtt_fixture.received_messages.empty() and monotonic() < deadline:
         asyncio.sleep(0.1)
