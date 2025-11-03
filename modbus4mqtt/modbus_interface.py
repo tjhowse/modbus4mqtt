@@ -209,7 +209,7 @@ class modbus_interface():
         if result is None:
             raise ModbusException("No result from modbus read.")
         if len(result.registers) != count:
-            raise ModbusException("Expected {} registers from modbus read, got {}.".format(count, len(result.registers)))
+            raise ModbusException("Expected {} registers from modbus read on {}, got {}.".format(count, start, len(result.registers)))
         return result.registers
 
 
