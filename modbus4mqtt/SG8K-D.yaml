@@ -3,7 +3,7 @@ port: 502
 update_rate: 5
 address_offset: 0
 variant: sungrow
-scan_batching: 1
+read_batching: 1
 registers:
   - pub_topic: "energy_meter_power" # Feed-in power is negative  and taken-back power is positive (W)
     address: 5082
