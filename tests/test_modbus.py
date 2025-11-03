@@ -280,6 +280,11 @@ class ModbusTests(unittest.TestCase):
                                                   write_mode=modbus_interface.WriteMode.Multi)
                 self.assertIn("Bad value for write_batching: {}. Enforcing minimum value of {}".format(bad_write_batching, modbus_interface.MIN_BATCHING), mock_logger.output[-1])
 
+                modbus_interface.modbus_interface(  '1.1.1.1', 111,
+                                                  write_batching=modbus_interface.MAX_BATCHING,
+                                                  write_mode=modbus_interface.WriteMode.Single)
+                self.assertIn("Overriding write batching to 1 due to single write mode.", mock_logger.output[-1])
+
     def test_type_conversions(self):
         a = modbus_interface._convert_from_type_to_bytes(-1, 'int16')
         self.assertEqual(a, b'\xff\xff')
