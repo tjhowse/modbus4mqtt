@@ -67,7 +67,7 @@ def test_generate_batched_addresses_max_batch():
     # No registers changed yet, so no batches
     assert batches == []
     for addr in [2, 4]:
-        table.set_value(addr, 123)
+        table.set_value(addr, 123, write=True)
     batches = table.get_batched_addresses(write_mode=True)
     # Should batch: [2] (start=2, len=1), [4] (start=4, len=1)
     assert batches == [[2, 1], [4, 1]]
