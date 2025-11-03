@@ -179,9 +179,16 @@ def main():
 @pytest_asyncio.fixture
 async def modbus_fixture():
     modbus_server = ModbusServer()
-    asyncio.create_task(modbus_server.run_async_server())
-    yield modbus_server
-    await modbus_server.stop()
+    server_task = asyncio.create_task(modbus_server.run_async_server())
+    await asyncio.sleep(1)  # Give server time to start
+    try:
+        yield modbus_server
+    finally:
+        server_task.cancel()
+        try:
+            await server_task
+        except asyncio.CancelledError:
+            pass
 
 
 @pytest.fixture
@@ -191,16 +198,17 @@ def mqtt_fixture():
     yield mqtt_client
 
 @pytest.mark.asyncio
-async def test_basic_functionality(modbus_fixture, mqtt_fixture):
+async def test_basic_functionality(modbus_fixture: ModbusServer, mqtt_fixture: MQTTClient):
     mqtt_fixture.subscribe("tests/holding")
-    modbus_fixture.set_holding_register(1, 42)
+    test_number = random.randint(1, 1000)
+    await modbus_fixture.set_holding_register(1, test_number)
     deadline = monotonic() + 5
     while mqtt_fixture.received_messages.empty() and monotonic() < deadline:
-        asyncio.sleep(0.1)
+        await asyncio.sleep(0.1)
     assert not mqtt_fixture.received_messages.empty()
     topic, payload = mqtt_fixture.received_messages.get()
     assert topic == "tests/holding"
-    assert int(payload) == 42
+    assert int(payload) == test_number
 
 
 
