@@ -1,3 +1,4 @@
+import json
 from queue import Queue
 import pytest
 from modbus4mqtt.modbus4mqtt import mqtt_interface
@@ -156,6 +157,21 @@ def modbus4mqtt_fixture():
     yield app
     app.stop()
 
+async def block_until_modbus_online(mqtt_client: MQTTClient, timeout: float = 5.0) -> None:
+    deadline = monotonic() + timeout
+    mqtt_client.clear_messages()
+    mqtt_client.subscribe("tests/modbus4mqtt")
+    while monotonic() < deadline:
+        for topic, payload in mqtt_client.received_messages:
+            if topic == "tests/modbus4mqtt":
+                decoded = json.loads(payload)
+                if decoded.get("status") == "online":
+                    mqtt_client.unsubscribe_to_all()
+                    mqtt_client.clear_messages()
+                    return
+        await asyncio.sleep(0.5)
+    raise TimeoutError("Modbus4MQTT did not report online status within timeout period.")
+
 async def wait_for_mqtt_messages(mqtt_client: MQTTClient, timeout: float = 1.0, count: int = 1) -> list[tuple[str, str]]:
     deadline = monotonic() + timeout
     while len(mqtt_client.received_messages) < count and monotonic() < deadline:
@@ -166,6 +182,7 @@ async def wait_for_mqtt_messages(mqtt_client: MQTTClient, timeout: float = 1.0, 
 
 @pytest.mark.asyncio
 async def test_basic_functionality(modbus_fixture: ModbusServer, mqtt_fixture: MQTTClient, modbus4mqtt_fixture: mqtt_interface):
+    await block_until_modbus_online(mqtt_fixture)
     mqtt_fixture.subscribe("tests/holding")
     test_number = random.randint(1, 0xFFFF)
     await modbus_fixture.set_holding_register(1, test_number)
@@ -176,6 +193,7 @@ async def test_basic_functionality(modbus_fixture: ModbusServer, mqtt_fixture: M
 
 @pytest.mark.asyncio
 async def test_multibyte_registers(modbus_fixture: ModbusServer, mqtt_fixture: MQTTClient, modbus4mqtt_fixture: mqtt_interface):
+    await block_until_modbus_online(mqtt_fixture)
     mqtt_fixture.subscribe("tests/uint64")
     mqtt_fixture.subscribe("tests/overlapping_uint16")
     test_number = 0x1234567890ABCDEF
@@ -197,9 +215,10 @@ async def test_multibyte_registers(modbus_fixture: ModbusServer, mqtt_fixture: M
 
 @pytest.mark.asyncio
 async def test_mqtt_write(modbus_fixture: ModbusServer, mqtt_fixture: MQTTClient, modbus4mqtt_fixture: mqtt_interface):
+    await block_until_modbus_online(mqtt_fixture)
     test_number = random.randint(1, 0xFFFF)
     mqtt_fixture.publish("tests/holding/set", str(test_number))
-    deadline = monotonic() + 5
+    deadline = monotonic() + 3
     while monotonic() < deadline:
         await asyncio.sleep(0.1)  # Give time for the message to be processed
         holding_value = await modbus_fixture.get_holding_register(1)
