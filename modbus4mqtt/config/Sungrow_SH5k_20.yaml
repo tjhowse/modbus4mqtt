@@ -3,7 +3,7 @@ port: 502
 update_rate: 5
 address_offset: 0
 variant: sungrow
-scan_batching: 100
+read_batching: 100
 word_order: lowhigh
 registers:
   - pub_topic: "ems/EMS_MODE"

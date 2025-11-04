@@ -1,11 +1,13 @@
 ip: 127.0.0.1
 port: 5020
-update_rate: 1
+update_rate: 0.1
 registers:
   - pub_topic: "holding"
     address: 1
-  - pub_topic: "input"
-    table: "input"
-    address: 1
-  - pub_topic: "default"
-    address: 2
+    set_topic: "holding/set"
+  - pub_topic: "uint64"
+    address: 10
+    type: "uint64"
+  - pub_topic: "overlapping_uint16"
+    address: 10
+    type: "uint16"

@@ -20,10 +20,27 @@ class ModbusConnectionStatus:
     Online = "online"
     Connecting = "connecting"
 
+class MqttConnectionStatus:
+    Offline = "offline"
+    Online = "online"
+    Connecting = "connecting"
+    Subscribing = "subscribing"
+
 
 class mqtt_interface():
-    def __init__(self, hostname, port, username, password, config_file, mqtt_topic_prefix,
-                 use_tls=True, insecure=False, cafile=None, cert=None, key=None):
+    def __init__(   self,
+                    hostname: str,
+                    port: int,
+                    username: str,
+                    password: str,
+                    config_file: str,
+                    mqtt_topic_prefix: str,
+                    use_tls=True,
+                    insecure=False,
+                    cafile=None,
+                    cert=None,
+                    key=None):
+        self._running = True
         self.hostname = hostname
         self._port = port
         self.username = username
@@ -44,6 +61,8 @@ class mqtt_interface():
         self.modbus_connect_retries = -1  # Retry forever by default
         self.modbus_reconnect_sleep_interval = 5  # Wait this many seconds between modbus connection attempts
         self.modbus_connection_status: ModbusConnectionStatus = ModbusConnectionStatus.Offline
+        self._subscription_mids: map[int, str] = {}
+        self.mqtt_connection_status: MqttConnectionStatus = MqttConnectionStatus.Offline
         self.setup_modbus()
 
     def connect(self):
@@ -57,7 +76,7 @@ class mqtt_interface():
         else:
             word_order = modbus_interface.WordOrder.HighLow
 
-        if self.config.get('write_mode', 'single').lower() == 'multi':
+        if self.config.get('write_mode', 'multi').lower() == 'multi':
             write_mode = modbus_interface.WriteMode.Multi
         else:
             write_mode = modbus_interface.WriteMode.Single
@@ -67,7 +86,8 @@ class mqtt_interface():
                                                      device_address=self.config.get('device_address', 0x01),
                                                      write_mode=write_mode,
                                                      variant=self.config.get('variant', None),
-                                                     scan_batching=self.config.get('scan_batching', None),
+                                                     # Allow the use of the deprecated "scan_batching" config option for backwards compatibility
+                                                     read_batching=self.config.get('read_batching', self.config.get('scan_batching', None)),
                                                      word_order=word_order)
         # Tells the modbus interface about the registers we consider interesting.
         for register in self.registers:
@@ -107,6 +127,7 @@ class mqtt_interface():
         self._mqtt_client._on_connect = self._on_connect
         self._mqtt_client._on_disconnect = self._on_disconnect
         self._mqtt_client._on_message = self._on_message
+        self._mqtt_client._on_subscribe = self._on_subscribe
         if self.use_tls:
             self._mqtt_client.tls_set(ca_certs=self.cafile, certfile=self.cert, keyfile=self.key)
             self._mqtt_client.tls_insecure_set(self.insecure)
@@ -191,19 +212,44 @@ class mqtt_interface():
             return
         # Subscribe to all the set topics.
         for register in self._get_registers_with('set_topic'):
-            self._mqtt_client.subscribe(self.prefix+register['set_topic'])
-            print("Subscribed to {}".format(self.prefix+register['set_topic']))
+            result  = self._mqtt_client.subscribe(self.prefix+register['set_topic'])
+
+            try:
+                success, mid = result
+            except ValueError:
+                logging.error("Failed to subscribe to {}. Not enough return values.".format(self.prefix+register['set_topic']))
+                continue
+            if success != mqtt.MQTT_ERR_SUCCESS:
+                logging.error("Failed to subscribe to {}: {}".format(self.prefix+register['set_topic'], success))
+                continue
+            self._subscription_mids[mid] = self.prefix+register['set_topic']
+            logging.info("Subscribing to {}".format(self.prefix+register['set_topic']))
+        self._set_mqtt_connection_status(MqttConnectionStatus.Subscribing)
+
+    def _on_disconnect(self, client, userdata, flags, reason_code, properties):
+        logging.warning("Disconnected from MQTT. Attempting to reconnect.")
+
+    def _on_subscribe(self, client, userdata, mid, reason_code_list, properties):
+        logging.info(f"Subscribed to {self._subscription_mids.get(mid, 'unknown topic')}.")
+        self._subscription_mids.pop(mid, None)
+        if not self._subscription_mids:
+            logging.info("Subscribed to all set topics.")
+            self._set_mqtt_connection_status(MqttConnectionStatus.Online)
+
+    def _set_mqtt_connection_status(self, status: MqttConnectionStatus):
+        if self.mqtt_connection_status == status:
+            return
+        self.mqtt_connection_status = status
+        if not self._mqtt_client.is_connected():
+            return
         self._mqtt_client.publish(self.prefix+'modbus4mqtt',
                                   json.dumps({
-                                        "status": "online",
+                                        "status": status,
                                         "version": f"{_version}",
                                         "timestamp": datetime.now().astimezone().strftime('%Y-%m-%dT%H:%M:%S%z')
                                   }),
                                   retain=True
                                   )
-
-    def _on_disconnect(self, client, userdata, flags, reason_code, properties):
-        logging.warning("Disconnected from MQTT. Attempting to reconnect.")
 
     def _on_message(self, client, userdata, msg):
         # print("got a message: {}: {}".format(msg.topic, msg.payload))
@@ -293,10 +339,16 @@ class mqtt_interface():
         return result
 
     def loop_forever(self):
-        while True:
+        while self._running:
             next_update_time_s = monotonic() + self.config['update_rate']
             self.poll()
             sleep(max(0, next_update_time_s - monotonic()))
+
+    def stop(self):
+        self._running = False
+        self._mqtt_client.loop_stop()
+        self._mqtt_client.disconnect()
+        self._mb.close()
 
 
 
@@ -311,7 +363,7 @@ class mqtt_interface():
               help='The password to authenticate to the MQTT server.', show_default=True)
 @click.option('--mqtt_topic_prefix', default='modbus4mqtt',
               help='A prefix for published MQTT topics.', show_default=True)
-@click.option('--config', default='./Sungrow_SH5k_20.yaml',
+@click.option('--config', default='./config/Sungrow_SH5k_20.yaml',
               help='The YAML config file for your modbus device.', show_default=True)
 @click.option('--use_tls', default=False,
               help='Configure network encryption and authentication options. Enables SSL/TLS.', show_default=True)

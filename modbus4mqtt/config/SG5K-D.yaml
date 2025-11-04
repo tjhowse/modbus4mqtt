@@ -3,7 +3,7 @@ port: 502
 update_rate: 60
 address_offset: 0
 variant: sungrow
-scan_batching: 1
+read_batching: 1
 registers:
   - pub_topic: "output_power" #total output power kWh
     address: 5000

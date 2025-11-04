@@ -88,7 +88,7 @@ class MQTTTests(unittest.TestCase):
                 args, _ = mock_mqtt().publish.call_args
                 self.assertEqual(args[0], MQTT_TOPIC_PREFIX+'/modbus4mqtt')
                 payload = json.loads(args[1])
-                self.assertEqual(payload["status"], "online")
+                self.assertEqual(payload["status"], "subscribing")
                 self.assertEqual(payload["version"], f"{modbus4mqtt._version}")
                 self.assertIn("timestamp", payload)
                 mock_mqtt().subscribe.assert_called_with(MQTT_TOPIC_PREFIX+'/subscribe')
@@ -481,9 +481,9 @@ class MQTTTests(unittest.TestCase):
                 ip='192.168.1.90',
                 port=502,
                 device_address=1,
-                write_mode=modbus4mqtt.modbus_interface.WriteMode.Single,
+                write_mode=modbus4mqtt.modbus_interface.WriteMode.Multi,
                 variant=None,
-                scan_batching=None,
+                read_batching=None,
                 word_order=word_order
             )
 
