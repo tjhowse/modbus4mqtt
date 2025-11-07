@@ -294,3 +294,16 @@ async def test_mqtt_write(
             break
     else:
         assert False, "Timeout waiting for Modbus register to update"
+    await block_until_harness_ready(mqtt_fixture)
+    test_number = random.randint(0x10000, 0xFFFFFFFF)
+    mqtt_fixture.publish("tests/holding_32b/set", str(test_number))
+    deadline = monotonic() + 3
+    while monotonic() < deadline:
+        await asyncio.sleep(0.1)  # Give time for the message to be processed
+        holding_value_high = await modbus_fixture.get_holding_register(2)
+        holding_value_low = await modbus_fixture.get_holding_register(3)
+        holding_value = (holding_value_high << 16) | holding_value_low
+        if holding_value == test_number:
+            break
+    else:
+        assert False, "Timeout waiting for Modbus register to update"

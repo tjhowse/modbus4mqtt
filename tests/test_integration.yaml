@@ -1,6 +1,7 @@
 ip: 127.0.0.1
 port: 5020
 update_rate: 0.1
+word_order: highlow
 registers:
   - pub_topic: "holding"
     address: 1
@@ -11,3 +12,7 @@ registers:
   - pub_topic: "overlapping_uint16"
     address: 10
     type: "uint16"
+  - pub_topic: "holding_32b"
+    address: 2
+    type: "uint32"
+    set_topic: "holding_32b/set"
