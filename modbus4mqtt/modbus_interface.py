@@ -49,25 +49,13 @@ class modbus_interface():
         self._read_batching: int = DEFAULT_READ_BATCHING
         self._write_batching: int = DEFAULT_WRITE_BATCHING
         self._word_order: WordOrder = word_order
-        if read_batching is not None:
-            if read_batching < MIN_BATCHING:
-                logging.warning("Bad value for read_batching: {}. Enforcing minimum value of {}".format(read_batching, MIN_BATCHING))
-                self._read_batching = MIN_BATCHING
-            elif read_batching > MAX_BATCHING:
-                logging.warning("Bad value for read_batching: {}. Enforcing maximum value of {}".format(read_batching, MAX_BATCHING))
-                self._read_batching = MAX_BATCHING
-            else:
-                self._read_batching = read_batching
-        if write_batching is not None:
-            if write_batching < MIN_BATCHING:
-                logging.warning("Bad value for write_batching: {}. Enforcing minimum value of {}".format(write_batching, MIN_BATCHING))
-                self._write_batching = MIN_BATCHING
-            elif write_batching > MAX_BATCHING:
-                logging.warning("Bad value for write_batching: {}. Enforcing maximum value of {}".format(write_batching, MAX_BATCHING))
-                self._write_batching = MAX_BATCHING
-            else:
-                self._write_batching = write_batching
-        if self._write_mode == WriteMode.Single:
+        if read_batching is not None and not (MIN_BATCHING <= read_batching <= MAX_BATCHING):
+            logging.warning(f"Bad value for read_batching: {read_batching}. Enforcing limits of {MIN_BATCHING} to {MAX_BATCHING}.")
+            self._read_batching = max(MIN_BATCHING, min(MAX_BATCHING, read_batching))
+        if write_batching is not None and not (MIN_BATCHING <= write_batching <= MAX_BATCHING):
+            logging.warning(f"Bad value for write_batching: {write_batching}. Enforcing limits of {MIN_BATCHING} to {MAX_BATCHING}.")
+            self._write_batching = max(MIN_BATCHING, min(MAX_BATCHING, write_batching))
+        if self._write_mode == WriteMode.Single and self._write_batching != 1:
             logging.warning("Overriding write batching to 1 due to single write mode.")
             self._write_batching = 1
         self._tables: dict[str, ModbusTable] = {

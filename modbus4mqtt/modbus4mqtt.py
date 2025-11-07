@@ -88,6 +88,7 @@ class mqtt_interface():
                                                      variant=self.config.get('variant', None),
                                                      # Allow the use of the deprecated "scan_batching" config option for backwards compatibility
                                                      read_batching=self.config.get('read_batching', self.config.get('scan_batching', None)),
+                                                     write_batching=self.config.get('write_batching', None),
                                                      word_order=word_order)
         # Tells the modbus interface about the registers we consider interesting.
         for register in self.registers:
@@ -331,11 +332,17 @@ class mqtt_interface():
                 raise ValueError("Bad YAML configuration. pub_topic '{}' has conflicting retain settings."
                                  .format(topic))
 
+
     def _load_modbus_config(self, path):
         yaml = YAML(typ='safe')
         result = yaml.load(open(path, 'r').read())
         registers = [register for register in result['registers'] if 'pub_topic' in register]
         mqtt_interface._validate_registers(registers)
+
+        if 'scan_batching' in result:
+            logging.warning("As of modbus4mqtt v1.0.0, the 'scan_batching' config option is deprecated. "
+                            "It has been replaced with 'read_batching' and 'write_batching'."
+                            "However, to be nice, modbus4mqtt will still accept 'scan_batching' for now.")
         return result
 
     def loop_forever(self):
