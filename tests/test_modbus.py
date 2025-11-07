@@ -1,7 +1,6 @@
-import os
 from collections import namedtuple
 import unittest
-from unittest.mock import patch, call, Mock
+from unittest.mock import patch, Mock
 
 from modbus4mqtt import modbus_interface
 from pymodbus import ModbusException

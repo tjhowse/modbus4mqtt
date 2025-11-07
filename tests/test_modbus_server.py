@@ -1,24 +1,20 @@
 import json
-from queue import Queue
 import pytest
 from modbus4mqtt.modbus4mqtt import mqtt_interface
 import pytest_asyncio
 import random
 from time import monotonic, sleep
-from pymodbus.server import ModbusTcpServer
-from pymodbus.datastore import ModbusServerContext, ModbusSequentialDataBlock, ModbusSparseDataBlock
 import threading
 import asyncio
 from paho.mqtt import client as mqtt_client
 
 from pymodbus import ModbusDeviceIdentification
+from pymodbus.server import ModbusTcpServer
 from pymodbus.datastore import (
     ModbusDeviceContext,
     ModbusSequentialDataBlock,
     ModbusServerContext,
 )
-from pymodbus.server import ModbusTcpServer
-import asyncio
 
 
 class ModbusServer:

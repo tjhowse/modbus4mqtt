@@ -59,7 +59,7 @@ def test_generate_batched_addresses_max_batch():
     # Should batch: [1,2,3,4] (start=1, len=4), [5] (start=5, len=1)
     assert batches == [[1, 4], [5, 1]]
 
-def test_generate_batched_addresses_max_batch():
+def test_generate_batched_addresses_max_batch_write_mode():
     table = ModbusTable(4)
     for addr in range(1, 6):
         table.add_register(addr)
