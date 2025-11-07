@@ -36,8 +36,8 @@ class modbus_interface:
         device_address=0x01,
         write_mode=WriteMode.Multi,
         variant=None,
-        read_batching=None,
-        write_batching=None,
+        read_batching: int = DEFAULT_READ_BATCHING,
+        write_batching: int = DEFAULT_WRITE_BATCHING,
         word_order=WordOrder.HighLow,
     ):
         self._ip: str = ip
@@ -47,23 +47,19 @@ class modbus_interface:
         self._write_mode: WriteMode = write_mode
         self._unit: int = device_address
         self._variant: str | None = variant
-        self._read_batching: int = DEFAULT_READ_BATCHING
-        self._write_batching: int = DEFAULT_WRITE_BATCHING
         self._word_order: WordOrder = word_order
-        if read_batching is not None and not (
-            MIN_BATCHING <= read_batching <= MAX_BATCHING
-        ):
+        self._read_batching: int = read_batching
+        self._write_batching: int = write_batching
+        if not MIN_BATCHING <= self._read_batching <= MAX_BATCHING:
             logging.warning(
-                f"Bad value for read_batching: {read_batching}. Enforcing limits of {MIN_BATCHING} to {MAX_BATCHING}."
+                f"Bad value for read_batching: {self._read_batching}. Enforcing limits of {MIN_BATCHING} to {MAX_BATCHING}."
             )
-            self._read_batching = max(MIN_BATCHING, min(MAX_BATCHING, read_batching))
-        if write_batching is not None and not (
-            MIN_BATCHING <= write_batching <= MAX_BATCHING
-        ):
+            self._read_batching = max(MIN_BATCHING, min(MAX_BATCHING, self._read_batching))
+        if not MIN_BATCHING <= self._write_batching <= MAX_BATCHING:
             logging.warning(
-                f"Bad value for write_batching: {write_batching}. Enforcing limits of {MIN_BATCHING} to {MAX_BATCHING}."
+                f"Bad value for write_batching: {self._write_batching}. Enforcing limits of {MIN_BATCHING} to {MAX_BATCHING}."
             )
-            self._write_batching = max(MIN_BATCHING, min(MAX_BATCHING, write_batching))
+            self._write_batching = max(MIN_BATCHING, min(MAX_BATCHING, self._write_batching))
         if self._write_mode == WriteMode.Single and self._write_batching != 1:
             logging.warning("Overriding write batching to 1 due to single write mode.")
             self._write_batching = 1

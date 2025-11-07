@@ -347,9 +347,7 @@ class ModbusTests(unittest.TestCase):
                     write_mode=modbus_interface.WriteMode.Multi,
                 )
                 self.assertIn(
-                    "Bad value for read_batching: {}. Enforcing maximum value of {}".format(
-                        bad_read_batching, modbus_interface.MAX_BATCHING
-                    ),
+                    f"Bad value for read_batching: {bad_read_batching}. Enforcing limits of {modbus_interface.MIN_BATCHING} to {modbus_interface.MAX_BATCHING}.",
                     mock_logger.output[-1],
                 )
 
@@ -361,9 +359,7 @@ class ModbusTests(unittest.TestCase):
                     write_mode=modbus_interface.WriteMode.Multi,
                 )
                 self.assertIn(
-                    "Bad value for read_batching: {}. Enforcing minimum value of {}".format(
-                        bad_read_batching, modbus_interface.MIN_BATCHING
-                    ),
+                    f"Bad value for read_batching: {bad_read_batching}. Enforcing limits of {modbus_interface.MIN_BATCHING} to {modbus_interface.MAX_BATCHING}.",
                     mock_logger.output[-1],
                 )
 
@@ -386,9 +382,7 @@ class ModbusTests(unittest.TestCase):
                     write_mode=modbus_interface.WriteMode.Multi,
                 )
                 self.assertIn(
-                    "Bad value for write_batching: {}. Enforcing maximum value of {}".format(
-                        bad_write_batching, modbus_interface.MAX_BATCHING
-                    ),
+                    f"Bad value for write_batching: {bad_write_batching}. Enforcing limits of {modbus_interface.MIN_BATCHING} to {modbus_interface.MAX_BATCHING}.",
                     mock_logger.output[-1],
                 )
 
@@ -400,9 +394,7 @@ class ModbusTests(unittest.TestCase):
                     write_mode=modbus_interface.WriteMode.Multi,
                 )
                 self.assertIn(
-                    "Bad value for write_batching: {}. Enforcing minimum value of {}".format(
-                        bad_write_batching, modbus_interface.MIN_BATCHING
-                    ),
+                    f"Bad value for write_batching: {bad_write_batching}. Enforcing limits of {modbus_interface.MIN_BATCHING} to {modbus_interface.MAX_BATCHING}.",
                     mock_logger.output[-1],
                 )
 
