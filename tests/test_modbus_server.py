@@ -20,7 +20,7 @@ from pymodbus.datastore import (
 class ModbusServer:
     """MODBUS server class."""
 
-    def __init__(self, host: str = '0.0.0.0', port: int = 5020) -> None:
+    def __init__(self, host: str = "0.0.0.0", port: int = 5020) -> None:
         """Initialize server context and identity."""
         self.storage: ModbusDeviceContext
         self.context: ModbusServerContext
@@ -36,16 +36,18 @@ class ModbusServer:
         """Run server setup."""
         self.holding_registers = ModbusSequentialDataBlock(0x00, [0] * 100)
         self.input_registers = ModbusSequentialDataBlock(0x00, [0] * 100)
-        self.storage = ModbusDeviceContext(hr=self.holding_registers, ir=self.input_registers)
+        self.storage = ModbusDeviceContext(
+            hr=self.holding_registers, ir=self.input_registers
+        )
         self.context = ModbusServerContext(devices=self.storage)
 
     async def set_holding_register(self, address: int, value: int) -> None:
         """Set holding register value."""
-        self.holding_registers.setValues(address+1, [value])
+        self.holding_registers.setValues(address + 1, [value])
 
     async def get_holding_register(self, address: int) -> int:
         """Get holding register value."""
-        return self.holding_registers.getValues(address+1, count=1)[0]
+        return self.holding_registers.getValues(address + 1, count=1)[0]
 
     async def run_async_server(self) -> None:
         """Run server."""
@@ -63,10 +65,11 @@ class ModbusServer:
             await self._mb_server.shutdown()
             self._mb_server = None
 
-class MQTTClient:
-    """ Basic MQTT client """
 
-    def __init__(self, host: str = '127.0.0.1', port: int = 1883):
+class MQTTClient:
+    """Basic MQTT client"""
+
+    def __init__(self, host: str = "127.0.0.1", port: int = 1883):
         self.host = host
         self.port = port
         self.client = mqtt_client.Client(mqtt_client.CallbackAPIVersion.VERSION2)
@@ -85,7 +88,9 @@ class MQTTClient:
             if self.subscribe_acknowledged:
                 return
             sleep(0.1)
-        raise TimeoutError(f"Subscription to topic {topic} not acknowledged within timeout period.")
+        raise TimeoutError(
+            f"Subscription to topic {topic} not acknowledged within timeout period."
+        )
 
     def unsubscribe_to_all(self):
         self.client.unsubscribe("#")
@@ -128,6 +133,7 @@ class MQTTClient:
         self.client.loop_stop()
         self.client.disconnect()
 
+
 @pytest_asyncio.fixture
 async def modbus_fixture():
     modbus_server = ModbusServer()
@@ -151,16 +157,19 @@ def mqtt_fixture():
     yield mqtt_client
     mqtt_client.disconnect()
 
+
 @pytest.fixture
 def modbus4mqtt_fixture():
 
-    app = mqtt_interface(   hostname='127.0.0.1',
-                            port=1883,
-                            username='',
-                            password='',
-                            use_tls=False,
-                            config_file='tests/test_integration.yaml',
-                            mqtt_topic_prefix='tests')
+    app = mqtt_interface(
+        hostname="127.0.0.1",
+        port=1883,
+        username="",
+        password="",
+        use_tls=False,
+        config_file="tests/test_integration.yaml",
+        mqtt_topic_prefix="tests",
+    )
     app.connect()
     th = threading.Thread(target=app.loop_forever, daemon=True)
     th.start()
@@ -168,7 +177,10 @@ def modbus4mqtt_fixture():
     app.stop()
     th.join()
 
-async def block_until_harness_ready(mqtt_client: MQTTClient, timeout: float = 5.0) -> None:
+
+async def block_until_harness_ready(
+    mqtt_client: MQTTClient, timeout: float = 5.0
+) -> None:
     deadline = monotonic() + timeout
     mqtt_client.clear_messages()
     mqtt_client.subscribe("#")
@@ -186,7 +198,9 @@ async def block_until_harness_ready(mqtt_client: MQTTClient, timeout: float = 5.
             break
         await asyncio.sleep(0.5)
     if not online_flag:
-        raise TimeoutError("Modbus4MQTT did not report online status within timeout period.")
+        raise TimeoutError(
+            "Modbus4MQTT did not report online status within timeout period."
+        )
     # Now we have to wait for a period of silence on the MQTT bus to ensure the
     # on-startup publications don't interfere with the test.
     silent_deadline = monotonic() + 1.0
@@ -197,16 +211,26 @@ async def block_until_harness_ready(mqtt_client: MQTTClient, timeout: float = 5.
             mqtt_client.clear_messages()
         await asyncio.sleep(0.1)
 
-async def wait_for_mqtt_messages(mqtt_client: MQTTClient, timeout: float = 1.0, count: int = 1) -> list[tuple[str, str]]:
+
+async def wait_for_mqtt_messages(
+    mqtt_client: MQTTClient, timeout: float = 1.0, count: int = 1
+) -> list[tuple[str, str]]:
     deadline = monotonic() + timeout
     while len(mqtt_client.received_messages) < count and monotonic() < deadline:
         await asyncio.sleep(0.1)
     if len(mqtt_client.received_messages) < count:
-        raise TimeoutError(f"Did not receive {count} MQTT messages within timeout period.")
+        raise TimeoutError(
+            f"Did not receive {count} MQTT messages within timeout period."
+        )
     return mqtt_client.received_messages
 
+
 @pytest.mark.asyncio
-async def test_basic_functionality(modbus_fixture: ModbusServer, mqtt_fixture: MQTTClient, modbus4mqtt_fixture: mqtt_interface):
+async def test_basic_functionality(
+    modbus_fixture: ModbusServer,
+    mqtt_fixture: MQTTClient,
+    modbus4mqtt_fixture: mqtt_interface,
+):
     await block_until_harness_ready(mqtt_fixture)
     mqtt_fixture.subscribe("tests/holding")
     test_number = random.randint(1, 0xFFFF)
@@ -216,12 +240,17 @@ async def test_basic_functionality(modbus_fixture: ModbusServer, mqtt_fixture: M
     assert topic == "tests/holding"
     assert int(payload) == test_number
 
+
 @pytest.mark.asyncio
-async def test_multibyte_registers(modbus_fixture: ModbusServer, mqtt_fixture: MQTTClient, modbus4mqtt_fixture: mqtt_interface):
+async def test_multibyte_registers(
+    modbus_fixture: ModbusServer,
+    mqtt_fixture: MQTTClient,
+    modbus4mqtt_fixture: mqtt_interface,
+):
     await block_until_harness_ready(mqtt_fixture)
     mqtt_fixture.subscribe("tests/uint64")
     mqtt_fixture.subscribe("tests/overlapping_uint16")
-    await asyncio.sleep(1) # Give time for subscriptions to take effect
+    await asyncio.sleep(1)  # Give time for subscriptions to take effect
     mqtt_fixture.clear_messages()
     test_number = 0x1234567890ABCDEF
     # Set the uint64 value across 4 registers (assuming big-endian)
@@ -241,7 +270,11 @@ async def test_multibyte_registers(modbus_fixture: ModbusServer, mqtt_fixture: M
 
 
 @pytest.mark.asyncio
-async def test_mqtt_write(modbus_fixture: ModbusServer, mqtt_fixture: MQTTClient, modbus4mqtt_fixture: mqtt_interface):
+async def test_mqtt_write(
+    modbus_fixture: ModbusServer,
+    mqtt_fixture: MQTTClient,
+    modbus4mqtt_fixture: mqtt_interface,
+):
     await block_until_harness_ready(mqtt_fixture)
     test_number = random.randint(1, 0xFFFF)
     mqtt_fixture.publish("tests/holding/set", str(test_number))

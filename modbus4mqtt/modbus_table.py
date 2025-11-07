@@ -1,5 +1,4 @@
-
-class ModbusTable():
+class ModbusTable:
 
     def __init__(self, read_batch_size: int = 100, write_batch_size: int = 0):
         self._registers: dict[int, int] = {}
@@ -40,7 +39,9 @@ class ModbusTable():
                 return []
         return self._batches
 
-    def _generate_batched_addresses(self, write_mode: bool = False) -> list[tuple[int, int]]:
+    def _generate_batched_addresses(
+        self, write_mode: bool = False
+    ) -> list[tuple[int, int]]:
         # This returns a list of pair tuples. Each tuple is the start and length
         # of a range of addresses that can be read/written together.
         # If "write_mode" is true, the returned lists will only include
@@ -56,7 +57,9 @@ class ModbusTable():
         for addr in self._registers:
             if write_mode and addr not in self._changed_registers:
                 continue
-            if current_batch_size >= max_batch_size or (previous_addr is not None and addr != previous_addr + 1):
+            if current_batch_size >= max_batch_size or (
+                previous_addr is not None and addr != previous_addr + 1
+            ):
                 result.append([current_batch_start, current_batch_size])
                 current_batch_start = addr
                 current_batch_size = 1

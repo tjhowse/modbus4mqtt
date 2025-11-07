@@ -27,18 +27,19 @@ class WriteMode(Enum):
     Multi = 2
 
 
-class modbus_interface():
+class modbus_interface:
 
-    def __init__(self,
-                 ip,
-                 port=502,
-                 device_address=0x01,
-                 write_mode=WriteMode.Multi,
-                 variant=None,
-                 read_batching=None,
-                 write_batching=None,
-                 word_order=WordOrder.HighLow
-                 ):
+    def __init__(
+        self,
+        ip,
+        port=502,
+        device_address=0x01,
+        write_mode=WriteMode.Multi,
+        variant=None,
+        read_batching=None,
+        write_batching=None,
+        word_order=WordOrder.HighLow,
+    ):
         self._ip: str = ip
         self._port: int = port
 
@@ -49,18 +50,26 @@ class modbus_interface():
         self._read_batching: int = DEFAULT_READ_BATCHING
         self._write_batching: int = DEFAULT_WRITE_BATCHING
         self._word_order: WordOrder = word_order
-        if read_batching is not None and not (MIN_BATCHING <= read_batching <= MAX_BATCHING):
-            logging.warning(f"Bad value for read_batching: {read_batching}. Enforcing limits of {MIN_BATCHING} to {MAX_BATCHING}.")
+        if read_batching is not None and not (
+            MIN_BATCHING <= read_batching <= MAX_BATCHING
+        ):
+            logging.warning(
+                f"Bad value for read_batching: {read_batching}. Enforcing limits of {MIN_BATCHING} to {MAX_BATCHING}."
+            )
             self._read_batching = max(MIN_BATCHING, min(MAX_BATCHING, read_batching))
-        if write_batching is not None and not (MIN_BATCHING <= write_batching <= MAX_BATCHING):
-            logging.warning(f"Bad value for write_batching: {write_batching}. Enforcing limits of {MIN_BATCHING} to {MAX_BATCHING}.")
+        if write_batching is not None and not (
+            MIN_BATCHING <= write_batching <= MAX_BATCHING
+        ):
+            logging.warning(
+                f"Bad value for write_batching: {write_batching}. Enforcing limits of {MIN_BATCHING} to {MAX_BATCHING}."
+            )
             self._write_batching = max(MIN_BATCHING, min(MAX_BATCHING, write_batching))
         if self._write_mode == WriteMode.Single and self._write_batching != 1:
             logging.warning("Overriding write batching to 1 due to single write mode.")
             self._write_batching = 1
         self._tables: dict[str, ModbusTable] = {
-            'input': ModbusTable(self._read_batching, self._write_batching),
-            'holding': ModbusTable(self._read_batching, self._write_batching)
+            "input": ModbusTable(self._read_batching, self._write_batching),
+            "holding": ModbusTable(self._read_batching, self._write_batching),
         }
 
     def connect(self) -> bool:
@@ -82,9 +91,9 @@ class modbus_interface():
         }
 
         if self._variant is None:
-            desired_framer, desired_client = None, 'tcp'
+            desired_framer, desired_client = None, "tcp"
         elif "-over-" in self._variant:
-            desired_framer, desired_client = self._variant.split('-over-')
+            desired_framer, desired_client = self._variant.split("-over-")
         else:
             desired_framer, desired_client = None, self._variant
 
@@ -99,21 +108,27 @@ class modbus_interface():
             desired_framer = "socket"
         framer = framers[desired_framer]
 
-        self._mb = client(host=self._ip, port=self._port, framer=framer, retries=3, timeout=1)
+        self._mb = client(
+            host=self._ip, port=self._port, framer=framer, retries=3, timeout=1
+        )
         self._mb.connect()
         return self._mb.connected
 
     def close(self):
         self._mb.close()
 
-    def add_monitor_register(self, table, addr, type='uint16'):
+    def add_monitor_register(self, table, addr, type="uint16"):
         # Accepts a modbus register and table to monitor
         if table not in self._tables:
-            raise ValueError("Unsupported table type. Please only use: {}".format(self._tables.keys()))
+            raise ValueError(
+                "Unsupported table type. Please only use: {}".format(
+                    self._tables.keys()
+                )
+            )
         # Register enough sequential addresses to fill the size of the register type.
         # Note: Each address provides 2 bytes of data.
         for i in range(type_length(type)):
-            self._tables[table].add_register(addr+i)
+            self._tables[table].add_register(addr + i)
 
     def poll(self):
         for table in self._tables:
@@ -121,18 +136,26 @@ class modbus_interface():
                 try:
                     values = self._scan_value_range(table, start, length)
                     for offset, value in enumerate(values):
-                        self._tables[table].set_value(start + offset, value, write=False)
+                        self._tables[table].set_value(
+                            start + offset, value, write=False
+                        )
                 except ModbusException as e:
                     if "Failed to connect" in str(e):
                         raise e
                     logging.error(e)
         self._process_writes()
 
-    def get_value(self, table, addr, type='uint16'):
+    def get_value(self, table, addr, type="uint16"):
         if table not in self._tables:
-            raise ValueError("Unsupported table type. Please only use: {}".format(self._tables.keys()))
+            raise ValueError(
+                "Unsupported table type. Please only use: {}".format(
+                    self._tables.keys()
+                )
+            )
         if addr not in self._tables[table]:
-            raise ValueError("Unpolled address. Use add_monitor_register(addr, table) to add a register to the polled list.")
+            raise ValueError(
+                "Unpolled address. Use add_monitor_register(addr, table) to add a register to the polled list."
+            )
         # Read sequential addresses to get enough bytes to satisfy the type of this register.
         # Note: Each address provides 2 bytes of data.
         value = bytes(0)
@@ -141,13 +164,13 @@ class modbus_interface():
             if self._word_order == WordOrder.HighLow:
                 data = self._tables[table].get_value(addr + i)
             else:
-                data = self._tables[table].get_value(addr + (type_len-i-1))
-            value += data.to_bytes(2, 'big')
+                data = self._tables[table].get_value(addr + (type_len - i - 1))
+            value += data.to_bytes(2, "big")
         value = _convert_from_bytes_to_type(value, type)
         return value
 
-    def set_value(self, table, addr, value, mask=0xFFFF, type='uint16'):
-        if table != 'holding':
+    def set_value(self, table, addr, value, mask=0xFFFF, type="uint16"):
+        if table != "holding":
             # I'm not sure if this is true for all devices. I might support writing to coils later,
             # so leave this door open.
             raise ValueError("Can only set values in the holding table.")
@@ -158,11 +181,16 @@ class modbus_interface():
         type_len = type_length(type)
         for i in range(type_len):
             if self._word_order == WordOrder.HighLow:
-                value = _convert_from_bytes_to_type(bytes_to_write[i*2:i*2+2], 'uint16')
+                value = _convert_from_bytes_to_type(
+                    bytes_to_write[i * 2 : i * 2 + 2], "uint16"
+                )
             else:
-                value = _convert_from_bytes_to_type(bytes_to_write[(type_len-i-1)*2:(type_len-i-1)*2+2], 'uint16')
-            self._planned_writes.put((addr+i, value, mask))
-            self._tables['holding'].set_value(addr+i, value, mask, write=True)
+                value = _convert_from_bytes_to_type(
+                    bytes_to_write[(type_len - i - 1) * 2 : (type_len - i - 1) * 2 + 2],
+                    "uint16",
+                )
+            self._planned_writes.put((addr + i, value, mask))
+            self._tables["holding"].set_value(addr + i, value, mask, write=True)
 
         # TODO Determine if we want to do immediate writes here, or leave it to be handled in poll().
         self._process_writes()
@@ -170,51 +198,63 @@ class modbus_interface():
     def _perform_write(self, addr, values):
         if self._write_mode == WriteMode.Single or len(values) == 1:
             for i, value in enumerate(values):
-                self._mb.write_register(address=addr+i, value=value, device_id=self._unit)
+                self._mb.write_register(
+                    address=addr + i, value=value, device_id=self._unit
+                )
         else:
             self._mb.write_registers(address=addr, values=values, device_id=self._unit)
 
     def _process_writes(self):
-        for start, length in self._tables['holding'].get_batched_addresses(write_mode=True):
+        for start, length in self._tables["holding"].get_batched_addresses(
+            write_mode=True
+        ):
             values = []
             for i in range(length):
-                values.append(self._tables['holding'].get_value(start + i))
+                values.append(self._tables["holding"].get_value(start + i))
             try:
                 self._perform_write(start, values)
             except ModbusException as e:
                 logging.error("Failed to write to modbus device: {}".format(e))
-        self._tables['holding'].clear_changed_registers()
+        self._tables["holding"].clear_changed_registers()
 
     def _scan_value_range(self, table, start, count):
         result = None
-        if table == 'input':
-            result = self._mb.read_input_registers(address=start, count=count, device_id=self._unit)
-        elif table == 'holding':
-            result = self._mb.read_holding_registers(address=start, count=count, device_id=self._unit)
+        if table == "input":
+            result = self._mb.read_input_registers(
+                address=start, count=count, device_id=self._unit
+            )
+        elif table == "holding":
+            result = self._mb.read_holding_registers(
+                address=start, count=count, device_id=self._unit
+            )
         if result is None:
             raise ModbusException("No result from modbus read.")
         if len(result.registers) != count:
-            raise ModbusException("Expected {} registers from modbus read on {}, got {}.".format(count, start, len(result.registers)))
+            raise ModbusException(
+                "Expected {} registers from modbus read on {}, got {}.".format(
+                    count, start, len(result.registers)
+                )
+            )
         return result.registers
 
 
 def type_length(type):
     # Return the number of addresses needed for the type.
     # Note: Each address provides 2 bytes of data.
-    if type in ['int16', 'uint16']:
+    if type in ["int16", "uint16"]:
         return 1
-    elif type in ['int32', 'uint32']:
+    elif type in ["int32", "uint32"]:
         return 2
-    elif type in ['int64', 'uint64']:
+    elif type in ["int64", "uint64"]:
         return 4
     raise ValueError("Unsupported type {}".format(type))
 
 
 def type_signed(type):
     # Returns whether the provided type is signed
-    if type in ['uint16', 'uint32', 'uint64']:
+    if type in ["uint16", "uint32", "uint64"]:
         return False
-    elif type in ['int16', 'int32', 'int64']:
+    elif type in ["int16", "int32", "int64"]:
         return True
     raise ValueError("Unsupported type {}".format(type))
 
@@ -222,7 +262,7 @@ def type_signed(type):
 def _convert_from_bytes_to_type(value, type):
     type = type.strip().lower()
     signed = type_signed(type)
-    return int.from_bytes(value, byteorder='big', signed=signed)
+    return int.from_bytes(value, byteorder="big", signed=signed)
 
 
 def _convert_from_type_to_bytes(value, type):
@@ -230,4 +270,4 @@ def _convert_from_type_to_bytes(value, type):
     signed = type_signed(type)
     # This can throw an OverflowError in various conditons. This will usually
     # percolate upwards and spit out an exception from on_message.
-    return int(value).to_bytes(type_length(type) * 2, byteorder='big', signed=signed)
+    return int(value).to_bytes(type_length(type) * 2, byteorder="big", signed=signed)
