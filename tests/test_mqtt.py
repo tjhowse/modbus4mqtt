@@ -1,7 +1,6 @@
-from datetime import datetime
 import json
 import unittest
-from unittest.mock import patch, call, Mock
+from unittest.mock import patch, Mock
 from paho.mqtt.client import MQTTMessage
 
 from modbus4mqtt import modbus4mqtt
