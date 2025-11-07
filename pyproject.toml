@@ -26,12 +26,10 @@ Homepage = "https://github.com/tjhowse/modbus4mqtt"
 
 [project.optional-dependencies]
 test = [
-    "nose2>=0.9.2",
-    "nose2[coverage_plugin]>=0.6.5",
     "flake8",
     "pytest",
-    "nose2",
     "codecov",
+    "pytest-cov>=7.0.0",
 ]
 
 [project.scripts]
