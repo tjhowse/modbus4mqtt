@@ -39,3 +39,9 @@ modbus4mqtt = "modbus4mqtt.modbus4mqtt:main"
 
 [tool.setuptools.packages.find]
 exclude = ["tests"]
+
+[tool.mypy]
+exclude = [
+    ".venv",
+    "build",
+]
