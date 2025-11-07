@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+from enum import StrEnum
 from time import sleep, monotonic
 from datetime import datetime
 import json
@@ -17,13 +18,13 @@ MAX_DECIMAL_POINTS = 8
 
 
 # Modbus connection status enum
-class ModbusConnectionStatus:
+class ModbusConnectionStatus(StrEnum):
     Offline = "offline"
     Online = "online"
     Connecting = "connecting"
 
 
-class MqttConnectionStatus:
+class MqttConnectionStatus(StrEnum):
     Offline = "offline"
     Online = "online"
     Connecting = "connecting"
@@ -67,9 +68,11 @@ class mqtt_interface:
         self.modbus_reconnect_sleep_interval = (
             5  # Wait this many seconds between modbus connection attempts
         )
-        self.modbus_connection_status: str = ModbusConnectionStatus.Offline
+        self.modbus_connection_status: ModbusConnectionStatus = (
+            ModbusConnectionStatus.Offline
+        )
         self._subscription_mids: dict[int, str] = {}
-        self.mqtt_connection_status: str = MqttConnectionStatus.Offline
+        self.mqtt_connection_status: MqttConnectionStatus = MqttConnectionStatus.Offline
         self.setup_modbus()
 
     def connect(self):
@@ -119,7 +122,7 @@ class mqtt_interface:
         else:
             self.set_modbus_connection_status(ModbusConnectionStatus.Offline)
 
-    def set_modbus_connection_status(self, status: str):
+    def set_modbus_connection_status(self, status: ModbusConnectionStatus):
         if status == self.modbus_connection_status:
             return
         self.modbus_connection_status = status
@@ -291,7 +294,7 @@ class mqtt_interface:
             logging.info("Subscribed to all set topics.")
             self._set_mqtt_connection_status(MqttConnectionStatus.Online)
 
-    def _set_mqtt_connection_status(self, status: str):
+    def _set_mqtt_connection_status(self, status: MqttConnectionStatus):
         if self.mqtt_connection_status == status:
             return
         self.mqtt_connection_status = status
