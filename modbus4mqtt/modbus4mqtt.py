@@ -67,11 +67,9 @@ class mqtt_interface:
         self.modbus_reconnect_sleep_interval = (
             5  # Wait this many seconds between modbus connection attempts
         )
-        self.modbus_connection_status: ModbusConnectionStatus = (
-            ModbusConnectionStatus.Offline
-        )
-        self._subscription_mids: map[int, str] = {}
-        self.mqtt_connection_status: MqttConnectionStatus = MqttConnectionStatus.Offline
+        self.modbus_connection_status: str = ModbusConnectionStatus.Offline
+        self._subscription_mids: dict[int, str] = {}
+        self.mqtt_connection_status: str = MqttConnectionStatus.Offline
         self.setup_modbus()
 
     def connect(self):
@@ -121,7 +119,7 @@ class mqtt_interface:
         else:
             self.set_modbus_connection_status(ModbusConnectionStatus.Offline)
 
-    def set_modbus_connection_status(self, status: ModbusConnectionStatus):
+    def set_modbus_connection_status(self, status: str):
         if status == self.modbus_connection_status:
             return
         self.modbus_connection_status = status
@@ -293,7 +291,7 @@ class mqtt_interface:
             logging.info("Subscribed to all set topics.")
             self._set_mqtt_connection_status(MqttConnectionStatus.Online)
 
-    def _set_mqtt_connection_status(self, status: MqttConnectionStatus):
+    def _set_mqtt_connection_status(self, status: str):
         if self.mqtt_connection_status == status:
             return
         self.mqtt_connection_status = status

@@ -46,9 +46,9 @@ class ModbusTable:
         # of a range of addresses that can be read/written together.
         # If "write_mode" is true, the returned lists will only include
         # registers that've changed since the last read operation.
-        result = []
-        current_batch_start = None
-        current_batch_size = 0
+        result: list[tuple[int, int]] = []
+        current_batch_start: int = -1
+        current_batch_size: int = 0
         previous_addr = None
         if write_mode:
             max_batch_size = self._write_batch_size
@@ -60,17 +60,17 @@ class ModbusTable:
             if current_batch_size >= max_batch_size or (
                 previous_addr is not None and addr != previous_addr + 1
             ):
-                result.append([current_batch_start, current_batch_size])
+                result.append((current_batch_start, current_batch_size))
                 current_batch_start = addr
                 current_batch_size = 1
             else:
-                if current_batch_start is None:
+                if current_batch_start == -1:
                     current_batch_start = addr
                 current_batch_size += 1
             previous_addr = addr
         # Don't forget to add the last batch
-        if current_batch_start is not None:
-            result.append([current_batch_start, current_batch_size])
+        if current_batch_start != -1:
+            result.append((current_batch_start, current_batch_size))
         return result
 
     def clear_changed_registers(self):

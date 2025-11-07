@@ -57,7 +57,7 @@ def test_generate_batched_addresses_simple():
         table.add_register(addr)
     batches = table.get_batched_addresses()
     # Should batch: [1,2] (start=1, len=2), [3] (start=3, len=1), [10,11] (start=10, len=2)
-    assert batches == [[1, 2], [3, 1], [10, 2]]
+    assert batches == [(1, 2), (3, 1), (10, 2)]
 
 
 def test_generate_batched_addresses_max_batch():
@@ -66,7 +66,7 @@ def test_generate_batched_addresses_max_batch():
         table.add_register(addr)
     batches = table.get_batched_addresses()
     # Should batch: [1,2,3,4] (start=1, len=4), [5] (start=5, len=1)
-    assert batches == [[1, 4], [5, 1]]
+    assert batches == [(1, 4), (5, 1)]
 
 
 def test_generate_batched_addresses_max_batch_write_mode():
@@ -80,4 +80,4 @@ def test_generate_batched_addresses_max_batch_write_mode():
         table.set_value(addr, 123, write=True)
     batches = table.get_batched_addresses(write_mode=True)
     # Should batch: [2] (start=2, len=1), [4] (start=4, len=1)
-    assert batches == [[2, 1], [4, 1]]
+    assert batches == [(2, 1), (4, 1)]

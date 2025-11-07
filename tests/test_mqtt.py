@@ -757,6 +757,7 @@ class MQTTTests(unittest.TestCase):
             write_mode=modbus4mqtt.modbus_interface.WriteMode.Multi,
             variant=None,
             read_batching=None,
+            write_batching=None,
             word_order=word_order,
         )
 

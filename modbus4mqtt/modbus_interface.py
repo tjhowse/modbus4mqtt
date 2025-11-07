@@ -5,7 +5,7 @@ from pymodbus.client import ModbusTcpClient, ModbusUdpClient, ModbusTlsClient
 from pymodbus.framer import FramerType
 from pymodbus import ModbusException
 
-from SungrowModbusTcpClient import SungrowModbusTcpClient
+from SungrowModbusTcpClient import SungrowModbusTcpClient  # type: ignore
 from modbus4mqtt.modbus_table import ModbusTable
 
 DEFAULT_READ_BATCHING = 100
@@ -48,18 +48,26 @@ class modbus_interface:
         self._unit: int = device_address
         self._variant: str | None = variant
         self._word_order: WordOrder = word_order
-        self._read_batching: int = read_batching
-        self._write_batching: int = write_batching
-        if not MIN_BATCHING <= self._read_batching <= MAX_BATCHING:
+        self._read_batching: int = (
+            read_batching if read_batching is not None else DEFAULT_READ_BATCHING
+        )
+        self._write_batching: int = (
+            write_batching if write_batching is not None else DEFAULT_WRITE_BATCHING
+        )
+        if not (MIN_BATCHING <= self._read_batching <= MAX_BATCHING):
             logging.warning(
                 f"Bad value for read_batching: {self._read_batching}. Enforcing limits of {MIN_BATCHING} to {MAX_BATCHING}."
             )
-            self._read_batching = max(MIN_BATCHING, min(MAX_BATCHING, self._read_batching))
-        if not MIN_BATCHING <= self._write_batching <= MAX_BATCHING:
+            self._read_batching = max(
+                MIN_BATCHING, min(MAX_BATCHING, self._read_batching)
+            )
+        if not (MIN_BATCHING <= self._write_batching <= MAX_BATCHING):
             logging.warning(
                 f"Bad value for write_batching: {self._write_batching}. Enforcing limits of {MIN_BATCHING} to {MAX_BATCHING}."
             )
-            self._write_batching = max(MIN_BATCHING, min(MAX_BATCHING, self._write_batching))
+            self._write_batching = max(
+                MIN_BATCHING, min(MAX_BATCHING, self._write_batching)
+            )
         if self._write_mode == WriteMode.Single and self._write_batching != 1:
             logging.warning("Overriding write batching to 1 due to single write mode.")
             self._write_batching = 1

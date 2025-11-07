@@ -8,8 +8,11 @@ import threading
 import asyncio
 from paho.mqtt import client as mqtt_client
 
-from pymodbus import ModbusDeviceIdentification
+from pymodbus import (
+    ModbusDeviceIdentification,
+)
 from pymodbus.server import ModbusTcpServer
+from pymodbus.constants import ExcCodes
 from pymodbus.datastore import (
     ModbusDeviceContext,
     ModbusSequentialDataBlock,
@@ -47,7 +50,12 @@ class ModbusServer:
 
     async def get_holding_register(self, address: int) -> int:
         """Get holding register value."""
-        return self.holding_registers.getValues(address + 1, count=1)[0]
+        result = self.holding_registers.getValues(address + 1, count=1)
+        if type(result) is ExcCodes:
+            raise ValueError(f"Error getting holding register at address {address}")
+        if type(result) is list and len(result) > 0:
+            return result[0]
+        raise ValueError(f"Error getting holding register at address {address}")
 
     async def run_async_server(self) -> None:
         """Run server."""
