@@ -5,6 +5,7 @@ address_offset: 0
 #variant: sungrow
 variant: tcp
 read_batching: 50
+write_batching: 1
 word_order: lowhigh
 registers:
   - pub_topic: "ems/EMS_MODE"

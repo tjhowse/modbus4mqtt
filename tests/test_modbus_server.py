@@ -307,3 +307,8 @@ async def test_mqtt_write(
             break
     else:
         assert False, "Timeout waiting for Modbus register to update"
+
+if __name__ == "__main__":
+    # Just run a modbus server
+    modbus_server = ModbusServer()
+    asyncio.run(modbus_server.run_async_server())
