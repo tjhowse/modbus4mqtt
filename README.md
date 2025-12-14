@@ -23,6 +23,7 @@ be a complete solution.
 
 * [Solariot](https://github.com/meltaxa/solariot)
 * [PVStats](https://github.com/ptarcher/pvstats) ([Fork](https://github.com/tjhowse/pvstats))
+* [ModbusTCP2MQTT](https://github.com/MatterVN/ModbusTCP2MQTT)
 
 There's also a good chance you'll be able to do what you need to do with a [Home Assistant](https://github.com/home-assistant)
 addon that is compatible with your device.
