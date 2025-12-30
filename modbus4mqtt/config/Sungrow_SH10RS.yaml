@@ -6,6 +6,7 @@ address_offset: 0
 variant: tcp
 read_batching: 50
 write_batching: 1
+write_mode: single
 word_order: lowhigh
 registers:
   - pub_topic: "ems/EMS_MODE"
