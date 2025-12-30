@@ -317,7 +317,7 @@ class mqtt_interface:
     def _on_message(self, client, userdata, msg):
         # print("got a message: {}: {}".format(msg.topic, msg.payload))
         # TODO Handle json_key writes. https://github.com/tjhowse/modbus4mqtt/issues/23
-        topic = msg.topic[len(self.prefix):]
+        topic = msg.topic[len(self.prefix) :]
         for register in [
             register for register in self.registers if "set_topic" in register
         ]:
@@ -431,7 +431,11 @@ class mqtt_interface:
         except FileNotFoundError:
             # Try to load the config from the pre-1.0.0 location. I.E. replace "config" with "modbus4mqtt"
             alt_path = path.replace("config", "modbus4mqtt")
-            logging.warning("Failed to find config file on path: {}. Checking alternative path {}".format(path, alt_path))
+            logging.warning(
+                "Failed to find config file on path: {}. Checking alternative path {}".format(
+                    path, alt_path
+                )
+            )
             result = yaml.load(open(alt_path, "r").read())
         registers = [
             register for register in result["registers"] if "pub_topic" in register
