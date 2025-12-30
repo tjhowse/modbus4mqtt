@@ -429,8 +429,8 @@ class mqtt_interface:
         try:
             result = yaml.load(open(path, "r").read())
         except FileNotFoundError:
-            # Try to load the config from the pre-1.0.0 location. I.E. replace "config" with "modbus4mqtt"
-            alt_path = path.replace("config", "modbus4mqtt")
+            # Try to re-map the path from the old config path to the new one.
+            alt_path = path.replace("/modbus4mqtt/modbus4mqtt", "/modbus4mqtt/config")
             logging.warning(
                 "Failed to find config file on path: {}. Checking alternative path {}".format(
                     path, alt_path
