@@ -110,6 +110,7 @@ class mqtt_interface:
                 register.get("table", "holding"),
                 register["address"],
                 register.get("type", "uint16"),
+                register.get("unit"),
             )
             register["value"] = None
 
@@ -197,6 +198,7 @@ class mqtt_interface:
                     register.get("table", "holding"),
                     register["address"],
                     register.get("type", "uint16"),
+                    register.get("unit"),
                 )
             except Exception:
                 logging.warning(
@@ -362,6 +364,7 @@ class mqtt_interface:
                 int(value),
                 register.get("mask", 0xFFFF),
                 type,
+                register.get("unit"),
             )
 
     # This throws ValueError exceptions if the imported registers are invalid

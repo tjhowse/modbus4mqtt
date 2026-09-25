@@ -71,10 +71,24 @@ class modbus_interface:
         if self._write_mode == WriteMode.Single and self._write_batching != 1:
             logging.warning("Overriding write batching to 1 due to single write mode.")
             self._write_batching = 1
-        self._tables: dict[str, ModbusTable] = {
-            "input": ModbusTable(self._read_batching, self._write_batching),
-            "holding": ModbusTable(self._read_batching, self._write_batching),
+        self._tables: dict[str, ModbusTable] = self._new_tables()
+        # Registers can name their own unit, so one connection reaches every
+        # device behind a gateway. The default unit's tables are self._tables.
+        self._unit_tables: dict[int, dict[str, ModbusTable]] = {
+            self._unit: self._tables
         }
+
+    def _new_tables(self) -> dict[str, ModbusTable]:
+        return {
+            name: ModbusTable(self._read_batching, self._write_batching)
+            for name in ("input", "holding")
+        }
+
+    def _tables_for(self, unit: int | None) -> dict[str, ModbusTable]:
+        unit = self._unit if unit is None else unit
+        if unit not in self._unit_tables:
+            self._unit_tables[unit] = self._new_tables()
+        return self._unit_tables[unit]
 
     def connect(self) -> bool:
         # Connects to the modbus device. Returns True on success, False on failure.
@@ -121,9 +135,10 @@ class modbus_interface:
     def close(self):
         self._mb.close()
 
-    def add_monitor_register(self, table, addr, type="uint16"):
+    def add_monitor_register(self, table, addr, type="uint16", unit=None):
         # Accepts a modbus register and table to monitor
-        if table not in self._tables:
+        tables = self._tables_for(unit)
+        if table not in tables:
             raise ValueError(
                 "Unsupported table type. Please only use: {}".format(
                     self._tables.keys()
@@ -132,31 +147,34 @@ class modbus_interface:
         # Register enough sequential addresses to fill the size of the register type.
         # Note: Each address provides 2 bytes of data.
         for i in range(type_length(type)):
-            self._tables[table].add_register(addr + i)
+            tables[table].add_register(addr + i)
 
     def poll(self):
-        for table in self._tables:
-            for start, length in self._tables[table].get_batched_addresses():
+        for unit, tables in self._unit_tables.items():
+            self._poll_unit(unit, tables)
+
+    def _poll_unit(self, unit, tables):
+        for table in tables:
+            for start, length in tables[table].get_batched_addresses():
                 try:
-                    values = self._scan_value_range(table, start, length)
+                    values = self._scan_value_range(table, start, length, unit)
                     for offset, value in enumerate(values):
-                        self._tables[table].set_value(
-                            start + offset, value, write=False
-                        )
+                        tables[table].set_value(start + offset, value, write=False)
                 except ModbusException as e:
                     if "Failed to connect" in str(e):
                         raise e
                     logging.error(e)
-        self._process_writes()
+        self._process_writes(unit, tables)
 
-    def get_value(self, table, addr, type="uint16"):
-        if table not in self._tables:
+    def get_value(self, table, addr, type="uint16", unit=None):
+        tables = self._tables_for(unit)
+        if table not in tables:
             raise ValueError(
                 "Unsupported table type. Please only use: {}".format(
                     self._tables.keys()
                 )
             )
-        if addr not in self._tables[table]:
+        if addr not in tables[table]:
             raise ValueError(
                 "Unpolled address. Use add_monitor_register(addr, table) to add a register to the polled list."
             )
@@ -166,14 +184,14 @@ class modbus_interface:
         type_len = type_length(type)
         for i in range(type_len):
             if self._word_order == WordOrder.HighLow:
-                data = self._tables[table].get_value(addr + i)
+                data = tables[table].get_value(addr + i)
             else:
-                data = self._tables[table].get_value(addr + (type_len - i - 1))
+                data = tables[table].get_value(addr + (type_len - i - 1))
             value += data.to_bytes(2, "big")
         value = _convert_from_bytes_to_type(value, type)
         return value
 
-    def set_value(self, table, addr, value, mask=0xFFFF, type="uint16"):
+    def set_value(self, table, addr, value, mask=0xFFFF, type="uint16", unit=None):
         if table != "holding":
             # I'm not sure if this is true for all devices. I might support writing to coils later,
             # so leave this door open.
@@ -194,42 +212,41 @@ class modbus_interface:
                     "uint16",
                 )
             self._planned_writes.put((addr + i, value, mask))
-            self._tables["holding"].set_value(addr + i, value, mask, write=True)
+            self._tables_for(unit)["holding"].set_value(
+                addr + i, value, mask, write=True
+            )
 
         # TODO Determine if we want to do immediate writes here, or leave it to be handled in poll().
-        self._process_writes()
+        unit = self._unit if unit is None else unit
+        self._process_writes(unit, self._tables_for(unit))
 
-    def _perform_write(self, addr, values):
+    def _perform_write(self, addr, values, unit):
         if self._write_mode == WriteMode.Single or len(values) == 1:
             for i, value in enumerate(values):
-                self._mb.write_register(
-                    address=addr + i, value=value, device_id=self._unit
-                )
+                self._mb.write_register(address=addr + i, value=value, device_id=unit)
         else:
-            self._mb.write_registers(address=addr, values=values, device_id=self._unit)
+            self._mb.write_registers(address=addr, values=values, device_id=unit)
 
-    def _process_writes(self):
-        for start, length in self._tables["holding"].get_batched_addresses(
-            write_mode=True
-        ):
+    def _process_writes(self, unit, tables):
+        for start, length in tables["holding"].get_batched_addresses(write_mode=True):
             values = []
             for i in range(length):
-                values.append(self._tables["holding"].get_value(start + i))
+                values.append(tables["holding"].get_value(start + i))
             try:
-                self._perform_write(start, values)
+                self._perform_write(start, values, unit)
             except ModbusException as e:
                 logging.error("Failed to write to modbus device: {}".format(e))
-        self._tables["holding"].clear_changed_registers()
+        tables["holding"].clear_changed_registers()
 
-    def _scan_value_range(self, table, start, count):
+    def _scan_value_range(self, table, start, count, unit):
         result = None
         if table == "input":
             result = self._mb.read_input_registers(
-                address=start, count=count, device_id=self._unit
+                address=start, count=count, device_id=unit
             )
         elif table == "holding":
             result = self._mb.read_holding_registers(
-                address=start, count=count, device_id=self._unit
+                address=start, count=count, device_id=unit
             )
         if result is None:
             raise ModbusException("No result from modbus read.")

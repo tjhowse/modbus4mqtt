@@ -33,7 +33,7 @@ class MQTTTests(unittest.TestCase):
     def tearDown(self):
         pass
 
-    def read_modbus_register(self, table, address, type="uint16"):
+    def read_modbus_register(self, table, address, type="uint16", unit=None):
         if address not in self.modbus_tables[table]:
             raise ValueError("Invalid address {} in table {}".format(address, table))
         value = bytes(0)
@@ -43,7 +43,9 @@ class MQTTTests(unittest.TestCase):
         value = modbus4mqtt.modbus_interface._convert_from_bytes_to_type(value, type)
         return value
 
-    def write_modbus_register(self, table, address, value, mask=0xFFFF, type="uint16"):
+    def write_modbus_register(
+        self, table, address, value, mask=0xFFFF, type="uint16", unit=None
+    ):
         old_value = self.modbus_tables[table][address]
         and_mask = (1 << 16) - 1 - mask
         or_mask = value
@@ -330,10 +332,10 @@ class MQTTTests(unittest.TestCase):
                     m.connect()
 
                     mock_modbus().add_monitor_register.assert_any_call(
-                        "holding", 1, "uint16"
+                        "holding", 1, "uint16", None
                     )
                     mock_modbus().add_monitor_register.assert_any_call(
-                        "holding", 2, "uint16"
+                        "holding", 2, "uint16", None
                     )
 
                     mock_mqtt().username_pw_set.assert_called_with("brengis", "pranto")
@@ -425,13 +427,13 @@ class MQTTTests(unittest.TestCase):
                 m.poll()
 
                 mock_modbus().add_monitor_register.assert_any_call(
-                    "holding", 1, "uint16"
+                    "holding", 1, "uint16", None
                 )
                 mock_modbus().add_monitor_register.assert_any_call(
-                    "holding", 2, "uint16"
+                    "holding", 2, "uint16", None
                 )
                 mock_modbus().add_monitor_register.assert_any_call(
-                    "holding", 3, "uint16"
+                    "holding", 3, "uint16", None
                 )
                 mock_mqtt().publish.assert_any_call(
                     "prefix/scale_up_no_value_map", 2, retain=False

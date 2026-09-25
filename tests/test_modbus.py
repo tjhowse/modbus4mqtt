@@ -47,6 +47,13 @@ class ModbusTests(unittest.TestCase):
             registers=self.holding_registers.registers[address : address + count]
         )
 
+    def read_holding_registers_by_unit(self, address, count, device_id):
+        # Unit n answers with n * 1000 + address, so a read from the wrong
+        # unit is visible in the value.
+        return self.modbusRegister(
+            registers=[device_id * 1000 + a for a in range(address, address + count)]
+        )
+
     def write_holding_register(self, address, value, device_id):
         self.holding_registers.registers[address] = value
 
@@ -667,3 +674,22 @@ class ModbusTests(unittest.TestCase):
             self.assertEqual(m.get_value("holding", 1, "uint64"), 18446573203856197441)
             # Read the value out as a different type.
             self.assertEqual(m.get_value("holding", 1, "int64"), -170869853354175)
+
+    def test_registers_poll_and_write_on_their_own_unit(self):
+        with patch("modbus4mqtt.modbus_interface.ModbusTcpClient") as mock_modbus:
+            mock_modbus().connect.side_effect = self.connect_success
+            mock_modbus().read_holding_registers.side_effect = (
+                self.read_holding_registers_by_unit
+            )
+            m = modbus_interface.modbus_interface("1.1.1.1")
+            m.connect()
+            m.add_monitor_register("holding", 17)
+            m.add_monitor_register("holding", 17, unit=2)
+            m.poll()
+            self.assertEqual(m.get_value("holding", 17), 1017)
+            self.assertEqual(m.get_value("holding", 17, unit=2), 2017)
+
+            m.set_value("holding", 17, 32, unit=2)
+            mock_modbus().write_register.assert_called_once_with(
+                address=17, value=32, device_id=2
+            )
